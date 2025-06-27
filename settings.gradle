@@ -1,0 +1,18 @@
+rootProject.name = 'nowaiting'
+
+include 'common'
+include 'domain-base'
+include 'domain-user'
+include 'domain-menu'
+include 'domain-store'
+include 'domain-token'
+include 'domain-bookmark'
+include 'domain-order'
+include 'domain-reservation'
+include 'api-user'
+include 'api-admin'
+include 'infra-aws'
+include 'security-admin'
+include 'security-front'
+include 'application-config'
+
