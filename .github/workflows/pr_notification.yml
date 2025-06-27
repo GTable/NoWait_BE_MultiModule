@@ -3,9 +3,6 @@ name: PR Discord Notification
 on:
   pull_request:
     types: [opened, closed, reopened]
-
-  schedule:
-    - cron: '25 11 * * 1-5'  # 월~금 오후 8시 25분 (KST = UTC+9)
     
   workflow_dispatch:
 
