@@ -83,7 +83,7 @@ public class MenuController {
 	@DeleteMapping("/delete/{menuId}")
 	public ResponseEntity<?> deleteMenu(@PathVariable Long menuId) {
 		return ResponseEntity
-			.status(HttpStatus.NO_CONTENT)
+			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
 					menuService.deleteMenu(menuId)
