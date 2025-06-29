@@ -58,20 +58,16 @@ public class Store extends BaseTimeEntity {
 	}
 
 	public void updateInfo(String name, String location, String description) {
-		this.name = name;
-		this.location = location;
-		this.description = description;
+		if (name != null) this.name = name;
+		if (location != null) this.location = location;
+		if (description != null) this.description = description;
 	}
 
 	public void markAsDeleted() {
 		this.deleted = true;
 	}
 
-	public void activate() {
-		this.isActive = true;
-	}
-
-	public void deactivate() {
-		this.isActive = false;
+	public void toggleActive() {
+		this.isActive = !this.isActive;
 	}
 }
