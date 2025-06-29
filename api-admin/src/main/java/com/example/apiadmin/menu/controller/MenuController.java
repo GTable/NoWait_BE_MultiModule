@@ -94,7 +94,7 @@ public class MenuController {
 	@PatchMapping("/toggle-soldout/{menuId}")
 	public ResponseEntity<?> toggleSoldOut(@PathVariable Long menuId) {
 		return ResponseEntity
-			.status(HttpStatus.NO_CONTENT)
+			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
 					menuService.toggleSoldOut(menuId)
