@@ -29,13 +29,28 @@ public class Menu extends BaseTimeEntity {
 	private String name;
 	private String description;
 	private Integer price;
+	private	Boolean isSoldOut;
+	private Boolean deleted;
 
-	public Menu(LocalDateTime createdAt, Long id, Long storeId, String name, String description, Integer price) {
+
+	public Menu(LocalDateTime createdAt, Long id, Long storeId, String name, String description, Integer price, Boolean isSoldOut, Boolean deleted) {
 		super(createdAt);
 		this.Id = id;
 		this.storeId = storeId;
 		this.name = name;
 		this.description = description;
 		this.price = price;
+		this.isSoldOut = isSoldOut != null ? isSoldOut : false;
+		this.deleted = deleted != null ? deleted : false;
 	}
+
+	public void updateInfo(String name, String description, Integer price) {
+		if (name != null) this.name = name;
+		if (description != null) this.description = description;
+		if (price != null) this.price = price;
+	}
+
+	public void markAsDeleted() { this.deleted = true; }
+
+	public void toggleSoldOut() { this.isSoldOut = !this.isSoldOut; }
 }
