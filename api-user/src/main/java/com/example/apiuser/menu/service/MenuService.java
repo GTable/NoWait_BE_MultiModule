@@ -25,7 +25,7 @@ public class MenuService {
 
 	@Transactional(readOnly = true)
 	public MenuReadResponse getMenusByStoreId(Long storeId) {
-		List<Menu> menus = menuRepository.findAllByStoreId(storeId);
+		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
 			.map(menu -> {
