@@ -24,7 +24,7 @@ public class MenuService {
 
 
 	@Transactional(readOnly = true)
-	public MenuReadResponse getMenusByStoreId(Long storeId) {
+	public MenuReadResponse getAllMenusByStoreId(Long storeId) {
 		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
@@ -38,5 +38,18 @@ public class MenuService {
 			.toList();
 
 		return MenuReadResponse.of(menuReadResponse);
+	}
+
+	@Transactional(readOnly = true)
+	public MenuReadDto getMenuById(Long storeId, Long menuId) {
+		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
+			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+
+		List<MenuImage> images = menuImageRepository.findByMenu(menu);
+		List<MenuImageUploadResponse> imageDto = images.stream()
+			.map(MenuImageUploadResponse::fromEntity)
+			.toList();
+
+		return MenuReadDto.fromEntity(menu, imageDto);
 	}
 }

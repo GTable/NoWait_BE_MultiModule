@@ -2,6 +2,8 @@ package com.example.apiuser.store.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.apiuser.store.dto.StoreImageUploadResponse;
@@ -39,6 +41,25 @@ public class StoreServiceImpl implements StoreService {
 			.toList();
 
 		boolean hasNext = false;
+
+		return StoreReadResponse.of(storeRead, hasNext);
+	}
+
+	@Transactional(readOnly = true)
+	public StoreReadResponse getAllStoresByPage(Pageable pageable) {
+		Slice<Store> stores = storeRepository.findAllByDeletedFalseOrderByStoreIdDesc(pageable);
+
+		List<StoreReadDto> storeRead = stores.getContent().stream()
+			.map(store -> {
+				List<StoreImage> images = storeImageRepository.findByStore(store);
+				List<StoreImageUploadResponse> imageDto = images.stream()
+					.map(StoreImageUploadResponse::fromEntity)
+					.toList();
+				return StoreReadDto.fromEntity(store, imageDto);
+			})
+			.toList();
+
+		boolean hasNext = stores.hasNext();
 
 		return StoreReadResponse.of(storeRead, hasNext);
 	}
