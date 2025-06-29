@@ -67,7 +67,7 @@ public class MenuService {
 
 	@Transactional
 	public MenuReadDto updateMenu(Long menuId, MenuUpdateRequest request) {
-		Menu menu = menuRepository.findById(menuId)
+		Menu menu = menuRepository.findByIdAndDeletedFalse(menuId)
 			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
 
 		menu.updateInfo(
