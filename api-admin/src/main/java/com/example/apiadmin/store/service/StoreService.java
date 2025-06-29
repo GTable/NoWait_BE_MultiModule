@@ -18,4 +18,5 @@ public interface StoreService {
 
 	String deleteStore(Long storeId);
 
+	Boolean toggleActive(Long storeId);
 }
