@@ -21,6 +21,8 @@ public class MenuCreateRequest {
 	private String description;
 	@NotNull
 	private Integer price;
+	private Boolean isSoldOut;
+	private Boolean deleted;
 
 	public Menu toEntity() {
 		return Menu.builder()
@@ -28,6 +30,8 @@ public class MenuCreateRequest {
 			.name(name)
 			.description(description)
 			.price(price)
+			.isSoldOut(false)
+			.deleted(false)
 			.build();
 	}
 }
