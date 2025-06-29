@@ -40,17 +40,6 @@ public class StoreController {
 			);
 	}
 
-	@GetMapping("/all-stores")
-	public ResponseEntity<?> getAllStores() {
-		return ResponseEntity
-			.status(HttpStatus.OK)
-			.body(
-				ApiUtils.success(
-					storeService.getAllStores()
-				)
-			);
-	}
-
 	@GetMapping("/{storeId}")
 	public ResponseEntity<?> getStoreById(@PathVariable Long storeId) {
 		return ResponseEntity
