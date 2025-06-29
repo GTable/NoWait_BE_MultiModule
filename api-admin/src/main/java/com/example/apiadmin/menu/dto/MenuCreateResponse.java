@@ -17,6 +17,8 @@ public class MenuCreateResponse {
 	private String name;
 	private String description;
 	private Integer price;
+	private Boolean isSoldOut;
+	private Boolean deleted;
 	private LocalDateTime createdAt;
 
 	public static MenuCreateResponse fromEntity(Menu menu) {
@@ -27,6 +29,8 @@ public class MenuCreateResponse {
 			.name(menu.getName())
 			.description(menu.getDescription())
 			.price(menu.getPrice())
+			.isSoldOut(menu.getIsSoldOut())
+			.deleted(menu.getDeleted())
 			.build();
 	}
 }

@@ -1,5 +1,6 @@
 package com.example.apiuser.store.controller;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +31,13 @@ public class StoreController {
 					storeService.getAllStores()
 				)
 			);
+	}
+
+	@GetMapping("/all-stores/infinite-scroll")
+	public ResponseEntity<?> getAllStores(Pageable pageable) {
+		return ResponseEntity
+			.ok()
+			.body(ApiUtils.success(storeService.getAllStoresByPage(pageable)));
 	}
 
 	@GetMapping("/{storeId}")

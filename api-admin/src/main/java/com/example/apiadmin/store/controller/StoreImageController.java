@@ -28,8 +28,7 @@ public class StoreImageController {
 	@PostMapping("/store-images/{storeId}")
 	public ResponseEntity<?> uploadStoreImage(
 		@PathVariable Long storeId,
-		@RequestParam("files") List<MultipartFile> files,
-		@RequestParam(value = "types") List<String> types
+		@RequestParam("files") List<MultipartFile> files
 	) {
 		// TODO 관련 정책 확정되면 메서드로 분리 예정
 		// 파일 개수 제한 검증
@@ -46,7 +45,7 @@ public class StoreImageController {
 			}
 		}
 
-		List<StoreImageUploadResponse> response = storeImageService.saveAll(storeId, files, types);
+		List<StoreImageUploadResponse> response = storeImageService.saveAll(storeId, files);
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
 			.body(

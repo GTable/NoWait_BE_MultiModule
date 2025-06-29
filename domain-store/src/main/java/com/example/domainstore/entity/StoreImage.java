@@ -36,7 +36,4 @@ public class StoreImage extends BaseTimeEntity {
 
 	@Column(nullable = false, length = 500)
 	private String fileKey;
-
-	@Column(length = 20)
-	private String type;
 }

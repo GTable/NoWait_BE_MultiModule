@@ -28,6 +28,8 @@ public class MenuCreateRequest {
 			.name(name)
 			.description(description)
 			.price(price)
+			.isSoldOut(false)
+			.deleted(false)
 			.build();
 	}
 }

@@ -25,7 +25,21 @@ public class MenuController {
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.getMenusByStoreId(storeId)
+					menuService.getAllMenusByStoreId(storeId)
+				)
+			);
+	}
+
+	@GetMapping("/{storeId}/{menuId}")
+	public ResponseEntity<?> getMenuById(
+		@PathVariable Long storeId,
+		@PathVariable Long menuId
+	) {
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					menuService.getMenuById(storeId, menuId)
 				)
 			);
 	}

@@ -1,4 +1,4 @@
-package com.example.apiadmin.store.dto;
+package com.example.apiadmin.menu.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class StoreUpdateRequest {
+public class MenuUpdateRequest {
 	private String name;
-	private String location;
 	private String description;
+	private Integer price;
 }

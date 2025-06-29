@@ -9,7 +9,6 @@ import com.example.apiadmin.store.dto.StoreCreateRequest;
 import com.example.apiadmin.store.dto.StoreCreateResponse;
 import com.example.apiadmin.store.dto.StoreImageUploadResponse;
 import com.example.apiadmin.store.dto.StoreReadDto;
-import com.example.apiadmin.store.dto.StoreReadResponse;
 import com.example.apiadmin.store.dto.StoreUpdateRequest;
 import com.example.domainstore.entity.Store;
 import com.example.domainstore.entity.StoreImage;
@@ -34,26 +33,6 @@ public class StoreServiceImpl implements StoreService {
 		Store saved = storeRepository.save(toSave);
 
 		return StoreCreateResponse.fromEntity(saved);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public StoreReadResponse getAllStores() {
-		List<Store> stores = storeRepository.findAllByDeletedFalse();
-
-		List<StoreReadDto> storeRead = stores.stream()
-			.map(store -> {
-				List<StoreImage> images = storeImageRepository.findByStore(store);
-				List<StoreImageUploadResponse> imageDto = images.stream()
-					.map(StoreImageUploadResponse::fromEntity)
-					.toList();
-				return StoreReadDto.fromEntity(store, imageDto);
-			})
-			.toList();
-
-		boolean hasNext = false;
-
-		return StoreReadResponse.of(storeRead, hasNext);
 	}
 
 	@Override
@@ -102,5 +81,14 @@ public class StoreServiceImpl implements StoreService {
 		storeRepository.save(store);
 
 		return "Store ID " + storeId + " 삭제되었습니다.";
+	}
+
+	@Transactional
+	public Boolean toggleActive(Long storeId) {
+		Store store = storeRepository.findById(storeId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 스토어가 존재하지 않습니다."));
+
+		store.toggleActive();
+		return store.getIsActive();
 	}
 }

@@ -10,6 +10,7 @@ import com.example.apiadmin.menu.dto.MenuCreateResponse;
 import com.example.apiadmin.menu.dto.MenuImageUploadResponse;
 import com.example.apiadmin.menu.dto.MenuReadDto;
 import com.example.apiadmin.menu.dto.MenuReadResponse;
+import com.example.apiadmin.menu.dto.MenuUpdateRequest;
 import com.example.menu.entity.Menu;
 import com.example.menu.entity.MenuImage;
 import com.example.menu.repository.MenuImageRepository;
@@ -34,10 +35,10 @@ public class MenuService {
 	}
 
 	@Transactional(readOnly = true)
-	public MenuReadResponse getMenusByStoreId(Long storeId) {
-		List<Menu> menus = menuRepository.findAllByStoreId(storeId);
+	public MenuReadResponse getAllMenusByStoreId(Long storeId) {
+		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
 
-		List<MenuReadDto> menuReadRespons = menus.stream()
+		List<MenuReadDto> menuReadResponse = menus.stream()
 			.map(menu -> {
 				List<MenuImage> images = menuImageRepository.findByMenu(menu);
 				List<MenuImageUploadResponse> imageDto = images.stream()
@@ -47,6 +48,63 @@ public class MenuService {
 			})
 			.toList();
 
-		return MenuReadResponse.of(menuReadRespons);
+		return MenuReadResponse.of(menuReadResponse);
 	}
+
+	@Transactional(readOnly = true)
+	public MenuReadDto getMenuById(Long storeId, Long menuId) {
+		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
+			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+
+		List<MenuImage> images = menuImageRepository.findByMenu(menu);
+		List<MenuImageUploadResponse> imageDto = images.stream()
+			.map(MenuImageUploadResponse::fromEntity)
+			.toList();
+
+		return MenuReadDto.fromEntity(menu, imageDto);
+	}
+
+
+	@Transactional
+	public MenuReadDto updateMenu(Long menuId, MenuUpdateRequest request) {
+		Menu menu = menuRepository.findByIdAndDeletedFalse(menuId)
+			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+
+		menu.updateInfo(
+			request.getName(),
+			request.getDescription(),
+			request.getPrice()
+		);
+
+		Menu saved = menuRepository.save(menu);
+
+		List<MenuImage> images = menuImageRepository.findByMenu(saved);
+		List<MenuImageUploadResponse> imageDto = images.stream()
+			.map(MenuImageUploadResponse::fromEntity)
+			.toList();
+
+		return MenuReadDto.fromEntity(saved, imageDto);
+	}
+
+	@Transactional
+	public String deleteMenu(Long menuId) {
+		Menu menu = menuRepository.findById(menuId)
+			.orElseThrow(() -> new IllegalArgumentException("Menu is already deleted with id: " + menuId));
+
+		menu.markAsDeleted();
+		menuRepository.save(menu);
+
+		return "Menu with ID " + menuId + " 삭제되었습니다.";
+	}
+
+	@Transactional
+	public Boolean toggleSoldOut(Long menuId) {
+		Menu menu = menuRepository.findById(menuId)
+			.orElseThrow(() -> new IllegalArgumentException("해당 메뉴가 존재하지 않습니다."));
+
+		menu.toggleSoldOut();
+		menuRepository.save(menu);
+		return menu.getIsSoldOut();
+	}
+
 }

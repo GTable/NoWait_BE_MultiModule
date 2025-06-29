@@ -28,10 +28,7 @@ public class StoreImageService {
 	private final S3Service s3Service;
 
 	@Transactional
-	public List<StoreImageUploadResponse> saveAll(Long storeId, List<MultipartFile> files, List<String> types) {
-		if (files.size() != types.size()) {
-			throw new IllegalArgumentException("파일과 타입의 개수가 일치해야 합니다.");
-		}
+	public List<StoreImageUploadResponse> saveAll(Long storeId, List<MultipartFile> files) {
 
 		String type = "store";
 		Store store = storeRepository.findById(storeId)
@@ -61,7 +58,6 @@ public class StoreImageService {
 				.store(store)
 				.imageUrl(uploadResult.url())
 				.fileKey(uploadResult.key())
-				.type(types.get(i))
 				.build();
 
 			storeImageRepository.save(storeImage);
