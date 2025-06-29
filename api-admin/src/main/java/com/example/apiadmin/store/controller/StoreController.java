@@ -79,7 +79,7 @@ public class StoreController {
 	@PatchMapping("/toggle-active/{storeId}")
 	public ResponseEntity<?> toggleActive(@PathVariable Long storeId) {
 		return ResponseEntity
-			.status(HttpStatus.NO_CONTENT)
+			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
 					storeService.toggleActive(storeId)
