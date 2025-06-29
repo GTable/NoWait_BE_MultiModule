@@ -89,12 +89,12 @@ public class MenuService {
 	@Transactional
 	public String deleteMenu(Long menuId) {
 		Menu menu = menuRepository.findById(menuId)
-			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+			.orElseThrow(() -> new IllegalArgumentException("Menu is already deleted with id: " + menuId));
 
 		menu.markAsDeleted();
 		menuRepository.save(menu);
 
-		return "Menu ID " + menuId + " 삭제되었습니다.";
+		return "Menu with ID " + menuId + " 삭제되었습니다.";
 	}
 
 	@Transactional
