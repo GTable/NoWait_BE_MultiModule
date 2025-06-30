@@ -18,6 +18,20 @@ subprojects {
     group = rootProject.group
     version = rootProject.version
 
+    // 실행 모듈만 따로 정의
+    def applicationModules = ['application-admin', 'application-user']
+
+    if (applicationModules.contains(project.name)) {
+        // 실제 Service 실행 모듈
+        apply plugin: 'org.springframework.boot'
+        bootJar { enabled = true }
+        jar     { enabled = false }
+    } else {
+        // 라이브러리/설정/도메인 전용 모듈
+        bootJar { enabled = false }
+        jar     { enabled = true }
+    }
+
     repositories {
         mavenCentral()
     }
@@ -42,12 +56,5 @@ subprojects {
 
     test {
         useJUnitPlatform()
-    }
-
-    bootJar {
-        enabled = false
-    }
-    jar {
-        enabled = true
     }
 }
