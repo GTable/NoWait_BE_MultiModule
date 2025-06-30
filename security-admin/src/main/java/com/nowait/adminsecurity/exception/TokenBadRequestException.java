@@ -1,7 +1,7 @@
 package com.nowait.adminsecurity.exception;
 
-import com.example.domaintoken.exception.BusinessException;
-import com.nowaiting.common.exception.ErrorMessage;
+import com.nowait.token.exception.BusinessException;
+import com.nowait.common.exception.ErrorMessage;
 
 public class TokenBadRequestException extends BusinessException {
 	public TokenBadRequestException() {
