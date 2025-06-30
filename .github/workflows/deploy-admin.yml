@@ -51,7 +51,7 @@ jobs:
       run: |
         rm -rf deploy && mkdir deploy
         cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar
-        cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml
+        cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml deploy/
         cd deploy
         zip -r ../${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip .
         cd ..
