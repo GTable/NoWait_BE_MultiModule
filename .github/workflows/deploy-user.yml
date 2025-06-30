@@ -54,11 +54,11 @@ jobs:
       run: |
         rm -rf deploy
         mkdir -p deploy/scripts
-        cp scripts/start-admin.sh scripts/stop-admin.sh deploy/scripts/
-        cp appspec-admin.yml deploy/appspec.yml
-        cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar  
+        cp scripts/start-user.sh scripts/stop-user.sh deploy/scripts/
+        cp appspec-user.yml deploy/appspec.yml
+        cp application-user/build/libs/application-user-*.jar deploy/application-user.jar  
         cd deploy
-        zip -r ../NoWait-admin-${GITHUB_SHA}.zip .
+        zip -r ../NoWait-user-${GITHUB_SHA}.zip .
         cd ..
 
     - name: Configure AWS credentials
