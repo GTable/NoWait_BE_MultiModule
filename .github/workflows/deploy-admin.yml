@@ -64,11 +64,12 @@ jobs:
         aws-secret-access-key: ${{ secrets.DEVSERVER_CICD_SECRET_KEY }}
       
     - name: S3에 업로드
-      run: aws deploy push \
-        --application-name "${{ env.AWS_CODE_DEPLOY_APPLICATION }}" \
-        --ignore-hidden-files \
-        --s3-location "s3://${{ env.AWS_S3_BUCKET }}/${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip" \
-        --source "${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip"
+      run: |
+        aws deploy push \
+          --application-name "${{ env.AWS_CODE_DEPLOY_APPLICATION }}" \
+          --ignore-hidden-files \
+          --s3-location "s3://${{ env.AWS_S3_BUCKET }}/${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip" \
+          --source "${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip"
 
     - name: EC2에 배포
       run: |
