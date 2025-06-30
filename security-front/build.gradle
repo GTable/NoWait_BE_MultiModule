@@ -20,6 +20,7 @@ dependencies {
     implementation project(':domain-user')
     implementation project(':domain-base')
     implementation project(':domain-token')
+    implementation project(':external-oauth')
     // SPRING SECURITY
     api 'org.springframework.boot:spring-boot-starter-security'
     api 'org.springframework.boot:spring-boot-starter-test'

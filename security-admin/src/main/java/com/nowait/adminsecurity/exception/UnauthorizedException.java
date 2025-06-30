@@ -1,6 +1,6 @@
 package com.nowait.adminsecurity.exception;
 
-import com.nowaiting.common.exception.ErrorMessage;
+import com.nowait.common.exception.ErrorMessage;
 
 public class UnauthorizedException extends RuntimeException {
 	private final ErrorMessage errorMessage;
