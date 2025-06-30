@@ -2,8 +2,8 @@ name: Dev Admin CI/CD
 
 on:
   push:
-    branches: 
-    - develop
+    branches:
+      - develop
     paths:
       - 'application-admin/**'
       - 'common/**'
@@ -21,60 +21,62 @@ env:
   AWS_S3_BUCKET: nowait-deploy-github-actions
   AWS_CODE_DEPLOY_APPLICATION: nowaiting
   AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev-admin
-  
+
 jobs:
   build-with-gradle:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-        
-    - name: JDK 17 설치
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'zulu'
-        
-    - name: gradlew에 실행 권한 부여
-      run: chmod +x ./gradlew
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Set YML
-      run: | 
-        mkdir -p application-admin/src/main/resources
-        echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode > application-admin/src/main/resources/application-admin.yml
-        find application-admin/src
-    
-    - name: 프로젝트 빌드
-      run: ./gradlew clean :application-admin:bootJar -x test
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'zulu'
 
-    - name: Prepare deployment package
-      run: |
-        rm -rf deploy && mkdir deploy
-        cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar
-        cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml deploy/
-        cd deploy
-        zip -r ../${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip .
-        cd ..
-    
-    - name: AWS credential 설정
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-region: ${{ env.AWS_REGION }}
-        aws-access-key-id: ${{ secrets.DEVSERVER_CICD_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.DEVSERVER_CICD_SECRET_KEY }}
-      
-    - name: S3에 업로드
-      run: |
-        aws deploy push \
-          --application-name "${{ env.AWS_CODE_DEPLOY_APPLICATION }}" \
-          --ignore-hidden-files \
-          --s3-location "s3://${{ env.AWS_S3_BUCKET }}/${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip" \
-          --source "${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip"
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-    - name: EC2에 배포
-      run: |
-        aws deploy create-deployment \
-        --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} \
-        --deployment-config-name CodeDeployDefault.AllAtOnce \
-        --deployment-group-name ${{ env.AWS_CODE_DEPLOY_GROUP }} \
-        --s3-location bucket=${{ env.AWS_S3_BUCKET }},key=${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip,bundleType=zip
+      - name: Set YML
+        run: |
+          mkdir -p application-admin/src/main/resources
+          echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" \
+            | base64 --decode \
+            > application-admin/src/main/resources/application-admin.yml
+          find application-admin/src
+
+      - name: Build Admin JAR
+        run: ./gradlew clean :application-admin:bootJar -x test
+
+      - name: Prepare deployment package
+        run: |
+          rm -rf deploy && mkdir deploy
+          cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar
+          cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml deploy/
+          cd deploy
+          zip -r ../${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip .
+          cd ..
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.DEVSERVER_CICD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.DEVSERVER_CICD_SECRET_KEY }}
+
+      - name: Upload to S3
+        run: |
+          aws deploy push \
+            --application-name "${{ env.AWS_CODE_DEPLOY_APPLICATION }}" \
+            --ignore-hidden-files \
+            --s3-location "s3://${{ env.AWS_S3_BUCKET }}/${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip" \
+            --source deploy
+
+      - name: Create CodeDeploy deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} \
+            --deployment-config-name CodeDeployDefault.AllAtOnce \
+            --deployment-group-name ${{ env.AWS_CODE_DEPLOY_GROUP }} \
+            --s3-location bucket=${{ env.AWS_S3_BUCKET }},key=${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip,bundleType=zip
