@@ -6,10 +6,11 @@ on:
       - develop
     paths:
       - 'application-admin/**'
+      - 'application-config/**'
       - 'common/**'
       - 'domain-*/**'
-      - 'application-config/**'
       - 'security-admin/**'
+      - 'infra-aws/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle/**'
@@ -41,9 +42,7 @@ jobs:
       - name: Set YML
         run: |
           mkdir -p application-admin/src/main/resources
-          echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" \
-            | base64 --decode \
-            > application-admin/src/main/resources/application-admin.yml
+          echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode application-admin/src/main/resources/application-admin.yml
           find application-admin/src
 
       - name: Build Admin JAR

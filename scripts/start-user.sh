@@ -1,19 +1,19 @@
 #!/bin/bash
 
-REPOSITORY="/home/ubuntu/spring-github-action"
+REPOSITORY="/home/ubuntu/spring-github-action-user"
 cd $REPOSITORY
 
-APP_NAME=application-admin
-JAR_NAME=$(ls $REPOSITORY/build/libs/ | grep '.jar' | tail -n 1)
-JAR_PATH=$REPOSITORY/build/libs/$JAR_NAME
+APP_NAME=application-user
+JAR_NAME=$(ls $REPOSITORY | grep '.jar' | tail -n 1)
+JAR_PATH=$REPOSITORY/$JAR_NAME
 
 START_LOG="$REPOSITORY/start.log"
 ERROR_LOG="$REPOSITORY/error.log"
 APP_LOG="$REPOSITORY/application.log"
 
 $ chmod 666 $START_LOG
-$ chmod 666 ERROR_LOG
-$ chmod 666 APP_LOG
+$ chmod 666 $ERROR_LOG
+$ chmod 666 $APP_LOG
 
 SERVICE_PID=$(pgrep -f ${APP_NAME}.*.jar) # 실행중인 Spring 서버의 PID
 NOW=$(date +%c)
