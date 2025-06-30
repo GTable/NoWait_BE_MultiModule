@@ -52,10 +52,11 @@ jobs:
       - name: Prepare deployment package
         run: |
           rm -rf deploy && mkdir deploy
-          cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar
-          cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml deploy/appspec.yml
+          cp scripts/start-admin.sh scripts/stop-admin.sh deploy/
+          cp appspec-admin.yml deploy/appspec.yml
+          cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar  
           cd deploy
-          zip -r ../${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip .
+          zip -r ../NoWait-admin-${GITHUB_SHA}.zip .
           cd ..
 
       - name: Configure AWS credentials
