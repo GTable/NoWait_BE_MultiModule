@@ -51,8 +51,9 @@ jobs:
 
       - name: Prepare deployment package
         run: |
-          rm -rf deploy && mkdir deploy
-          cp scripts/start-admin.sh scripts/stop-admin.sh deploy/
+          rm -rf deploy
+          mkdir -p deploy/scripts
+          cp scripts/start-admin.sh scripts/stop-admin.sh deploy/scripts/
           cp appspec-admin.yml deploy/appspec.yml
           cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar  
           cd deploy
