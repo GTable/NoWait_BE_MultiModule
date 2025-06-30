@@ -42,7 +42,9 @@ jobs:
     - name: Set YML
       run: |
         mkdir -p application-user/src/main/resources
-        echo "${{ secrets.APPLICATION_DEV_USER_YML }}" | base64 --decode application-user/src/main/resources/application-user.yml
+        echo "${{ secrets.APPLICATION_DEV_USER_YML }}" \
+          | base64 --decode \
+          > application-user/src/main/resources/application-user.yml
         find application-user/src
 
     - name: Build User JAR
