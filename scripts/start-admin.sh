@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPOSITORY="/home/ubuntu/spring-github-action"
+REPOSITORY="/home/ubuntu/spring-github-action-admin"
 cd $REPOSITORY
 
 APP_NAME=application-admin
