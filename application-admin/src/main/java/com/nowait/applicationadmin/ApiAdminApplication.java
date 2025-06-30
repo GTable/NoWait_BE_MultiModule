@@ -18,7 +18,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 	"com.nowait.user.entity",
 	"com.nowait.reservation.entity",
 	"com.nowait.order.entity"
-
 })
 @EnableJpaRepositories(basePackages = {
 	"com.nowait.menu.repository",
@@ -33,4 +32,3 @@ public class ApiAdminApplication {
 		org.springframework.boot.SpringApplication.run(ApiAdminApplication.class, args);
 	}
 }
-
