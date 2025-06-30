@@ -42,7 +42,7 @@ jobs:
       run: | 
         mkdir -p application-admin/src/main/resources
         echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode > application-admin/src/main/resources/application-admin.yml
-#        find application-admin/src
+        find application-admin/src
     
     - name: 프로젝트 빌드
       run: ./gradlew clean :application-admin:bootJar -x test
@@ -77,6 +77,3 @@ jobs:
         --deployment-config-name CodeDeployDefault.AllAtOnce \
         --deployment-group-name ${{ env.AWS_CODE_DEPLOY_GROUP }} \
         --s3-location bucket=${{ env.AWS_S3_BUCKET }},key=${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip,bundleType=zip
-
-
-
