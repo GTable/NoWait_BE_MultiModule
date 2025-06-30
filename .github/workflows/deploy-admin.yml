@@ -42,7 +42,7 @@ jobs:
       run: | 
         mkdir -p application-admin/src/main/resources
         echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode > application-admin/src/main/resources/application-admin.yml
-        find src
+        find application-admin/src
     
     - name: 프로젝트 빌드
       run: ./gradlew clean :application-admin:bootJar -x test
