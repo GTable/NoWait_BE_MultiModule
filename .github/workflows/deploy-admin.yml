@@ -1,15 +1,26 @@
-name: Dev CICD
+name: Dev Admin CI/CD
 
 on:
   push:
     branches: 
     - develop
+    paths:
+      - 'application-admin/**'
+      - 'common/**'
+      - 'domain-*/**'
+      - 'application-config/**'
+      - 'security-admin/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+
 env:
   PROJECT_NAME: NoWait
+  DIVISION: admin
   AWS_REGION: ap-northeast-2
   AWS_S3_BUCKET: nowait-deploy-github-actions
   AWS_CODE_DEPLOY_APPLICATION: nowaiting
-  AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev
+  AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev-admin
   
 jobs:
   build-with-gradle:
@@ -30,11 +41,19 @@ jobs:
     - name: Set YML
       run: | 
         mkdir -p src/main/resources
-        echo "${{ secrets.APPLICATION_DEV_YML }}" | base64 --decode > src/main/resources/application-dev.yml
+        echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode > src/main/resources/application-admin.yml
         find src
     
     - name: 프로젝트 빌드
-      run: ./gradlew clean build -x test
+      run: ./gradlew clean :application-admin:bootJar -x test
+
+    - name: Prepare deployment package
+      run: |
+        rm -rf deploy && mkdir deploy
+        cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar
+        cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml deploy/appspec.yml
+        cd deploy
+        zip -r ../${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip .
     
     - name: AWS credential 설정
       uses: aws-actions/configure-aws-credentials@v1
@@ -44,7 +63,7 @@ jobs:
         aws-secret-access-key: ${{ secrets.DEVSERVER_CICD_SECRET_KEY }}
       
     - name: S3에 업로드
-      run: aws deploy push --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} --ignore-hidden-files --s3-location s3://$AWS_S3_BUCKET/$PROJECT_NAME/$GITHUB_SHA.zip --source .
+      run: aws deploy push --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} --ignore-hidden-files --s3-location s3://$AWS_S3_BUCKET/$PROJECT_NAME/$DIVISION/$GITHUB_SHA.zip --source .
 
     - name: EC2에 배포
       run: |
@@ -52,6 +71,7 @@ jobs:
         --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} \
         --deployment-config-name CodeDeployDefault.AllAtOnce \
         --deployment-group-name ${{ env.AWS_CODE_DEPLOY_GROUP }} \
-        --s3-location bucket=$AWS_S3_BUCKET,key=$PROJECT_NAME/$GITHUB_SHA.zip,bundleType=zip
+        --s3-location bucket=${{ env.AWS_S3_BUCKET }},key=${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip,bundleType=zip
+
 
 
