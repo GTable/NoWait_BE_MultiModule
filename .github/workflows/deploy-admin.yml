@@ -40,8 +40,8 @@ jobs:
 
     - name: Set YML
       run: | 
-        mkdir -p src/main/resources
-        echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode > src/main/resources/application-admin.yml
+        mkdir -p application-admin/src/main/resources
+        echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" | base64 --decode > application-admin/src/main/resources/application-admin.yml
         find src
     
     - name: 프로젝트 빌드
@@ -54,6 +54,7 @@ jobs:
         cp scripts/start-admin.sh scripts/stop-admin.sh appspec-admin.yml deploy/appspec.yml
         cd deploy
         zip -r ../${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip .
+        cd ..
     
     - name: AWS credential 설정
       uses: aws-actions/configure-aws-credentials@v1
@@ -63,7 +64,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.DEVSERVER_CICD_SECRET_KEY }}
       
     - name: S3에 업로드
-      run: aws deploy push --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} --ignore-hidden-files --s3-location s3://$AWS_S3_BUCKET/$PROJECT_NAME/$DIVISION/$GITHUB_SHA.zip --source .
+      run: aws deploy push \
+        --application-name "${{ env.AWS_CODE_DEPLOY_APPLICATION }}" \
+        --ignore-hidden-files \
+        --s3-location "s3://${{ env.AWS_S3_BUCKET }}/${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip" \
+        --source "${{ env.PROJECT_NAME }}-${{ env.DIVISION }}-${{ github.sha }}.zip"
 
     - name: EC2에 배포
       run: |
