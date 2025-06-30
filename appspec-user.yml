@@ -1,0 +1,20 @@
+version: 0.0
+os: linux
+
+files:
+  - source:  /
+    destination: /home/ubuntu/spring-github-action-user
+    overwrite: yes
+
+permissions:
+  - object: /
+    owner: ubuntu
+    group: ubuntu
+
+hooks:
+  AfterInstall:
+    - location: scripts/stop-user.sh
+      timeout: 60
+  ApplicationStart:
+    - location: scripts/start-user.sh
+      timeout: 60
