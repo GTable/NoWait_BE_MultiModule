@@ -4,8 +4,8 @@ REPOSITORY="/home/ubuntu/spring-github-action-admin"
 cd $REPOSITORY
 
 APP_NAME=application-admin
-JAR_NAME=$(ls $REPOSITORY/build/libs/ | grep '.jar' | tail -n 1)
-JAR_PATH=$REPOSITORY/build/libs/$JAR_NAME
+JAR_NAME=$(ls $REPOSITORY | grep '.jar' | tail -n 1)
+JAR_PATH=$REPOSITORY/$JAR_NAME
 
 START_LOG="$REPOSITORY/start.log"
 ERROR_LOG="$REPOSITORY/error.log"
