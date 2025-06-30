@@ -1,4 +1,4 @@
-package com.nowait.auth.config;
+package com.nowait.frontsecurity.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,11 +14,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import com.nowait.auth.jwt.JwtAuthorizationFilter;
-import com.nowait.auth.jwt.JwtUtil;
-import com.nowait.auth.oauth2.CustomOAuth2UserService;
-import com.nowait.auth.oauth2.OAuth2LoginSuccessHandler;
-import com.nowait.auth.service.CustomUserDetailService;
+import com.nowait.externaloauth.jwt.JwtAuthorizationFilter;
+import com.nowait.externaloauth.jwt.JwtUtil;
+import com.nowait.externaloauth.oauth2.CustomOAuth2UserService;
+import com.nowait.externaloauth.oauth2.OAuth2LoginSuccessHandler;
+import com.nowait.externaloauth.service.CustomUserDetailService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,13 +27,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 	private final CustomOAuth2UserService customOAuth2UserService;
-	private final OAuth2LoginSuccessHandler OAuth2LoginSuccessHandler;
+	private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 	private final JwtUtil jwtUtil;
 	private final CustomUserDetailService userDetailsService;
+	private final CorsConfigurationSource corsConfigurationSource;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
+			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			// CSRF 방어 기능 비활성화 (jwt 토큰을 사용할 것이기에 필요없음)
 			.csrf(AbstractHttpConfigurer::disable)
 			// 시큐리티 폼 로그인 비활성화
@@ -46,7 +48,7 @@ public class SecurityConfig {
 			.oauth2Login(oauth2 ->
 				oauth2.userInfoEndpoint(userInfoEndpoint ->
 					userInfoEndpoint.userService(customOAuth2UserService)
-				).successHandler(OAuth2LoginSuccessHandler)
+				).successHandler(oAuth2LoginSuccessHandler)
 			)
 			// 세션 사용하지 않음
 			.sessionManagement(session ->
