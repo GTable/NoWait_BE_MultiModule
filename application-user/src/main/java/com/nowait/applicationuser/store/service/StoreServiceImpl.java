@@ -11,6 +11,8 @@ import com.nowait.applicationuser.store.dto.StoreReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadResponse;
 import com.nowait.store.entity.Store;
 import com.nowait.store.entity.StoreImage;
+import com.nowait.store.exception.StoreNotFoundException;
+import com.nowait.store.exception.StoreParamEmptyException;
 import com.nowait.store.repository.StoreImageRepository;
 import com.nowait.store.repository.StoreRepository;
 
@@ -68,8 +70,10 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional(readOnly = true)
 	public StoreReadDto getStoreByStoreId(Long storeId) {
+		if (storeId == null) throw new StoreParamEmptyException();
+
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " store not found."));
+			.orElseThrow(StoreNotFoundException::new);
 
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
@@ -81,6 +85,10 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	public List<StoreReadDto> searchStoresByName(String name) {
+		if (name == null || name.isBlank()) {
+			throw new StoreParamEmptyException();
+		}
+
 		List<Store> stores = storeRepository.findByNameContainingIgnoreCaseAndDeletedFalse(name);
 		return stores.stream()
 			.map(store -> {

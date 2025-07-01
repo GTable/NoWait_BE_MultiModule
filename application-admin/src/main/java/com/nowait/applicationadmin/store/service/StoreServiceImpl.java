@@ -12,6 +12,8 @@ import com.nowait.applicationadmin.store.dto.StoreReadDto;
 import com.nowait.applicationadmin.store.dto.StoreUpdateRequest;
 import com.nowait.store.entity.Store;
 import com.nowait.store.entity.StoreImage;
+import com.nowait.store.exception.StoreNotFoundException;
+import com.nowait.store.exception.StoreParamEmptyException;
 import com.nowait.store.repository.StoreImageRepository;
 import com.nowait.store.repository.StoreRepository;
 
@@ -28,6 +30,8 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional
 	public StoreCreateResponse createStore(StoreCreateRequest request) {
+		if (request == null) throw new StoreParamEmptyException();
+
 		Store toSave = request.toEntity();
 
 		Store saved = storeRepository.save(toSave);
@@ -38,8 +42,10 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional(readOnly = true)
 	public StoreReadDto getStoreByStoreId(Long storeId) {
+		if (storeId == null) throw new StoreParamEmptyException();
+
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " store not found."));
+			.orElseThrow(StoreNotFoundException::new);
 
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
@@ -52,8 +58,10 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional
 	public StoreReadDto updateStore(Long storeId, StoreUpdateRequest request) {
+		if (storeId == null || request == null) throw new StoreParamEmptyException();
+
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " store not found."));
+			.orElseThrow(StoreNotFoundException::new);
 
 		store.updateInfo(
 			request.getName(),
@@ -74,8 +82,12 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional
 	public String deleteStore(Long storeId) {
+		if (storeId == null) {
+			throw new StoreParamEmptyException();
+		}
+
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " store not found."));
+			.orElseThrow(StoreNotFoundException::new);
 
 		store.markAsDeleted();
 		storeRepository.save(store);

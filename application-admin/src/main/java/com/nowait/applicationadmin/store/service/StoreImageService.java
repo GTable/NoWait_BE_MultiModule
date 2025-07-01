@@ -12,6 +12,9 @@ import com.nowait.applicationadmin.store.dto.StoreImageUploadResponse;
 import com.nowait.store.entity.Store;
 
 import com.nowait.store.entity.StoreImage;
+import com.nowait.store.exception.StoreImageEmptyException;
+import com.nowait.store.exception.StoreImageNotFoundException;
+import com.nowait.store.exception.StoreNotFoundException;
 import com.nowait.store.repository.StoreImageRepository;
 import com.nowait.store.repository.StoreRepository;
 import com.nowait.infraaws.s3.S3Service;
@@ -29,10 +32,11 @@ public class StoreImageService {
 
 	@Transactional
 	public List<StoreImageUploadResponse> saveAll(Long storeId, List<MultipartFile> files) {
+		if (files == null || files.isEmpty()) throw new StoreImageEmptyException();
 
 		String type = "store";
 		Store store = storeRepository.findById(storeId)
-			.orElseThrow(() -> new EntityNotFoundException("Store not found with id: " + storeId));
+			.orElseThrow(StoreNotFoundException::new);
 
 		// 모든 파일을 비동기로 업로드
 		List<CompletableFuture<S3Service.S3UploadResult>> uploadFutures = new ArrayList<>();
@@ -52,8 +56,7 @@ public class StoreImageService {
 
 		// DB 저장은 모든 S3 업로드 성공 후 수행
 		List<StoreImageUploadResponse> imageUploadResponses = new ArrayList<>();
-		for (int i = 0; i < uploadResults.size(); i++) {
-			S3Service.S3UploadResult uploadResult = uploadResults.get(i);
+		for (S3Service.S3UploadResult uploadResult : uploadResults) {
 			StoreImage storeImage = StoreImage.builder()
 				.store(store)
 				.imageUrl(uploadResult.url())
@@ -70,7 +73,7 @@ public class StoreImageService {
 	@Transactional
 	public void delete(Long storeImageId) {
 		StoreImage storeImage = storeImageRepository.findById(storeImageId)
-			.orElseThrow(() -> new EntityNotFoundException("StoreImage not found with id: " + storeImageId));
+			.orElseThrow(StoreImageNotFoundException::new);
 
 		s3Service.delete(storeImage.getFileKey());
 		storeImageRepository.delete(storeImage);
