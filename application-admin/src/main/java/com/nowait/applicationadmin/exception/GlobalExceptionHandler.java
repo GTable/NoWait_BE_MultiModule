@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MultipartException;
 
-import com.nowait.applicationadmin.reservation.exception.ReservationNotFoundException;
+import com.nowait.reservation.exception.ReservationNotFoundException;
 import com.nowait.token.exception.BusinessException;
 import com.nowait.adminsecurity.exception.ResourceNotFoundException;
 import com.nowait.adminsecurity.exception.UnauthorizedException;

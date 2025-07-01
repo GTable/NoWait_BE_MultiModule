@@ -11,6 +11,7 @@ import com.nowait.applicationadmin.reservation.dto.ReservationGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusSummaryDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateRequestDto;
 import com.nowait.reservation.entity.Reservation;
+import com.nowait.reservation.exception.ReservationNotFoundException;
 import com.nowait.reservation.repository.ReservationRepository;
 import com.nowait.common.enums.ReservationStatus;
 
