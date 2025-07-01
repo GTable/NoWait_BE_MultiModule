@@ -18,6 +18,7 @@ public enum ErrorMessage {
 	ORDER_PARAMETER_EMPTY("주문 생성 시 파라미터 정보가 없습니다.", "order001"),
 	ORDER_ITEMS_EMPTY("주문 항목이 없습니다.", "order002"),
 	DUPLICATE_ORDER("동일한 주문이 접수되었습니다.", "order003"),
+	DEPOSITOR_NAME_TOO_LONG("주문자명은 10자 이내 글자열입니다.", "order004"),
 
 	//reservation
 	NOTFOUND_RESERVATION("저장된 예약 정보가 없습니다.", "reservation001"),

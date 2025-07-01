@@ -23,6 +23,7 @@ import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
 import com.nowait.frontsecurity.exception.ResourceNotFoundException;
 import com.nowait.frontsecurity.exception.UnauthorizedException;
+import com.nowait.order.exception.DepositorNameTooLongException;
 import com.nowait.order.exception.DuplicateOrderException;
 import com.nowait.order.exception.OrderItemsEmptyException;
 import com.nowait.order.exception.OrderParameterEmptyException;
@@ -137,6 +138,13 @@ public class GlobalExceptionHandler {
 	public ErrorResponse orderItemsEmptyException(OrderItemsEmptyException e) {
 		log.error("orderItemsEmptyException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_ITEMS_EMPTY.getCode());
+	}
+
+	@ResponseStatus(value = BAD_REQUEST)
+	@ExceptionHandler(DepositorNameTooLongException.class)
+	public ErrorResponse depositorNameTooLongException(DepositorNameTooLongException e) {
+		log.error("depositorNameTooLongException", e);
+		return new ErrorResponse(e.getMessage(), DEPOSITOR_NAME_TOO_LONG.getCode());
 	}
 
 	@ResponseStatus(value = BAD_REQUEST)
