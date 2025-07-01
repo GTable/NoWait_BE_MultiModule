@@ -13,8 +13,10 @@ import com.nowait.applicationadmin.menu.dto.MenuReadResponse;
 import com.nowait.applicationadmin.menu.dto.MenuUpdateRequest;
 import com.nowait.menu.entity.Menu;
 import com.nowait.menu.entity.MenuImage;
+import com.nowait.menu.exception.MenuNotFoundException;
 import com.nowait.menu.repository.MenuImageRepository;
 import com.nowait.menu.repository.MenuRepository;
+import com.nowait.order.exception.OrderParameterEmptyException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -53,8 +55,12 @@ public class MenuService {
 
 	@Transactional(readOnly = true)
 	public MenuReadDto getMenuById(Long storeId, Long menuId) {
+		if (storeId == null || menuId == null) {
+			throw new OrderParameterEmptyException();
+		}
+
 		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
-			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+			.orElseThrow(MenuNotFoundException::new);
 
 		List<MenuImage> images = menuImageRepository.findByMenu(menu);
 		List<MenuImageUploadResponse> imageDto = images.stream()
@@ -68,7 +74,7 @@ public class MenuService {
 	@Transactional
 	public MenuReadDto updateMenu(Long menuId, MenuUpdateRequest request) {
 		Menu menu = menuRepository.findByIdAndDeletedFalse(menuId)
-			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+			.orElseThrow(MenuNotFoundException::new);
 
 		menu.updateInfo(
 			request.getName(),
@@ -89,7 +95,7 @@ public class MenuService {
 	@Transactional
 	public String deleteMenu(Long menuId) {
 		Menu menu = menuRepository.findById(menuId)
-			.orElseThrow(() -> new IllegalArgumentException("Menu is already deleted with id: " + menuId));
+			.orElseThrow(MenuNotFoundException::new);
 
 		menu.markAsDeleted();
 		menuRepository.save(menu);
@@ -100,7 +106,7 @@ public class MenuService {
 	@Transactional
 	public Boolean toggleSoldOut(Long menuId) {
 		Menu menu = menuRepository.findById(menuId)
-			.orElseThrow(() -> new IllegalArgumentException("해당 메뉴가 존재하지 않습니다."));
+			.orElseThrow(MenuNotFoundException::new);
 
 		menu.toggleSoldOut();
 		menuRepository.save(menu);

@@ -8,6 +8,9 @@ import com.nowait.applicationadmin.menu.dto.MenuImageUploadResponse;
 import com.nowait.infraaws.s3.S3Service;
 import com.nowait.menu.entity.Menu;
 import com.nowait.menu.entity.MenuImage;
+import com.nowait.menu.exception.MenuImageEmptyException;
+import com.nowait.menu.exception.MenuImageNotFoundException;
+import com.nowait.menu.exception.MenuNotFoundException;
 import com.nowait.menu.repository.MenuImageRepository;
 import com.nowait.menu.repository.MenuRepository;
 
@@ -23,10 +26,13 @@ public class MenuImageService {
 
 	@Transactional
 	public MenuImageUploadResponse save(Long menuId, MultipartFile file) {
+		if (file == null || file.isEmpty()) {
+			throw new MenuImageEmptyException();
+		}
 
 		String type = "menu";
 		Menu menu = menuRepository.findById(menuId)
-			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+			.orElseThrow(MenuNotFoundException::new);
 
 		S3Service.S3UploadResult uploadResult = s3Service.upload(type, menuId, file).join();
 
@@ -46,7 +52,7 @@ public class MenuImageService {
 	@Transactional
 	public void delete(Long id) {
 		MenuImage menuImage = menuImageRepository.findById(id)
-			.orElseThrow(() -> new IllegalArgumentException("MenuImage not found with id: " + id));
+			.orElseThrow(MenuImageNotFoundException::new);
 
 		s3Service.delete(menuImage.getFileKey());
 		menuImageRepository.delete(menuImage);

@@ -10,6 +10,8 @@ import com.nowait.applicationuser.menu.dto.MenuReadDto;
 import com.nowait.applicationuser.menu.dto.MenuReadResponse;
 import com.nowait.menu.entity.Menu;
 import com.nowait.menu.entity.MenuImage;
+import com.nowait.menu.exception.MenuNotFoundException;
+import com.nowait.menu.exception.MenuParamEmptyException;
 import com.nowait.menu.repository.MenuImageRepository;
 import com.nowait.menu.repository.MenuRepository;
 
@@ -25,6 +27,9 @@ public class MenuService {
 
 	@Transactional(readOnly = true)
 	public MenuReadResponse getAllMenusByStoreId(Long storeId) {
+		if (storeId == null) {
+			throw new MenuParamEmptyException();
+		}
 		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
@@ -42,8 +47,12 @@ public class MenuService {
 
 	@Transactional(readOnly = true)
 	public MenuReadDto getMenuById(Long storeId, Long menuId) {
+		if (storeId == null || menuId == null) {
+			throw new MenuParamEmptyException();
+		}
+
 		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
-			.orElseThrow(() -> new IllegalArgumentException("Menu not found with id: " + menuId));
+			.orElseThrow(MenuNotFoundException::new);
 
 		List<MenuImage> images = menuImageRepository.findByMenu(menu);
 		List<MenuImageUploadResponse> imageDto = images.stream()

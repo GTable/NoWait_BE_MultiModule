@@ -24,7 +24,22 @@ public enum ErrorMessage {
 
 	// bookmark
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
-	NOT_OWN_BOOKMARK("해당 주점은 다른 사용자가 북마크한 주점입니다.", "bookmark002");
+	NOT_OWN_BOOKMARK("해당 주점은 다른 사용자가 북마크한 주점입니다.", "bookmark002"),
+
+	// menu
+	MENU_PARAMETER_EMPTY("메뉴 생성 시 파라미터 정보가 없습니다.", "menu001"),
+	MENU_NOT_FOUND("해당 메뉴를 찾을 수 없습니다.", "menu001"),
+
+	// store
+	STORE_PARAMETER_EMPTY("주점 생성 시 파라미터 정보가 없습니다.", "store001"),
+	STORE_NOT_FOUND("해당 주점을 찾을 수 없습니다.", "store002"),
+
+	// image
+	IMAGE_FILE_EMPTY("이미지 파일을 업로드 해주세요", "image001"),
+	IMAGE_FILE_NOT_FOUND("이미지 파일을 업로드 해주세요", "image001"),
+
+	// search
+	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001");
 
 	private final String message;
 	private final String code;
