@@ -9,7 +9,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication(scanBasePackages = {
 	"com.nowait.applicationadmin",
 	"com.nowait.infraaws",
-	"com.nowait.adminsecurity"
+	"com.nowait.adminsecurity",
+	"com.nowait.config"
 })
 @EntityScan(basePackages = {
 	"com.nowait.menu.entity",

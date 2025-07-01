@@ -28,6 +28,7 @@ dependencies {
     implementation project(':domain-reservation')    // 예약 관련 도메인
     implementation project(':security-admin')    // 인증 관련 도메인
     implementation project(':infra-aws')         // aws 관련 도메인
+    implementation project(':application-config')
 
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'

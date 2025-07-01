@@ -29,6 +29,7 @@ dependencies {
     implementation project(':infra-aws')           // 사용자 관련 도메인
     implementation project(':security-front')           // 사용자 관련 도메인
     implementation project(':external-oauth')           // 외부 OAuth 관련 도메인
+    implementation project(':application-config')
 
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
