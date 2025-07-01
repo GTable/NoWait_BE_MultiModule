@@ -19,5 +19,5 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
 	List<Store> findByNameContainingIgnoreCaseAndDeletedFalse(String name);
 
-	Slice<Store> findAllByDeletedFalseOrderByStoreIdDesc(Pageable pageable);
+	Slice<Store> findAllByDeletedFalseOrderByStoreIdAsc(Pageable pageable);
 }

@@ -45,9 +45,10 @@ public class StoreServiceImpl implements StoreService {
 		return StoreReadResponse.of(storeRead, hasNext);
 	}
 
+	@Override
 	@Transactional(readOnly = true)
 	public StoreReadResponse getAllStoresByPage(Pageable pageable) {
-		Slice<Store> stores = storeRepository.findAllByDeletedFalseOrderByStoreIdDesc(pageable);
+		Slice<Store> stores = storeRepository.findAllByDeletedFalseOrderByStoreIdAsc(pageable);
 
 		List<StoreReadDto> storeRead = stores.getContent().stream()
 			.map(store -> {
