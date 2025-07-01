@@ -29,6 +29,7 @@ public class StoreImage extends BaseTimeEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "store_id")
+	@Column(nullable = false)
 	private Store store;
 
 	@Column(nullable = false, length = 500)
