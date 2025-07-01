@@ -4,6 +4,6 @@ import com.nowait.common.exception.ErrorMessage;
 
 public class DepositorNameTooLongException extends RuntimeException {
 	public DepositorNameTooLongException() {
-		super(ErrorMessage.DUPLICATE_ORDER.getMessage());
+		super(ErrorMessage.DEPOSITOR_NAME_TOO_LONG.getMessage());
 	}
 }
