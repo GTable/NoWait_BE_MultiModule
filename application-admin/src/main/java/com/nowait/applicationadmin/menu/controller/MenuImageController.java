@@ -14,16 +14,27 @@ import com.nowait.applicationadmin.menu.dto.MenuImageUploadResponse;
 import com.nowait.applicationadmin.menu.service.MenuImageService;
 import com.nowait.common.api.ApiUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Tag(name = "Menu Image API", description = "메뉴 이미지 API")
 @RestController
 @RequestMapping("/admin/menus")
 @RequiredArgsConstructor
+@Slf4j
 public class MenuImageController {
 
 	private final MenuImageService menuImageService;
 
 	@PostMapping("/images/{menuId}")
+	@Operation(
+		summary = "메뉴 이미지 업로드",
+		description = "특정 메뉴에 대한 이미지를 업로드합니다. 파일 크기는 최대 10MB로 제한됩니다."
+	)
+	@ApiResponse(responseCode = "201", description = "메뉴 이미지 업로드 성공")
 	public ResponseEntity<?> uploadMenuImage(
 		@PathVariable Long menuId,
 		@RequestParam("file") MultipartFile file
@@ -40,11 +51,16 @@ public class MenuImageController {
 	}
 
 	@DeleteMapping("/images/{menuImageId}")
+	@Operation(
+		summary = "메뉴 이미지 삭제",
+		description = "특정 메뉴 이미지 ID에 해당하는 이미지를 삭제합니다."
+	)
+	@ApiResponse(responseCode = "200", description = "메뉴 이미지 삭제 성공")
 	public ResponseEntity<?> deleteMenuImage(@PathVariable Long id) {
 		menuImageService.delete(id);
 		return ResponseEntity
 			.status(
-				HttpStatus.NO_CONTENT
+				HttpStatus.OK
 			)
 			.body(
 				ApiUtils

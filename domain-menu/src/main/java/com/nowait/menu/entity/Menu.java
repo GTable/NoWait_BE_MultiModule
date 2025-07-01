@@ -3,6 +3,7 @@ package com.nowait.menu.entity;
 import java.time.LocalDateTime;
 import com.nowait.base.BaseTimeEntity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,11 +26,23 @@ public class Menu extends BaseTimeEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long Id;
+
+	@Column(nullable = false)
 	private Long storeId;
+
+	@Column(nullable = false)
 	private String name;
+
+	@Column(nullable = true)
 	private String description;
+
+	@Column(nullable = true)
 	private Integer price;
+
+	@Column(nullable = false)
 	private	Boolean isSoldOut;
+
+	@Column(nullable = false)
 	private Boolean deleted;
 
 

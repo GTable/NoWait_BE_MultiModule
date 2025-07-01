@@ -29,21 +29,23 @@ public class Store extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long storeId;
 
+	@Column(name = "department_id", nullable = false)
 	private Long departmentId;
 
+	@Column(nullable = false, length = 200)
 	private String name;
 
+	@Column(nullable = true, length = 200)
 	private String location;
 
+	@Column(nullable = true, length = 200)
 	private String description;
 
-	@Builder.Default
 	@Column(name = "is_active", nullable = false)
-	private Boolean isActive = false;
+	private Boolean isActive;
 
-	@Builder.Default
-	@Column
-	private Boolean deleted = false;
+	@Column(nullable = false)
+	private Boolean deleted;
 
 	public Store(LocalDateTime createdAt, Long storeId, Long departmentId, String name, String location,
 		String description, Boolean isActive, Boolean deleted) {

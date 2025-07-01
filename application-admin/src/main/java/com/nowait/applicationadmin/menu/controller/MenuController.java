@@ -17,17 +17,25 @@ import com.nowait.applicationadmin.menu.dto.MenuUpdateRequest;
 import com.nowait.applicationadmin.menu.service.MenuService;
 import com.nowait.common.api.ApiUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Tag(name = "Menu API", description = "메뉴 API")
 @RestController
 @RequestMapping("/admin/menus")
 @RequiredArgsConstructor
+@Slf4j
 public class MenuController {
 
 	private final MenuService menuService;
 
 	@PostMapping("/create")
+	@Operation(summary = "메뉴 생성", description = "새로운 메뉴를 생성합니다.")
+	@ApiResponse(responseCode = "201", description = "메뉴 생성")
 	public ResponseEntity<?> createMenu(@Valid @RequestBody MenuCreateRequest request) {
 		MenuCreateResponse response = menuService.createMenu(request);
 
@@ -41,6 +49,8 @@ public class MenuController {
 	}
 
 	@GetMapping("/all-menus/stores/{storeId}")
+	@Operation(summary = "가게의 모든 메뉴 조회", description = "특정 가게의 모든 메뉴를 조회")
+	@ApiResponse(responseCode = "200", description = "가게의 모든 메뉴 조회")
 	public ResponseEntity<?> getMenusByStoreId(@PathVariable Long storeId) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
@@ -52,6 +62,8 @@ public class MenuController {
 	}
 
 	@GetMapping("/{storeId}/{menuId}")
+	@Operation(summary = "메뉴 상세 조회", description = "특정 메뉴의 상세 정보를 조회")
+	@ApiResponse(responseCode = "200", description = "메뉴 상세 조회")
 	public ResponseEntity<?> getMenuById(
 		@PathVariable Long storeId,
 		@PathVariable Long menuId
@@ -67,6 +79,8 @@ public class MenuController {
 
 
 	@PatchMapping("/update/{menuId}")
+	@Operation(summary = "메뉴 수정", description = "특정 메뉴의 정보를 수정합니다.")
+	@ApiResponse(responseCode = "200", description = "메뉴 수정")
 	public ResponseEntity<?> updateMenu(
 		@PathVariable Long menuId,
 		@Valid @RequestBody MenuUpdateRequest request
@@ -81,6 +95,8 @@ public class MenuController {
 	}
 
 	@DeleteMapping("/delete/{menuId}")
+	@Operation(summary = "메뉴 삭제", description = "특정 메뉴를 삭제합니다.")
+	@ApiResponse(responseCode = "200", description = "메뉴 삭제")
 	public ResponseEntity<?> deleteMenu(@PathVariable Long menuId) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
@@ -92,6 +108,8 @@ public class MenuController {
 	}
 
 	@PatchMapping("/toggle-soldout/{menuId}")
+	@Operation(summary = "메뉴 판매 중지/재개", description = "특정 메뉴의 판매 상태를 판매 중지 또는 재개로 토글합니다.")
+	@ApiResponse(responseCode = "200", description = "메뉴 판매 상태 토글")
 	public ResponseEntity<?> toggleSoldOut(@PathVariable Long menuId) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
