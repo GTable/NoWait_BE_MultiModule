@@ -46,8 +46,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
 					"/api/refresh-token", // refresh token (토큰 갱신)
-					"/admin/menus/**",
-					"/admin/stores/**",
+					"/orders/**",
 					"/admin/users/**",
 					"/swagger-ui/**",
 					"/v3/api-docs/**",
