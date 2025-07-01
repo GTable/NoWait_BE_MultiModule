@@ -13,6 +13,8 @@ import com.nowait.applicationuser.token.dto.RefreshTokenRequest;
 import com.nowait.applicationuser.token.service.TokenService;
 import com.nowait.externaloauth.jwt.JwtUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +29,10 @@ public class TokenController {
     private long accessTokenExpiration;
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpiration;
+
     @PostMapping
+    @Operation(summary = "리프레시 토큰으로 새로운 액세스 토큰 발급", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급합니다.")
+    @ApiResponse(responseCode = "200", description = "새로운 액세스 토큰 발급 성공")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request){
         String refreshToken = request.getRefreshToken();
 

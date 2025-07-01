@@ -11,7 +11,7 @@ public interface StoreService {
 
 	StoreReadResponse getAllStores();
 
-	public StoreReadResponse getAllStoresByPage(Pageable pageable);
+	StoreReadResponse getAllStoresByPage(Pageable pageable);
 
 	StoreReadDto getStoreByStoreId(Long storeId);
 
