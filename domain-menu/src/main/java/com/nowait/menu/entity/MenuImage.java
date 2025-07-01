@@ -28,8 +28,7 @@ public class MenuImage extends BaseTimeEntity {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "menu_id")
-	@Column(nullable = false)
+	@JoinColumn(name = "menu_id", nullable = false)
 	private Menu menu;
 
 	@Column(nullable = false, length = 500)
