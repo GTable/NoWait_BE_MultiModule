@@ -55,6 +55,7 @@ public class OrderService {
 			.store(store)
 			.signature(signature) // signature 저장
 			.sessionId(sessionId) // sessionId 저장
+			.depositorName(orderCreateRequestDto.getDepositorName())
 			.build();
 		UserOrder savedOrder = orderRepository.save(order);
 
@@ -102,10 +103,16 @@ public class OrderService {
 
 	private static void parameterValidation(Long storeId, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {
 		if (storeId == null || tableId == null || orderCreateRequestDto == null) {
-			        throw new OrderParameterEmptyException();
+				throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getItems() == null || orderCreateRequestDto.getItems().isEmpty()) {
-			throw new OrderItemsEmptyException();
+				throw new OrderItemsEmptyException();
+		}
+		if (orderCreateRequestDto.getDepositorName() == null || orderCreateRequestDto.getDepositorName().trim().isEmpty()) {
+				throw new OrderParameterEmptyException();
+		}
+		if (orderCreateRequestDto.getDepositorName().length() > 20) {
+				throw new IllegalArgumentException("Depositor name is too long");
 		}
 	}
 	private String generateOrderSignature(Long storeId, Long tableId, List<CartItemDto> items) {
