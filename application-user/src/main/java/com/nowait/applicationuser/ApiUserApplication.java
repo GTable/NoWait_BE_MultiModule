@@ -10,7 +10,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication(scanBasePackages = {
 	"com.nowait.applicationuser",
 	"com.nowait.frontsecurity",
-	"com.nowait.externaloauth"
+	"com.nowait.externaloauth",
+	"com.nowait.config"
 })
 @EntityScan(basePackages = {
 	"com.nowait.menu.entity",
@@ -19,7 +20,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 	"com.nowait.user.entity",
 	"com.nowait.bookmark.entity",
 	"com.nowait.reservation.entity",
-	"com.nowait.order.entity",
 	"com.nowait.order.entity"
 })
 @EnableJpaRepositories(basePackages = {
