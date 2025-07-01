@@ -16,6 +16,7 @@ public class OrderCreateResponseDto {
 	private Long storeId;                  // 상점 ID
 	private String storeName;              // 상점 이름
 	private String sessionId;
+	private String depositorName;
 	private List<OrderItemResponseDTO> orderItems;  // 주문 항목 목록
 
 	public static OrderCreateResponseDto fromEntity(UserOrder order) {
@@ -24,6 +25,7 @@ public class OrderCreateResponseDto {
 			.storeId(order.getStore().getStoreId())
 			.storeName(order.getStore().getName())
 			.sessionId(order.getSessionId())
+			.depositorName(order.getDepositorName())
 			.orderItems(List.of())
 			.build();
 	}

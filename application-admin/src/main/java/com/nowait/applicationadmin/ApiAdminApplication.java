@@ -10,7 +10,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 	"com.nowait.applicationadmin",
 	"com.nowait.infraaws",
 	"com.nowait.adminsecurity",
-	"com.nowait.config"
+	"com.nowait.config",
+	"com.nowait.reservation"
 })
 @EntityScan(basePackages = {
 	"com.nowait.menu.entity",

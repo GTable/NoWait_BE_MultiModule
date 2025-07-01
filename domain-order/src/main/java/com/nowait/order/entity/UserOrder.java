@@ -47,4 +47,6 @@ public class UserOrder extends BaseTimeEntity {
 
 	private String sessionId;
 
+	private String depositorName;
+
 }

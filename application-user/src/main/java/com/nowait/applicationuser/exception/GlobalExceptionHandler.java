@@ -1,8 +1,8 @@
 package com.nowait.applicationuser.exception;
 
 import static com.nowait.common.exception.ErrorMessage.*;
-import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MultipartException;
-
-import com.nowait.applicationuser.reservation.exception.ReservationNotFoundException;
 import com.nowait.bookmark.exception.BookmarkOwnerMismatchException;
 import com.nowait.bookmark.exception.DuplicateBookmarkException;
 import com.nowait.common.exception.ErrorMessage;
@@ -28,6 +26,7 @@ import com.nowait.frontsecurity.exception.UnauthorizedException;
 import com.nowait.order.exception.DuplicateOrderException;
 import com.nowait.order.exception.OrderItemsEmptyException;
 import com.nowait.order.exception.OrderParameterEmptyException;
+import com.nowait.reservation.exception.ReservationNotFoundException;
 import com.nowait.token.exception.BusinessException;
 import com.nowait.user.exception.UserNotFoundException;
 

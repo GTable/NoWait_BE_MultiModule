@@ -55,6 +55,7 @@ public class OrderService {
 			.store(store)
 			.signature(signature) // signature 저장
 			.sessionId(sessionId) // sessionId 저장
+			.depositorName(orderCreateRequestDto.getDepositorName())
 			.build();
 		UserOrder savedOrder = orderRepository.save(order);
 
