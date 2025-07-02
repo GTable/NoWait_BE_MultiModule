@@ -57,7 +57,6 @@ public class OrderController {
 		@PathVariable Long tableId,
 		HttpSession session
 	) {
-		// 세션ID 추출 (Spring이 세션 자동 관리)
 		String sessionId = session.getId();
 
 		List<OrderItemListGetResponseDto> orderItems = orderService.getOrderItems(storeId, tableId, sessionId);
