@@ -58,7 +58,6 @@ public class OrderController {
 		HttpSession session
 	) {
 		String sessionId = session.getId();
-
 		List<OrderItemListGetResponseDto> orderItems = orderService.getOrderItems(storeId, tableId, sessionId);
 		return ResponseEntity.
 			status(HttpStatus.OK)
