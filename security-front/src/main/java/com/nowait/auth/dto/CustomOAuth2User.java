@@ -13,16 +13,11 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class CustomOAuth2User implements OAuth2User {
-	private User user;
-
-	// User 객체를 받는 생성자
-	public CustomOAuth2User(User user) {
-		this.user = user;
-	}
+	private final User user;
 
 	@Override
 	public Map<String, Object> getAttributes() {
-		return null;
+		return Map.of("email", user.getEmail(), "nickname", user.getNickname());
 	}
 
 	// 사용자가 가지는 권한 설정

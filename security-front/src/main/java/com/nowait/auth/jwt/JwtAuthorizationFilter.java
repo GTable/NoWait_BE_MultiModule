@@ -36,7 +36,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		if (header == null || !header.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
 
-			log.info("JwtAuthorizationFilter 1 ");
+			log.debug("JwtAuthorizationFilter: Authorization 헤더가 없거나 Bearer 토큰 형식이 아님. JWT 인증 필터를 건너뜁니다. [header={}] ", header);
 			return;
 		}
 
@@ -52,7 +52,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			response.getWriter().print("access token expired");
 
-			log.info("JwtAuthorizationFilter 2 ");
+			log.warn("JwtAuthorizationFilter: 만료된 AccessToken입니다. 토큰 인증 거부, URI: {}", request.getRequestURI());
 			return;
 		}
 
@@ -64,14 +64,19 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			response.getWriter().print("invalid access token");
 
-			log.info("JwtAuthorizationFilter 3 ");
+			log.warn("JwtAuthorizationFilter: 잘못된 토큰 유형(accessToken 아님)으로 인증 요청. URI: {}, tokenCategory: {}", request.getRequestURI(), tokenCategory);
 			return;
 		}
 
 		// userId와 role 값 추출
 		Long userId = jwtUtil.getUserId(accessToken);
 		String roleString = jwtUtil.getRole(accessToken);
-
+		if (userId == null || roleString == null) {
+			log.warn("JwtAuthorizationFilter: JWT에서 userId 또는 role 추출 실패. 토큰: {}", accessToken);
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			response.getWriter().print("invalid token");
+			return;
+		}
 		User user = User.createUserWithId(userId, "sampleEmail", "sampleNickname", "sampleProfileImg"
 			, SocialType.KAKAO, Role.fromString(roleString));
 
@@ -84,7 +89,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		// 생성한 인증 정보를 SecurityContext에 설정
 		SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 
-		log.info("JwtAuthorizationFilter 4 ");
+		log.info("JwtAuthorizationFilter: 인증 성공. userId={}, role={}, URI={}", userId, roleString, request.getRequestURI());
 
 		filterChain.doFilter(request, response);
 
