@@ -15,6 +15,7 @@ import com.nowait.applicationuser.order.dto.CartItemDto;
 import com.nowait.applicationuser.order.dto.OrderCreateRequestDto;
 import com.nowait.applicationuser.order.dto.OrderCreateResponseDto;
 import com.nowait.applicationuser.order.dto.OrderItemListGetResponseDto;
+import com.nowait.order.entity.OrderStatus;
 import com.nowait.store.entity.Store;
 import com.nowait.store.repository.StoreRepository;
 import com.nowait.menu.entity.Menu;
@@ -56,6 +57,9 @@ public class OrderService {
 			.signature(signature) // signature 저장
 			.sessionId(sessionId) // sessionId 저장
 			.depositorName(orderCreateRequestDto.getDepositorName())
+			.status(OrderStatus.WAITING_FOR_PAYMENT)
+			.totalPrice(orderCreateRequestDto.getTotalPrice())
+
 			.build();
 		UserOrder savedOrder = orderRepository.save(order);
 

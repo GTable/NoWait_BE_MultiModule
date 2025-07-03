@@ -1,6 +1,6 @@
 package com.example.domaintoken.exception;
 
-import com.nowaiting.common.exception.ErrorMessage;
+import com.nowait.common.exception.ErrorMessage;
 
 public abstract class BusinessException extends RuntimeException {
 	private final ErrorMessage errorMessage;

@@ -2,6 +2,7 @@ package com.nowait.applicationuser.order.dto;
 
 import java.util.List;
 
+import com.nowait.order.entity.OrderStatus;
 import com.nowait.order.entity.UserOrder;
 
 import lombok.AllArgsConstructor;
@@ -18,6 +19,8 @@ public class OrderCreateResponseDto {
 	private String sessionId;
 	private String depositorName;
 	private List<OrderItemResponseDTO> orderItems;  // 주문 항목 목록
+	private OrderStatus status;
+	private Integer totalPrice;
 
 	public static OrderCreateResponseDto fromEntity(UserOrder order) {
 		return OrderCreateResponseDto.builder()
@@ -27,6 +30,8 @@ public class OrderCreateResponseDto {
 			.sessionId(order.getSessionId())
 			.depositorName(order.getDepositorName())
 			.orderItems(List.of())
+			.status(order.getStatus())
+			.totalPrice(order.getTotalPrice())
 			.build();
 	}
 }
