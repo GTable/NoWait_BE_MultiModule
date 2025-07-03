@@ -56,6 +56,7 @@ public class UserOrder extends BaseTimeEntity {
 	@Enumerated(value = EnumType.STRING)
 	private OrderStatus status = OrderStatus.WAITING_FOR_PAYMENT;
 
+	@Column(nullable = false)
 	private Integer totalPrice;
 
 	public void updateStatus(OrderStatus newStatus) {
