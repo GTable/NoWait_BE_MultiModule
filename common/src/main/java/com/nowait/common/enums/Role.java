@@ -2,7 +2,8 @@ package com.nowait.common.enums;
 
 public enum Role {
     USER("USER"),
-    MANAGER("MANAGER");
+    MANAGER("MANAGER"),
+    SUPER_ADMIN("SUPER_ADMIN");
 
     private final String name;
 

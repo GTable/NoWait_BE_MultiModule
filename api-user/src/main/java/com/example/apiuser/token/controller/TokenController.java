@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.token.controller;
+package com.example.apiuser.token.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -8,13 +8,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nowait.applicationuser.token.dto.AuthenticationResponse;
-import com.nowait.applicationuser.token.dto.RefreshTokenRequest;
-import com.nowait.applicationuser.token.service.TokenService;
-import com.nowait.externaloauth.jwt.JwtUtil;
+import com.example.apiuser.token.dto.AuthenticationResponse;
+import com.example.apiuser.token.dto.RefreshTokenRequest;
+import com.example.apiuser.token.service.TokenService;
+import com.nowait.auth.jwt.JwtUtil;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,10 +27,7 @@ public class TokenController {
     private long accessTokenExpiration;
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpiration;
-
     @PostMapping
-    @Operation(summary = "리프레시 토큰으로 새로운 액세스 토큰 발급", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급합니다.")
-    @ApiResponse(responseCode = "200", description = "새로운 액세스 토큰 발급 성공")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request){
         String refreshToken = request.getRefreshToken();
 

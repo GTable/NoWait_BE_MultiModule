@@ -60,7 +60,13 @@ public class UserService {
 		);
 		MemberDetails memberDetails = (MemberDetails) authentication.getPrincipal();
 		User user = userRepository.getReferenceById(memberDetails.getId());
-		String accessToken = jwtUtil.createAccessToken("accessToken", user.getId(), String.valueOf(user.getRole()), accessTokenExpiration);
+
+		long currentAccessTokenExpiration = accessTokenExpiration;
+		if (user.getRole() == com.nowait.common.enums.Role.SUPER_ADMIN) {
+			currentAccessTokenExpiration = 7L * 24 * 60 * 60 * 1000L; // 7일
+		}
+
+		String accessToken = jwtUtil.createAccessToken("accessToken", user.getId(), String.valueOf(user.getRole()), currentAccessTokenExpiration);
 		return ManagerLoginResponseDto.fromEntity(user,accessToken);
 	}
 }

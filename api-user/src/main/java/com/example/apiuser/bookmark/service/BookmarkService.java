@@ -1,20 +1,19 @@
-package com.nowait.applicationuser.bookmark.service;
+package com.example.apiuser.bookmark.service;
 
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.applicationuser.bookmark.dto.BookmarkCreateResponse;
-import com.nowait.applicationuser.bookmark.dto.BookmarkGetResponse;
-import com.nowait.externaloauth.dto.CustomOAuth2User;
-import com.nowait.store.entity.Store;
-import com.nowait.store.repository.StoreRepository;
-import com.nowait.bookmark.entity.Bookmark;
-import com.nowait.bookmark.repository.BookmarkRepository;
-import com.nowait.user.entity.User;
-import com.nowait.user.repository.UserRepository;
+import com.example.apiuser.bookmark.dto.BookmarkCreateResponse;
+import com.example.apiuser.bookmark.dto.BookmarkGetResponse;
+import com.example.domainstore.entity.Store;
+import com.example.domainstore.repository.StoreRepository;
+import com.nowait.auth.dto.CustomOAuth2User;
+import com.nowait.domainbookmark.entity.Bookmark;
+import com.nowait.domainbookmark.repository.BookmarkRepository;
+import com.nowaiting.user.entity.User;
+import com.nowaiting.user.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +59,7 @@ public class BookmarkService {
 		parameterValidation(bookmarkId, customOAuth2User);
 		Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
 			.orElseThrow(() -> new EntityNotFoundException(bookmarkId + " bookmark not found."));
-		if (!Objects.equals(bookmark.getUser().getId(), customOAuth2User.getUserId())) {
+		if (bookmark.getUser().getId() != customOAuth2User.getUserId()) {
 			throw new IllegalArgumentException("you can only delete your own bookmark");
 		}
 		bookmarkRepository.delete(bookmark);

@@ -1,4 +1,4 @@
-package com.nowait.applicationadmin.token.service;
+package com.example.apiuser.token.service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -6,11 +6,11 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.token.entity.Token;
-import com.nowait.token.repository.TokenRepository;
-import com.nowait.adminsecurity.auth.jwt.JwtUtil;
-import com.nowait.adminsecurity.exception.RefreshTokenNotFoundException;
-import com.nowait.adminsecurity.exception.TokenBadRequestException;
+import com.example.domaintoken.entity.Token;
+import com.example.domaintoken.repository.TokenRepository;
+import com.nowait.auth.jwt.JwtUtil;
+import com.nowait.exception.RefreshTokenNotFoundException;
+import com.nowait.exception.TokenBadRequestException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,29 +23,29 @@ public class TokenService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public boolean validateToken(String token, Long userId){
+    public Boolean validateToken(String token, Long userId){
         // DB에서 해당 userId와 일치하는 리프레시토큰을 찾는다.
         Optional<Token> savedToken = tokenRepository.findByUserId(userId);
         
         // DB에서 userId에 대응되는 리프레시토큰 없으면, 유효하지 않음
         if (savedToken.isEmpty()){
-            log.debug("DB에 현재 userId에 대응되는 리프레시 토큰이 없습니다");
+            log.info("여기에 걸렸니 ? -- 1 ");
             return false;
         }
         
         // 리프레시 토큰이 DB에 저장된 토큰과 일치하는지 확인
         if (!savedToken.get().getRefreshToken().equals(token)){
-            log.debug("DB에 저장된 리프레시 토큰와 현재 전달받은 리프레시 토큰 일치하지 않습니다");
+            log.info("여기에 걸렸니 ? -- 2 ");
             return false;
         }
         
         // 리프레시 토큰의 만료여부 확인
         if(jwtUtil.isExpired(token)){
-            log.debug("리프레시 토큰이 만료된 토큰입니다");
+            log.info("여기에 걸렸니 ? -- 3 ");
             return false; // 만료된 토큰은 유효하지 않음
         }
 
-        log.info("리프레시 토큰이 유효한 토큰입니다");
+        log.info("여기에 걸렸니 ? -- 4 ");
         return true; // 모든 조건 만족 시, 유효한 토큰
     }
 
