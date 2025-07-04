@@ -5,14 +5,14 @@ on:
     branches: 
     - develop
     paths:
-      - 'nowait-app-user-api/**'
-      - 'nowait-common/**'
-      - 'nowait-domain/domain-core-rdb/**'
-      - 'nowait-domain/domain-user-rdb/**'
-      - 'nowait-infra/**'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - 'gradle/**'
+    - 'nowait-app-user-api/**'
+    - 'nowait-common/**'
+    - 'nowait-domain/domain-core-rdb/**'
+    - 'nowait-domain/domain-user-rdb/**'
+    - 'nowait-infra/**'
+    - 'build.gradle'
+    - 'settings.gradle'
+    - 'gradle/**'
 
 env:
   PROJECT_NAME: NoWait
