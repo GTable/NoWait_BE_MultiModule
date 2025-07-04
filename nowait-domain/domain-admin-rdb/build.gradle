@@ -7,7 +7,7 @@ jar {
 }
 
 
-group = 'com.nowaiting'
+group = 'com.nowait'
 version = rootProject.version
 
 java {
