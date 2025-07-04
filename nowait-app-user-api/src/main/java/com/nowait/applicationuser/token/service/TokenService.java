@@ -22,29 +22,29 @@ public class TokenService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public Boolean validateToken(String token, Long userId){
+    public boolean validateToken(String token, Long userId){
         // DB에서 해당 userId와 일치하는 리프레시토큰을 찾는다.
         Optional<Token> savedToken = tokenRepository.findByUserId(userId);
         
         // DB에서 userId에 대응되는 리프레시토큰 없으면, 유효하지 않음
         if (savedToken.isEmpty()){
-            log.info("여기에 걸렸니 ? -- 1 ");
+            log.debug("DB에 현재 userId에 대응되는 리프레시 토큰이 없습니다");
             return false;
         }
         
         // 리프레시 토큰이 DB에 저장된 토큰과 일치하는지 확인
         if (!savedToken.get().getRefreshToken().equals(token)){
-            log.info("여기에 걸렸니 ? -- 2 ");
+            log.debug("DB에 저장된 리프레시 토큰와 현재 전달받은 리프레시 토큰 일치하지 않습니다");
             return false;
         }
         
         // 리프레시 토큰의 만료여부 확인
         if(jwtUtil.isExpired(token)){
-            log.info("여기에 걸렸니 ? -- 3 ");
+            log.debug("리프레시 토큰이 만료된 토큰입니다");
             return false; // 만료된 토큰은 유효하지 않음
         }
 
-        log.info("여기에 걸렸니 ? -- 4 ");
+        log.info("리프레시 토큰이 유효한 토큰입니다");
         return true; // 모든 조건 만족 시, 유효한 토큰
     }
 
