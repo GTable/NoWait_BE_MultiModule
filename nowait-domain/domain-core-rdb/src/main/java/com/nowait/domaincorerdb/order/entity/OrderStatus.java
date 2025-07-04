@@ -1,4 +1,4 @@
-package com.nowait.order.entity;
+package com.nowait.domaincorerdb.order.entity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
