@@ -56,6 +56,9 @@ public class OrderService {
 			.signature(signature) // signature 저장
 			.sessionId(sessionId) // sessionId 저장
 			.depositorName(orderCreateRequestDto.getDepositorName())
+			.status(OrderStatus.WAITING_FOR_PAYMENT)
+			.totalPrice(orderCreateRequestDto.getTotalPrice())
+
 			.build();
 		UserOrder savedOrder = orderRepository.save(order);
 

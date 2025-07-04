@@ -40,10 +40,15 @@ public class TokenController {
         Long userId = jwtUtil.getUserId(refreshToken);
         String role = jwtUtil.getRole(refreshToken);
 
+        long currentAccessTokenExpiration = accessTokenExpiration;
+        if (role.equals("SUPER_ADMIN")) {
+            currentAccessTokenExpiration = 7L * 24 * 60 * 60 * 1000L; // 7일
+        }
+
         // 리프레시 토큰 유효성 검증
         if (tokenService.validateToken(refreshToken, userId)){
             // 유효한 토큰이라면, 새로운 accessToken, refreshToken 생성
-            String newAccessToken = jwtUtil.createAccessToken("accessToken", userId, role, accessTokenExpiration);
+            String newAccessToken = jwtUtil.createAccessToken("accessToken", userId, role, currentAccessTokenExpiration);
             String newRefreshToken = jwtUtil.createRefreshToken("refreshToken", userId, refreshTokenExpiration);
 
             // DB에 새로운 refreshToken으로 교체

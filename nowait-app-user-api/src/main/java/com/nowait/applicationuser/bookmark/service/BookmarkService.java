@@ -1,6 +1,7 @@
 package com.nowait.applicationuser.bookmark.service;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +60,7 @@ public class BookmarkService {
 		parameterValidation(bookmarkId, customOAuth2User);
 		Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
 			.orElseThrow(() -> new EntityNotFoundException(bookmarkId + " bookmark not found."));
-		if (bookmark.getUser().getId() != customOAuth2User.getUserId()) {
+		if (!Objects.equals(bookmark.getUser().getId(), customOAuth2User.getUserId())) {
 			throw new IllegalArgumentException("you can only delete your own bookmark");
 		}
 		bookmarkRepository.delete(bookmark);
