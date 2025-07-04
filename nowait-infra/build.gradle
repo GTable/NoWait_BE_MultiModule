@@ -5,9 +5,6 @@ plugins {
 jar {
     enabled = true
 }
-bootJar {
-    enabled = false
-}
 
 
 group = 'com.nowaiting'

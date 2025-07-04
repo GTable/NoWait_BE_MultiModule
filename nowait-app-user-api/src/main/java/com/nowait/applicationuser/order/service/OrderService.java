@@ -18,6 +18,7 @@ import com.nowait.applicationuser.order.dto.OrderItemListGetResponseDto;
 import com.nowait.domaincorerdb.menu.entity.Menu;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.order.entity.OrderItem;
+import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
@@ -56,6 +57,9 @@ public class OrderService {
 			.signature(signature) // signature 저장
 			.sessionId(sessionId) // sessionId 저장
 			.depositorName(orderCreateRequestDto.getDepositorName())
+			.status(OrderStatus.WAITING_FOR_PAYMENT)
+			.totalPrice(orderCreateRequestDto.getTotalPrice())
+
 			.build();
 		UserOrder savedOrder = orderRepository.save(order);
 
