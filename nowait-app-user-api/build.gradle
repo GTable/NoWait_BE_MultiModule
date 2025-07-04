@@ -2,11 +2,11 @@ plugins {
     id 'java'
 }
 
-bootJar {
-    enabled = true
-}
 jar     {
     enabled = false
+}
+bootJar {
+    enabled = true
 }
 
 group = 'com.nowait'
@@ -30,7 +30,6 @@ dependencies {
     // SPRING SECURITY
     implementation 'org.springframework.boot:spring-boot-starter-security'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
     // jwt
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
