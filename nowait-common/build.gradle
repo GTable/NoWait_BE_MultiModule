@@ -1,0 +1,15 @@
+jar {
+    enabled = true
+}
+bootJar {
+    enabled = false
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+}

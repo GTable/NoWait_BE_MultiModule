@@ -1,56 +1,34 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.0' apply false
-    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com.nowaiting'
+group = 'com.nowait'
 version = '0.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
 }
 
+allprojects {
+    group = 'com.nowait'
+    version = '0.0.1-SNAPSHOT'
+}
+
 subprojects {
-    apply plugin: 'java'
-    apply plugin: 'org.springframework.boot'
-    apply plugin: 'io.spring.dependency-management'
-
-    group = rootProject.group
-    version = rootProject.version
-
-    // 실행 모듈만 따로 정의
-    def applicationModules = ['application-admin', 'application-user']
-
-    if (applicationModules.contains(project.name)) {
-        // 실제 Service 실행 모듈
-        apply plugin: 'org.springframework.boot'
-        bootJar { enabled = true }
-        jar     { enabled = false }
-    } else {
-        // 라이브러리/설정/도메인 전용 모듈
-        bootJar { enabled = false }
-        jar     { enabled = true }
-    }
+    apply plugin: "java"
+    apply plugin: 'java-library'
+    apply plugin: "io.spring.dependency-management"
+    apply plugin: "org.springframework.boot"
 
     repositories {
         mavenCentral()
     }
 
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
-        }
-    }
 
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.0"
-        }
-    }
-
-    if (project.name != 'common') {
-        dependencies {
-            implementation project(':common')
         }
     }
 
