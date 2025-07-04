@@ -2,7 +2,7 @@ name: Dev User CI/CD
 
 on:
   push:
-    branches: 
+    branches:
     - develop
     paths:
     - 'nowait-app-user-api/**'
@@ -21,20 +21,20 @@ env:
   AWS_S3_BUCKET: nowait-deploy-github-actions
   AWS_CODE_DEPLOY_APPLICATION: nowaiting
   AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev-user
-  
+
 jobs:
   build-with-gradle:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-        
+
     - name: JDK 17 설치
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'zulu'
-        
+
     - name: gradlew에 실행 권한 부여
       run: chmod +x ./gradlew
 
@@ -43,7 +43,7 @@ jobs:
         mkdir -p nowait-app-user-api/src/main/resources
         echo "${{ secrets.APPLICATION_DEV_USER_YML }}" \
           | base64 --decode \
-          > nowait-app-user-api/src/main/resources/nowait-app-user-api.yml
+          > nowait-app-user-api/src/main/resources/application-user.yml
         find nowait-app-user-api/src
 
     - name: Build User JAR
