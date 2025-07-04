@@ -2,7 +2,7 @@ name: Dev User CI/CD
 
 on:
   push:
-    branches: 
+    branches:
     - develop
     paths:
     - 'nowait-app-user-api/**'
@@ -21,20 +21,20 @@ env:
   AWS_S3_BUCKET: nowait-deploy-github-actions
   AWS_CODE_DEPLOY_APPLICATION: nowaiting
   AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev-user
-  
+
 jobs:
   build-with-gradle:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-        
+
     - name: JDK 17 설치
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'zulu'
-        
+
     - name: gradlew에 실행 권한 부여
       run: chmod +x ./gradlew
 
@@ -42,94 +42,8 @@ jobs:
       run: |
         mkdir -p nowait-app-user-api/src/main/resources
         echo "${{ secrets.APPLICATION_DEV_USER_YML }}" \
-          | base64 --decode \name: Dev User CI/CD
-
-on:
-  push:
-    branches:
-      - develop
-    paths:
-      - 'nowait-app-user-api/**'
-      - 'nowait-common/**'
-      - 'nowait-domain/domain-core-rdb/**'
-      - 'nowait-domain/domain-user-rdb/**'
-      - 'nowait-infra/**'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - 'gradle/**'
-
-env:
-  PROJECT_NAME: NoWait
-  DIVISION: user
-  AWS_REGION: ap-northeast-2
-  AWS_S3_BUCKET: nowait-deploy-github-actions
-  AWS_CODE_DEPLOY_APPLICATION: nowaiting
-  AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev-user
-
-jobs:
-  build-with-gradle:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: JDK 17 설치
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'zulu'
-
-      - name: gradlew에 실행 권한 부여
-        run: chmod +x ./gradlew
-
-      - name: Set YML
-        run: |
-          mkdir -p nowait-app-user-api/src/main/resources
-          echo "${{ secrets.APPLICATION_DEV_USER_YML }}" \
-            | base64 --decode \
-            > nowait-app-user-api/src/main/resources/application-user.yml
-          find nowait-app-user-api/src
-
-      - name: Build User JAR
-        run: ./gradlew clean :nowait-app-user-api:bootJar -x test
-
-      - name: Prepare deployment package
-        run: |
-          rm -rf deploy
-          mkdir -p deploy/scripts
-          cp scripts/start-user.sh scripts/stop-user.sh deploy/scripts/
-          cp appspec-user.yml deploy/appspec.yml
-          cp nowait-app-user-api/build/libs/nowait-app-user-api-*.jar deploy/nowait-app-user-api.jar  
-          cd deploy
-          zip -r ../NoWait-user-${GITHUB_SHA}.zip .
-          cd ..
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.DEVSERVER_CICD_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.DEVSERVER_CICD_SECRET_KEY }}
-
-      - name: Upload to S3
-        run: |
-          aws deploy push \
-            --application-name "${{ env.AWS_CODE_DEPLOY_APPLICATION }}" \
-            --ignore-hidden-files \
-            --s3-location "s3://${{ env.AWS_S3_BUCKET }}/${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip" \
-            --source deploy
-
-      - name: Create CodeDeploy deployment
-        run: |
-          aws deploy create-deployment \
-            --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} \
-            --deployment-config-name CodeDeployDefault.AllAtOnce \
-            --deployment-group-name ${{ env.AWS_CODE_DEPLOY_GROUP }} \
-            --s3-location bucket=${{ env.AWS_S3_BUCKET }},key=${{ env.PROJECT_NAME }}/${{ env.DIVISION }}/${{ github.sha }}.zip,bundleType=zip
-          
-          
-          
-            > nowait-app-user-api/src/main/resources/nowait-app-user-api.yml
+          | base64 --decode \
+          > nowait-app-user-api/src/main/resources/application-user.yml
         find nowait-app-user-api/src
 
     - name: Build User JAR
