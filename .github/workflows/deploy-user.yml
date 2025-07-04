@@ -5,12 +5,11 @@ on:
     branches: 
     - develop
     paths:
-      - 'application-user/**'
-      - 'application-config/**'
-      - 'common/**'
-      - 'domain-*/**'
-      - 'security-front/**'
-      - 'external-oauth/**'
+      - 'nowait-app-user-api/**'
+      - 'nowait-common/**'
+      - 'nowait-domain/domain-core-rdb/**'
+      - 'nowait-domain/domain-user-rdb/**'
+      - 'nowait-infra/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle/**'
@@ -41,14 +40,14 @@ jobs:
 
     - name: Set YML
       run: |
-        mkdir -p application-user/src/main/resources
+        mkdir -p nowait-app-user-api/src/main/resources
         echo "${{ secrets.APPLICATION_DEV_USER_YML }}" \
           | base64 --decode \
-          > application-user/src/main/resources/application-user.yml
-        find application-user/src
+          > nowait-app-user-api/src/main/resources/nowait-app-user-api.yml
+        find nowait-app-user-api/src
 
     - name: Build User JAR
-      run: ./gradlew clean :application-user:bootJar -x test
+      run: ./gradlew clean :nowait-app-user-api:bootJar -x test
 
     - name: Prepare deployment package
       run: |
@@ -56,7 +55,7 @@ jobs:
         mkdir -p deploy/scripts
         cp scripts/start-user.sh scripts/stop-user.sh deploy/scripts/
         cp appspec-user.yml deploy/appspec.yml
-        cp application-user/build/libs/application-user-*.jar deploy/application-user.jar  
+        cp nowait-app-user-api/build/libs/nowait-app-user-api-*.jar deploy/nowait-app-user-api.jar  
         cd deploy
         zip -r ../NoWait-user-${GITHUB_SHA}.zip .
         cd ..

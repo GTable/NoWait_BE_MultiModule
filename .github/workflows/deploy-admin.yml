@@ -5,12 +5,11 @@ on:
     branches:
       - develop
     paths:
-      - 'application-admin/**'
-      - 'application-config/**'
-      - 'common/**'
-      - 'domain-*/**'
-      - 'security-admin/**'
-      - 'infra-aws/**'
+      - 'nowait-app-admin-api/**'
+      - 'nowait-common/**'
+      - 'nowait-domain/domain-core-rdb/**'
+      - 'nowait-domain/domain-admin-rdb/**'
+      - 'nowait-infra/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle/**'
@@ -41,14 +40,14 @@ jobs:
 
       - name: Set YML
         run: |
-          mkdir -p application-admin/src/main/resources
+          mkdir -p nowait-app-admin-api/src/main/resources
           echo "${{ secrets.APPLICATION_DEV_ADMIN_YML }}" \
             | base64 --decode \
-            > application-admin/src/main/resources/application-admin.yml
-          find application-admin/src
+            > nowait-app-admin-api/src/main/resources/application-admin.yml
+          find nowait-app-admin-api/src
 
       - name: Build Admin JAR
-        run: ./gradlew clean :application-admin:bootJar -x test
+        run: ./gradlew clean :nowait-app-admin-api:bootJar -x test
 
       - name: Prepare deployment package
         run: |
@@ -56,7 +55,7 @@ jobs:
           mkdir -p deploy/scripts
           cp scripts/start-admin.sh scripts/stop-admin.sh deploy/scripts/
           cp appspec-admin.yml deploy/appspec.yml
-          cp application-admin/build/libs/application-admin-*.jar deploy/application-admin.jar  
+          cp nowait-app-admin-api/build/libs/nowait-app-admin-api-*.jar deploy/nowait-app-admin-api.jar  
           cd deploy
           zip -r ../NoWait-admin-${GITHUB_SHA}.zip .
           cd ..
