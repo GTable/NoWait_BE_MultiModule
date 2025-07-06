@@ -3,7 +3,7 @@
 REPOSITORY="/home/ubuntu/spring-github-action-user"
 cd $REPOSITORY
 
-APP_NAME=application-user
+APP_NAME=nowait-app-user-api
 JAR_NAME=$(ls $REPOSITORY | grep '.jar' | tail -n 1)
 JAR_PATH=$REPOSITORY/$JAR_NAME
 
