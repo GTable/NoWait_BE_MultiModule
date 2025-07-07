@@ -66,8 +66,7 @@ public class ReservationService {
 	public CallGetResponseDto updateReservationStatus(Long reservationId, ReservationStatusUpdateRequestDto requestDto,
 		MemberDetails memberDetails) {
 		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		Reservation reservation = reservationRepository.findById(reservationId)
-			.orElseThrow(ReservationNotFoundException::new);
+		Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(ReservationNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(reservation.getStore().getStoreId())) {
 			throw new ReservationUpdateUnauthorizedException();
 		}
