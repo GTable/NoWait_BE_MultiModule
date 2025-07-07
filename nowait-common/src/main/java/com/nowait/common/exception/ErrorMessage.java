@@ -29,7 +29,11 @@ public enum ErrorMessage {
 
 	// menu
 	MENU_PARAMETER_EMPTY("메뉴 생성 시 파라미터 정보가 없습니다.", "menu001"),
-	MENU_NOT_FOUND("해당 메뉴를 찾을 수 없습니다.", "menu001"),
+	MENU_NOT_FOUND("해당 메뉴를 찾을 수 없습니다.", "menu002"),
+	MENU_CREATION_UNAUTHORIZED("메뉴 생성 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu003"),
+	MENU_VIEW_UNAUTHORIZED("메뉴 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu004"),
+	MENU_UPDATE_UNAUTHORIZED("메뉴 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu005"),
+	MENU_DELETE_UNAUTHORIZED("메뉴 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu006"),
 
 	// store
 	STORE_PARAMETER_EMPTY("주점 생성 시 파라미터 정보가 없습니다.", "store001"),

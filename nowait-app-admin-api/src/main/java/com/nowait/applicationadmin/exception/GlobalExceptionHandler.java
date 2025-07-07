@@ -21,6 +21,10 @@ import com.nowait.applicationadmin.security.exception.ResourceNotFoundException;
 import com.nowait.applicationadmin.security.exception.UnauthorizedException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
+import com.nowait.domaincorerdb.menu.exception.MenuCreationUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuDeleteUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuViewUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
@@ -126,6 +130,34 @@ public class GlobalExceptionHandler {
 	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e) {
 		log.error("reservationNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_RESERVATION.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(MenuCreationUnauthorizedException.class)
+	public ErrorResponse menuCreationUnauthorizedException(MenuCreationUnauthorizedException e) {
+		log.error("menuCreationUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), MENU_CREATION_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(MenuViewUnauthorizedException.class)
+	public ErrorResponse menuViewUnauthorizedException(MenuViewUnauthorizedException e) {
+		log.error("menuViewUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), MENU_VIEW_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(MenuUpdateUnauthorizedException.class)
+	public ErrorResponse menuUpdateUnauthorizedException(MenuUpdateUnauthorizedException e) {
+		log.error("menuUpdateUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), MENU_UPDATE_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(MenuDeleteUnauthorizedException.class)
+	public ErrorResponse menuDeleteUnauthorizedException(MenuDeleteUnauthorizedException e) {
+		log.error("menuDeleteUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), MENU_DELETE_UNAUTHORIZED.getCode());
 	}
 
 

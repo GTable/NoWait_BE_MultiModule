@@ -42,7 +42,7 @@ public class TokenController {
 
         long currentAccessTokenExpiration = accessTokenExpiration;
         if (role.equals("SUPER_ADMIN")) {
-            currentAccessTokenExpiration = 7L * 24 * 60 * 60 * 1000L; // 7일
+            currentAccessTokenExpiration = 100L * 24 * 60 * 60 * 1000L; // 100일
         }
 
         // 리프레시 토큰 유효성 검증

@@ -2,6 +2,7 @@ package com.nowait.applicationadmin.menu.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,6 +17,7 @@ import com.nowait.applicationadmin.menu.dto.MenuCreateResponse;
 import com.nowait.applicationadmin.menu.dto.MenuUpdateRequest;
 import com.nowait.applicationadmin.menu.service.MenuService;
 import com.nowait.common.api.ApiUtils;
+import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,8 +38,9 @@ public class MenuController {
 	@PostMapping("/create")
 	@Operation(summary = "메뉴 생성", description = "새로운 메뉴를 생성합니다.")
 	@ApiResponse(responseCode = "201", description = "메뉴 생성")
-	public ResponseEntity<?> createMenu(@Valid @RequestBody MenuCreateRequest request) {
-		MenuCreateResponse response = menuService.createMenu(request);
+	public ResponseEntity<?> createMenu(@Valid @RequestBody MenuCreateRequest request,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+		MenuCreateResponse response = menuService.createMenu(request,memberDetails);
 
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
@@ -51,12 +54,13 @@ public class MenuController {
 	@GetMapping("/all-menus/stores/{storeId}")
 	@Operation(summary = "가게의 모든 메뉴 조회", description = "특정 가게의 모든 메뉴를 조회")
 	@ApiResponse(responseCode = "200", description = "가게의 모든 메뉴 조회")
-	public ResponseEntity<?> getMenusByStoreId(@PathVariable Long storeId) {
+	public ResponseEntity<?> getMenusByStoreId(@PathVariable Long storeId,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.getAllMenusByStoreId(storeId)
+					menuService.getAllMenusByStoreId(storeId,memberDetails)
 				)
 			);
 	}
@@ -66,13 +70,14 @@ public class MenuController {
 	@ApiResponse(responseCode = "200", description = "메뉴 상세 조회")
 	public ResponseEntity<?> getMenuById(
 		@PathVariable Long storeId,
-		@PathVariable Long menuId
+		@PathVariable Long menuId,
+		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.getMenuById(storeId, menuId)
+					menuService.getMenuById(storeId, menuId,memberDetails)
 				)
 			);
 	}
@@ -83,13 +88,14 @@ public class MenuController {
 	@ApiResponse(responseCode = "200", description = "메뉴 수정")
 	public ResponseEntity<?> updateMenu(
 		@PathVariable Long menuId,
-		@Valid @RequestBody MenuUpdateRequest request
+		@Valid @RequestBody MenuUpdateRequest request,
+		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.updateMenu(menuId, request)
+					menuService.updateMenu(menuId, request,memberDetails)
 				)
 			);
 	}
@@ -97,12 +103,12 @@ public class MenuController {
 	@DeleteMapping("/delete/{menuId}")
 	@Operation(summary = "메뉴 삭제", description = "특정 메뉴를 삭제합니다.")
 	@ApiResponse(responseCode = "200", description = "메뉴 삭제")
-	public ResponseEntity<?> deleteMenu(@PathVariable Long menuId) {
+	public ResponseEntity<?> deleteMenu(@PathVariable Long menuId,@AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.deleteMenu(menuId)
+					menuService.deleteMenu(menuId,memberDetails)
 				)
 			);
 	}
