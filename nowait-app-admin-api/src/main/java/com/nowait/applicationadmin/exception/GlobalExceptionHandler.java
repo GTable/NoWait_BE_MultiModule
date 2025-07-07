@@ -27,7 +27,10 @@ import com.nowait.domaincorerdb.menu.exception.MenuUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuViewUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
+import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
+import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -123,6 +126,27 @@ public class GlobalExceptionHandler {
 	public ErrorResponse duplicateOrderException(DuplicateOrderException e) {
 		log.error("duplicateOrderException", e);
 		return new ErrorResponse(e.getMessage(), ErrorMessage.DUPLICATE_ORDER.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(OrderViewUnauthorizedException.class)
+	public ErrorResponse orderViewUnauthorizedException(OrderViewUnauthorizedException e) {
+		log.error("orderViewUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), ORDER_VIEW_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = NOT_FOUND)
+	@ExceptionHandler(OrderNotFoundException.class)
+	public ErrorResponse orderNotFoundException(OrderNotFoundException e) {
+		log.error("orderNotFoundException", e);
+		return new ErrorResponse(e.getMessage(), ORDER_NOT_FOUND.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(OrderUpdateUnauthorizedException.class)
+	public ErrorResponse orderUpdateUnauthorizedException(OrderUpdateUnauthorizedException e) {
+		log.error("orderUpdateUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), ORDER_UPDATE_UNAUTHORIZED.getCode());
 	}
 
 	@ResponseStatus(value = NOT_FOUND)

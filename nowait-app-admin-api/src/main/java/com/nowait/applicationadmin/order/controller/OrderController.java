@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import com.nowait.applicationadmin.order.dto.OrderStatusUpdateRequestDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.applicationadmin.order.service.OrderService;
 import com.nowait.common.api.ApiUtils;
+import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,8 +36,9 @@ public class OrderController {
     @GetMapping("/{storeId}")
     @Operation(summary = "주점별 주문리스트 조회", description = "특정 주점에 대한 예약리스트 조회")
     @ApiResponse(responseCode = "200", description = "주리스트 조회")
-    public ResponseEntity<?> getOrderListByStoreId(@PathVariable Long storeId) {
-        List<OrderResponseDto> response = orderService.findAllOrders(storeId);
+    public ResponseEntity<?> getOrderListByStoreId(@PathVariable Long storeId,
+        @AuthenticationPrincipal MemberDetails memberDetails) {
+        List<OrderResponseDto> response = orderService.findAllOrders(storeId,memberDetails);
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(
@@ -51,9 +54,11 @@ public class OrderController {
     @ApiResponse(responseCode = "400", description = "주문을 찾을 수 없음")
     public ResponseEntity<?> updateOrderStatus(
         @PathVariable Long orderId,
-        @RequestBody@Valid OrderStatusUpdateRequestDto requestDto
+        @RequestBody@Valid OrderStatusUpdateRequestDto requestDto,
+        @AuthenticationPrincipal MemberDetails memberDetails
     ) {
-        OrderStatusUpdateResponseDto response = orderService.updateOrderStatus(orderId, requestDto.getOrderStatus());
+        OrderStatusUpdateResponseDto response = orderService.updateOrderStatus(
+            orderId,requestDto.getOrderStatus(),memberDetails);
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(ApiUtils.success(response));
