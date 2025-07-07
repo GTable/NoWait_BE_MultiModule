@@ -10,15 +10,22 @@ import com.nowait.applicationadmin.store.dto.StoreCreateResponse;
 import com.nowait.applicationadmin.store.dto.StoreImageUploadResponse;
 import com.nowait.applicationadmin.store.dto.StoreReadDto;
 import com.nowait.applicationadmin.store.dto.StoreUpdateRequest;
+import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.entity.StoreImage;
+import com.nowait.domaincorerdb.store.exception.StoreDeleteUnauthorizedException;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreParamEmptyException;
+import com.nowait.domaincorerdb.store.exception.StoreUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.store.exception.StoreViewUnauthorizedException;
 import com.nowait.domaincorerdb.store.repository.StoreImageRepository;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
+import com.nowait.domaincorerdb.user.entity.MemberDetails;
+import com.nowait.domaincorerdb.user.entity.User;
+import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domaincorerdb.user.repository.UserRepository;
 
-
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -27,6 +34,7 @@ public class StoreServiceImpl implements StoreService {
 
 	private final StoreRepository storeRepository;
 	private final StoreImageRepository storeImageRepository;
+	private final UserRepository userRepository;
 
 	@Override
 	@Transactional
@@ -42,9 +50,12 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreReadDto getStoreByStoreId(Long storeId) {
+	public StoreReadDto getStoreByStoreId(Long storeId, MemberDetails memberDetails) {
 		if (storeId == null) throw new StoreParamEmptyException();
-
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
+			throw new StoreViewUnauthorizedException();
+		}
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -58,9 +69,12 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional
-	public StoreReadDto updateStore(Long storeId, StoreUpdateRequest request) {
+	public StoreReadDto updateStore(Long storeId, StoreUpdateRequest request, MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		if (storeId == null || request == null) throw new StoreParamEmptyException();
-
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
+			throw new StoreUpdateUnauthorizedException();
+		}
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -82,9 +96,13 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional
-	public String deleteStore(Long storeId) {
+	public String deleteStore(Long storeId, MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		if (storeId == null) {
 			throw new StoreParamEmptyException();
+		}
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
+			throw new StoreDeleteUnauthorizedException();
 		}
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)

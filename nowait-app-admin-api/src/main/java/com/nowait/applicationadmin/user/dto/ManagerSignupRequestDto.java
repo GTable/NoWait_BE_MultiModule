@@ -35,9 +35,6 @@ public class ManagerSignupRequestDto {
 	@Schema(description = "로그인타입", example = "LOCAL")
 	private String socialType;
 
-	@NotNull
-	@Schema(description = "관리자가 속한 storeId", example = "1")
-	private Long storeId;
 
 	public User toEntity() {
 		return User.builder()
@@ -46,7 +43,6 @@ public class ManagerSignupRequestDto {
 			.nickname(nickname)
 			.socialType(SocialType.LOCAL)
 			.role(Role.MANAGER)
-			.storeId(storeId)
 			.build();
 
 	}
