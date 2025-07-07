@@ -2,6 +2,7 @@ package com.nowait.applicationadmin.store.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,6 +17,7 @@ import com.nowait.applicationadmin.store.dto.StoreCreateResponse;
 import com.nowait.applicationadmin.store.dto.StoreUpdateRequest;
 import com.nowait.applicationadmin.store.service.StoreService;
 import com.nowait.common.api.ApiUtils;
+import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -52,12 +54,12 @@ public class StoreController {
 	@GetMapping("/{storeId}")
 	@Operation(summary = "주점 조회", description = "주점 ID로 주점을 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 조회 성공")
-	public ResponseEntity<?> getStoreById(@PathVariable Long storeId) {
+	public ResponseEntity<?> getStoreById(@PathVariable Long storeId,@AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					storeService.getStoreByStoreId(storeId)
+					storeService.getStoreByStoreId(storeId,memberDetails)
 				)
 			);
 	}
@@ -67,13 +69,14 @@ public class StoreController {
 	@ApiResponse(responseCode = "200", description = "주점 정보 수정 성공")
 	public ResponseEntity<?> updateStore(
 		@PathVariable Long storeId,
-		@Valid @RequestBody StoreUpdateRequest request
+		@Valid @RequestBody StoreUpdateRequest request,
+		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					storeService.updateStore(storeId, request)
+					storeService.updateStore(storeId, request, memberDetails)
 				)
 			);
 	}
@@ -81,12 +84,12 @@ public class StoreController {
 	@DeleteMapping("/{storeId}")
 	@Operation(summary = "주점 삭제", description = "주점 ID로 주점을 삭제합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 삭제 성공")
-	public ResponseEntity<?> deleteStore(@PathVariable Long storeId) {
+	public ResponseEntity<?> deleteStore(@PathVariable Long storeId,@AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.ok()
 			.body(
 				ApiUtils.success(
-					storeService.deleteStore(storeId)
+					storeService.deleteStore(storeId,memberDetails)
 				)
 			);
 	}

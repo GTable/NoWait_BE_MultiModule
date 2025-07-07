@@ -34,6 +34,9 @@ import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
+import com.nowait.domaincorerdb.store.exception.StoreDeleteUnauthorizedException;
+import com.nowait.domaincorerdb.store.exception.StoreUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.store.exception.StoreViewUnauthorizedException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 
@@ -200,6 +203,26 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), MENU_DELETE_UNAUTHORIZED.getCode());
 	}
 
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(StoreViewUnauthorizedException.class)
+	public ErrorResponse storeViewUnauthorizedException(StoreViewUnauthorizedException e) {
+		log.error("storeViewUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), STORE_VIEW_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(StoreUpdateUnauthorizedException.class)
+	public ErrorResponse storeUpdateUnauthorizedException(StoreUpdateUnauthorizedException e) {
+		log.error("storeUpdateUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), STORE_UPDATE_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(StoreDeleteUnauthorizedException.class)
+	public ErrorResponse storeDeleteUnauthorizedException(StoreDeleteUnauthorizedException e) {
+		log.error("storeDeleteUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), STORE_DELETE_UNAUTHORIZED.getCode());
+	}
 
 	private static Map<String, String> getErrors(MethodArgumentNotValidException e) {
 		return e.getBindingResult()
