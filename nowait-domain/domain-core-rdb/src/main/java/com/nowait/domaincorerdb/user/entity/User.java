@@ -44,23 +44,29 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    private Long storeId;
+
     @Builder
-    public User(String email,String password, String nickname, String profileImage, SocialType socialType, Role role){
+    public User(String email,String password, String nickname, String profileImage, SocialType socialType,
+        Role role, Long storeId) {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.profileImage = profileImage;
         this.socialType = socialType;
         this.role = role;
+        this.storeId = storeId;
     }
 
-    public static User createUserWithId(Long userId, String email, String nickname, String profileImage, SocialType socialType, Role role){
+    public static User createUserWithId(Long userId, String email, String nickname, String profileImage,
+        SocialType socialType, Role role, Long storeId) {
         User user = User.builder()
             .email(email)
             .nickname(nickname)
             .profileImage(profileImage)
             .socialType(socialType)
             .role(role)
+            .storeId(storeId)
             .build();
         user.id = userId;
 

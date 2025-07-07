@@ -79,7 +79,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		}
 
 		User user = User.createUserWithId(userId, "sampleEmail", "sampleNickname", "sampleProfileImg"
-			, SocialType.KAKAO, Role.fromString(roleString));
+			, SocialType.KAKAO, Role.fromString(roleString),5000L);
 
 		CustomOAuth2User customOAuth2User = new CustomOAuth2User(user);
 
