@@ -32,6 +32,8 @@ import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 
@@ -154,6 +156,20 @@ public class GlobalExceptionHandler {
 	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e) {
 		log.error("reservationNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_RESERVATION.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(ReservationViewUnauthorizedException.class)
+	public ErrorResponse reservationViewUnauthorizedException(ReservationViewUnauthorizedException e) {
+		log.error("reservationViewUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_VIEW_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(value = FORBIDDEN)
+	@ExceptionHandler(ReservationUpdateUnauthorizedException.class)
+	public ErrorResponse reservationUpdateUnauthorizedException(ReservationUpdateUnauthorizedException e) {
+		log.error("reservationUpdateUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_UPDATE_UNAUTHORIZED.getCode());
 	}
 
 	@ResponseStatus(value = FORBIDDEN)

@@ -11,9 +11,17 @@ import com.nowait.applicationadmin.reservation.dto.ReservationGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusSummaryDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateRequestDto;
 import com.nowait.common.enums.ReservationStatus;
+import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
+import com.nowait.domaincorerdb.user.entity.MemberDetails;
+import com.nowait.domaincorerdb.user.entity.User;
+import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domaincorerdb.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,9 +30,14 @@ import lombok.RequiredArgsConstructor;
 public class ReservationService {
 
 	private final ReservationRepository reservationRepository;
+	private final UserRepository userRepository;
 
 	@Transactional(readOnly = true)
-	public ReservationStatusSummaryDto getReservationListByStoreId(Long storeId) {
+	public ReservationStatusSummaryDto getReservationListByStoreId(Long storeId, MemberDetails memberDetails) {
+		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
+			throw new ReservationViewUnauthorizedException();
+		}
 		List<Reservation> reservations = reservationRepository.findAllByStore_StoreIdOrderByRequestedAtAsc(storeId);
 
 		// 상태별 카운트 집계
@@ -50,9 +63,14 @@ public class ReservationService {
 			.build();
 	}
 	@Transactional
-	public CallGetResponseDto updateReservationStatus(Long reservationId, ReservationStatusUpdateRequestDto requestDto) {
+	public CallGetResponseDto updateReservationStatus(Long reservationId, ReservationStatusUpdateRequestDto requestDto,
+		MemberDetails memberDetails) {
+		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Reservation reservation = reservationRepository.findById(reservationId)
 			.orElseThrow(ReservationNotFoundException::new);
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(reservation.getStore().getStoreId())) {
+			throw new ReservationUpdateUnauthorizedException();
+		}
 			reservation.updateStatus(requestDto.getStatus());
 		return CallGetResponseDto.fromEntity(reservation);
 	}
