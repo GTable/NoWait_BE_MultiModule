@@ -19,6 +19,9 @@ public enum ErrorMessage {
 	ORDER_ITEMS_EMPTY("주문 항목이 없습니다.", "order002"),
 	DUPLICATE_ORDER("동일한 주문이 접수되었습니다.", "order003"),
 	DEPOSITOR_NAME_TOO_LONG("주문자명은 10자 이내 글자열입니다.", "order004"),
+	ORDER_VIEW_UNAUTHORIZED("주문 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "order005"),
+	ORDER_NOT_FOUND("해당 주문을 찾을 수 없습니다.", "order006"),
+	ORDER_UPDATE_UNAUTHORIZED("주문 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "order007"),
 
 	//reservation
 	NOTFOUND_RESERVATION("저장된 예약 정보가 없습니다.", "reservation001"),
