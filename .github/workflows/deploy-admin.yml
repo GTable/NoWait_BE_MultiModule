@@ -18,7 +18,7 @@ env:
   PROJECT_NAME: NoWait
   DIVISION: admin
   AWS_REGION: ap-northeast-2
-  AWS_S3_BUCKET: nowait-deploy-github-actions
+  AWS_S3_BUCKET: nowait-deploy-github- actions
   AWS_CODE_DEPLOY_APPLICATION: nowaiting
   AWS_CODE_DEPLOY_GROUP: nowaiting-deploy-dev-admin
 
