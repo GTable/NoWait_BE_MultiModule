@@ -26,18 +26,18 @@ services:
       - ./nowait-app-admin-api:/app
     restart: always
 
-  nowait-app-user-api:
-    build:
-      context: nowait-app-user-api
-      dockerfile: Dockerfile
-    container_name: nowait-app-user-api
-    ports:
-      - "8081:8081"
-    depends_on:
-      - mysql
-    volumes:
-      - ./nowait-app-user-api:/app
-    restart: always
+#  nowait-app-user-api:
+#    build:
+#      context: nowait-app-user-api
+#      dockerfile: Dockerfile
+#    container_name: nowait-app-user-api
+#    ports:
+#      - "8081:8081"
+#    depends_on:
+#      - mysql
+#    volumes:
+#      - ./nowait-app-user-api:/app
+#    restart: always
 
 volumes:
   mysql_data:
