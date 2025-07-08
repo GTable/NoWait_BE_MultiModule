@@ -28,7 +28,7 @@ public class Token {
     private Long tokenId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false,unique = true)
     private User user;
 
     @Column
@@ -50,6 +50,11 @@ public class Token {
                 .refreshToken(refreshToken)
                 .expiredDate(expiredDate)
                 .build();
+    }
+
+    public void updateRefreshToken(String refreshToken, LocalDateTime expiredDate) {
+        this.refreshToken = refreshToken;
+        this.expiredDate = expiredDate;
     }
 
 }
