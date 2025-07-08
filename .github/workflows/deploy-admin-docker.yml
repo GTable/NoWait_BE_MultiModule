@@ -56,8 +56,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/nowait_dev:admin-${{ github.sha }} ./nowait-app-admin-api
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/nowait_dev:admin-${{ github.sha }}
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/nowait_dev:admin ./nowait-app-admin-api
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/nowait_dev:admin
 
 
 
