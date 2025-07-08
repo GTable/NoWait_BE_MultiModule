@@ -67,10 +67,6 @@ jobs:
       needs: build-with-gradle
 
       steps:
-        - name: Debug SSH key length
-          run: |
-            echo "Length: $(echo "${{ secrets.EC2_SSH_KEY }}" | wc -c)"
-
         - name: Deploy to EC2
           uses: appleboy/ssh-action@v0.1.4
           env:
@@ -81,6 +77,7 @@ jobs:
             host: ${{ secrets.EC2_HOST }}
             username: ${{ secrets.EC2_USER }}
             key: ${{ secrets.EC2_SSH_KEY }}
+            port: ${{ secrets.EC2_PORT }}
             envs: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
             script: |
               cd ${{ env.EC2_DEPLOY_PATH }}
