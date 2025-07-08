@@ -5,13 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationuser.security.jwt.JwtUtil;
 import com.nowait.applicationuser.token.dto.AuthenticationResponse;
-import com.nowait.applicationuser.token.dto.RefreshTokenRequest;
 import com.nowait.applicationuser.token.service.TokenService;
 
 import io.swagger.v3.oas.annotations.Operation;

@@ -58,9 +58,6 @@ public class TokenService {
             throw new TokenBadRequestException(); // 400
         }
 
-        // 기존 토큰 삭제 및 새 토큰 저장
-        tokenRepository.delete(token);
-        Token newToken = Token.toEntity(token.getUser(), newRefreshToken, LocalDateTime.now().plusDays(30));
-        tokenRepository.save(newToken);
+        token.updateRefreshToken(newRefreshToken, LocalDateTime.now().plusDays(30));
     }
 }
