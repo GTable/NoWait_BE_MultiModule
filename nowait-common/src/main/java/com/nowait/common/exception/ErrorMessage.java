@@ -27,6 +27,7 @@ public enum ErrorMessage {
 	NOTFOUND_RESERVATION("저장된 예약 정보가 없습니다.", "reservation001"),
 	RESERVATION_VIEW_UNAUTHORIZED("예약 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "reservation002"),
 	RESERVATION_UPDATE_UNAUTHORIZED("예약 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "reservation003"),
+	DUPLICATE_RESERVATION("이미 대기 중인 예약이 존재합니다.", "reservation004"),
 
 	// bookmark
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
