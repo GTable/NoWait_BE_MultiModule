@@ -1,6 +1,7 @@
 package com.nowait.applicationuser.reservation.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,8 +10,11 @@ import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
+import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
+import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -31,10 +35,21 @@ public class ReservationService {
 	public ReservationCreateResponseDto create(Long storeId, CustomOAuth2User customOAuth2User,
 		ReservationCreateRequestDto requestDto) {
 		Store store = storeRepository.findById(storeId)
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 store"));
+			.orElseThrow(StoreNotFoundException::new);
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
-
+		// store 웨이팅 비활성화 여부
+		if (Boolean.FALSE.equals(store.getIsActive()))
+			throw new StoreWaitingDisabledException();
+		// 중복 예약 존재 여부 확인
+		boolean hasOngoingReservation = reservationRepository.existsByUserAndStoreAndStatusIn(
+			user,
+			store,
+			List.of(ReservationStatus.WAITING, ReservationStatus.CALLING)
+		);
+		if (hasOngoingReservation) {
+			throw new DuplicateReservationException();
+		}
 		Reservation reservation = Reservation.builder()
 			.store(store)
 			.user(user)

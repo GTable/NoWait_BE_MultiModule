@@ -26,7 +26,9 @@ import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
+import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
+import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domainuserrdb.bookmark.exception.BookmarkOwnerMismatchException;
@@ -160,6 +162,20 @@ public class GlobalExceptionHandler {
 	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e) {
 		log.error("reservationNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_RESERVATION.getCode());
+	}
+
+	@ResponseStatus(value = BAD_REQUEST)
+	@ExceptionHandler(DuplicateReservationException.class)
+	public ErrorResponse duplicateReservationException(DuplicateReservationException e) {
+		log.error("duplicateReservationException", e);
+		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
+	}
+
+	@ResponseStatus(value = BAD_REQUEST)
+	@ExceptionHandler(StoreWaitingDisabledException.class)
+	public ErrorResponse storeWaitingDisabledException(StoreWaitingDisabledException e) {
+		log.error("storeWaitingDisabledException", e);
+		return new ErrorResponse(e.getMessage(), STORE_WAITING_DISABLED.getCode());
 	}
 
 

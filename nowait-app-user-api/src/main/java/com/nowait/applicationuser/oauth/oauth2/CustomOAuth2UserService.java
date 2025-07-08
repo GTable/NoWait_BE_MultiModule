@@ -54,6 +54,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 				.profileImage(oAuth2Response.getProfileImage())
 				.socialType(SocialType.KAKAO)
 				.role(Role.USER) // 일반 유저 설정
+				.storeId(0L)
 				.build();
 
 			userRepository.save(user);
