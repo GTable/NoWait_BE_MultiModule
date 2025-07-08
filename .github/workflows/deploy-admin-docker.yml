@@ -17,7 +17,6 @@ on:
 env:
   DOCKERHUB_REPO: jihuneddie/nowait_dev
   DIVISION: admin
-  IMAGE_TAG: ${{ env.DIVISION }}-${{ github.sha }}
   EC2_DEPLOY_PATH: /home/ubuntu/spring-github-action-admin-docker
 
 
