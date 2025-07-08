@@ -10,3 +10,4 @@ public class ApiAdminApplication {
 		org.springframework.boot.SpringApplication.run(ApiAdminApplication.class, args);
 	}
 }
+
