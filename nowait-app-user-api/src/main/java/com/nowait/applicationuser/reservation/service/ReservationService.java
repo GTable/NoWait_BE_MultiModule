@@ -14,6 +14,7 @@ import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationExcept
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
+import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -37,7 +38,9 @@ public class ReservationService {
 			.orElseThrow(StoreNotFoundException::new);
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
-
+		// store 웨이팅 비활성화 여부
+		if (Boolean.FALSE.equals(store.getIsActive()))
+			throw new StoreWaitingDisabledException();
 		// 중복 예약 존재 여부 확인
 		boolean hasOngoingReservation = reservationRepository.existsByUserAndStoreAndStatusIn(
 			user,

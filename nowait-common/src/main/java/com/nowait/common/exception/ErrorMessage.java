@@ -47,6 +47,7 @@ public enum ErrorMessage {
 	STORE_VIEW_UNAUTHORIZED("주점 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "store003"),
 	STORE_UPDATE_UNAUTHORIZED("주점 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "store004"),
 	STORE_DELETE_UNAUTHORIZED("주점 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "store005"),
+	STORE_WAITING_DISABLED("해당 주점은 대기 비활성화된 주점입니다.", "store006"),
 
 	// image
 	IMAGE_FILE_EMPTY("이미지 파일을 업로드 해주세요", "image001"),
