@@ -56,11 +56,12 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/admin/nowait-app-admin-api ./nowait-app-admin-api
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/admin/nowait-app-admin-api
-          
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/nowait_dev:admin-${{ github.sha }} ./nowait-app-admin-api
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/nowait_dev:admin-${{ github.sha }}
 
-  deploy:
+
+
+deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
     needs: build-with-gradle
