@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.menu.entity.Menu;
+import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
+import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
@@ -27,10 +30,12 @@ import lombok.RequiredArgsConstructor;
 public class OrderService {
 	private final OrderRepository orderRepository;
 	private final UserRepository userRepository;
+	private final MenuRepository menuRepository;
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> findAllOrders(Long storeId, MemberDetails memberDetails) {
 		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		Menu menu = menuRepository.findById(storeId).orElseThrow(MenuNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new OrderViewUnauthorizedException();
 		}
