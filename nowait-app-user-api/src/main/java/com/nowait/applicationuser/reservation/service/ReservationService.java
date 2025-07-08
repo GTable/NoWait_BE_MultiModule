@@ -10,6 +10,7 @@ import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
+import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
@@ -18,7 +19,6 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
-import com.sun.jdi.request.DuplicateRequestException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,7 +45,7 @@ public class ReservationService {
 			List.of(ReservationStatus.WAITING, ReservationStatus.CALLING)
 		);
 		if (hasOngoingReservation) {
-			throw new DuplicateRequestException();
+			throw new DuplicateReservationException();
 		}
 		Reservation reservation = Reservation.builder()
 			.store(store)
