@@ -1,0 +1,27 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_nowait_container
+    environment:
+      MYSQL_ROOT_PASSWORD: gtable1118!
+      MYSQL_DATABASE: gtable_dev
+      MYSQL_USER: developer
+      MYSQL_PASSWORD: gtable1118!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  nowait-app-user-api:
+    image: jihuneddie/nowait_dev:user
+    container_name: nowait-app-user-api
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql
+    volumes:
+      - ./nowait-app-user-api:/app
+    restart: always
+
+volumes:
+  mysql_data:
