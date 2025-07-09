@@ -107,6 +107,6 @@ jobs:
           envs: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
           script: |
             cd ${{ env.EC2_DEPLOY_PATH }}
-            chmod +x ./scripts/deploy-user-docker
-            ./scripts/deploy-user-docker
+            chmod +x ./scripts/deploy-user-docker.sh
+            ./scripts/deploy-user-docker.sh
               
