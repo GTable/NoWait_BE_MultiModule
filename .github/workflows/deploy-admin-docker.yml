@@ -88,7 +88,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
           source: "scripts/deploy-admin-docker"
-          target: "${{ env.EC2_DEPLOY_PATH }}/scripts/"
+          target: "${{ env.EC2_DEPLOY_PATH }}/scripts"
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
