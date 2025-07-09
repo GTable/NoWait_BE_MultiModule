@@ -3,7 +3,7 @@ name: Dev User CI/CD
 on:
   push:
     branches:
-    - develop
+    - legacy
     paths:
     - 'nowait-app-user-api/**'
     - 'nowait-common/**'
