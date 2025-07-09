@@ -77,6 +77,16 @@ jobs:
           source: "docker-compose.yml"
           target: ${{ env.EC2_DEPLOY_PATH }}
 
+      - name: Copy deploy-user-docker to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "scripts/deploy-user-docker"
+          target: "${{ env.EC2_DEPLOY_PATH }}"
+
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
@@ -97,7 +107,6 @@ jobs:
           envs: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
           script: |
             cd ${{ env.EC2_DEPLOY_PATH }}
-            sudo docker rm -f nowait-app-user-api || true
-            sudo docker-compose -p nowait_dev pull nowait-app-user-api
-            sudo docker-compose -p nowait_dev up -d nowait-app-user-api
+            chmod +x ./scripts/deploy-user-docker
+            ./scripts/deploy-user-docker
               
