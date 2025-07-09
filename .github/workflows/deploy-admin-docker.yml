@@ -70,14 +70,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Copy docker-compose.yml to EC2
+      - name: Copy docker-compose.admin.yml to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
-          source: "docker-compose.yml"
+          source: "docker-compose.admin.yml"
           target: ${{ env.EC2_DEPLOY_PATH }}
 
       - name: Copy deploy-admin-docker.sh to EC2

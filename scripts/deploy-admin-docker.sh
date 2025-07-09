@@ -17,8 +17,8 @@ else
 fi
 
 echo "3. start container"
-sudo docker-compose -p nowait_dev pull nowait-app-admin-api
-sudo docker-compose -p nowait_dev up -d nowait-app-admin-api
+sudo docker-compose -f docker-compose.admin.yml -p nowait_dev pull nowait-app-admin-api
+sudo docker-compose -f docker-compose.admin.yml -p nowait_dev up -d nowait-app-admin-api
 
 echo "4. check container status"
 NEW_CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")

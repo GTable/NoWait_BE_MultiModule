@@ -3,7 +3,7 @@ name: Dev Admin CI/CD
 on:
   push:
     branches:
-      - develop
+      - legacy
     paths:
     - 'nowait-app-admin-api/**'
     - 'nowait-common/**'
