@@ -80,14 +80,14 @@ jobs:
           source: "docker-compose.yml"
           target: ${{ env.EC2_DEPLOY_PATH }}
 
-      - name: Copy deploy-admin-docker to EC2
+      - name: Copy deploy-admin-docker.sh to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
-          source: "scripts/deploy-admin-docker"
+          source: "scripts/deploy-admin-docker.sh"
           target: "${{ env.EC2_DEPLOY_PATH }}"
 
       - name: Login to DockerHub
