@@ -1,0 +1,27 @@
+#!/bin/bash
+
+REPOSITORY="/home/ubuntu/spring-github-action-admin-docker"
+cd $REPOSITORY
+
+START_LOG="$REPOSITORY/start.log"
+
+echo "1. find container id"
+CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")
+
+echo "2. stop container"
+if [ -n "$CONTAINER_ID" ]; then
+  echo "Stopping container $CONTAINER_ID"
+  docker rm -f "$CONTAINER_ID"
+else
+  echo "No admin container found."
+fi
+
+echo "3. start container"
+sudo docker-compose -p nowait_dev pull nowait-app-admin-api
+sudo docker-compose -p nowait_dev up -d nowait-app-admin-api
+
+echo "4. check container status"
+NEW_CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")
+NOW=$(date +%c)
+
+echo "[$NOW] > Container ID: $NEW_CONTAINER_ID"
