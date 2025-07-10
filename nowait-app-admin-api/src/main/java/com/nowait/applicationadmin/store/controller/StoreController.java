@@ -54,12 +54,12 @@ public class StoreController {
 	@GetMapping("/{storeId}")
 	@Operation(summary = "주점 조회", description = "주점 ID로 주점을 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 조회 성공")
-	public ResponseEntity<?> getStoreById(@PathVariable Long storeId,@AuthenticationPrincipal MemberDetails memberDetails) {
+	public ResponseEntity<?> getStoreById(@PathVariable Long storeId, @AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					storeService.getStoreByStoreId(storeId,memberDetails)
+					storeService.getStoreByStoreId(storeId, memberDetails)
 				)
 			);
 	}
@@ -84,7 +84,7 @@ public class StoreController {
 	@DeleteMapping("/{storeId}")
 	@Operation(summary = "주점 삭제", description = "주점 ID로 주점을 삭제합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 삭제 성공")
-	public ResponseEntity<?> deleteStore(@PathVariable Long storeId,@AuthenticationPrincipal MemberDetails memberDetails) {
+	public ResponseEntity<?> deleteStore(@PathVariable Long storeId, @AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.ok()
 			.body(
