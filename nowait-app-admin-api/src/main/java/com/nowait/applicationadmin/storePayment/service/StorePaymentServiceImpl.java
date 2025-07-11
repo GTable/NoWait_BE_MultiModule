@@ -10,8 +10,11 @@ import com.nowait.applicationadmin.storePayment.dto.StorePaymentUpdateRequest;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreParamEmptyException;
-import com.nowait.domaincorerdb.store.exception.StoreViewUnauthorizedException;
 import com.nowait.domaincorerdb.storePayment.entity.StorePayment;
+import com.nowait.domaincorerdb.storePayment.exception.StorePaymentCreationUnauthorized;
+import com.nowait.domaincorerdb.storePayment.exception.StorePaymentParamEmptyException;
+import com.nowait.domaincorerdb.storePayment.exception.StorePaymentUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.storePayment.exception.StorePaymentViewUnauthorizedException;
 import com.nowait.domaincorerdb.storePayment.repository.StorePaymentRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
@@ -30,11 +33,12 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	@Override
 	@Transactional
 	public StorePaymentCreateResponse createStorePayment(StorePaymentCreateRequest request, MemberDetails memberDetails) {
-		// if (request == null) throw new StoreParamEmptyException();
+		if (request == null) throw new StorePaymentParamEmptyException();
+
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StoreViewUnauthorizedException();
+			throw new StorePaymentCreationUnauthorized();
 		}
 		StorePayment toSave = request.toEntity(storeId);
 		StorePayment saved = storePaymentRepository.save(toSave);
@@ -45,11 +49,12 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	@Override
 	@Transactional(readOnly = true)
 	public StorePaymentReadDto getStorePaymentByStoreId(MemberDetails memberDetails) {
-		// if (storeId == null) throw new StoreParamEmptyException();
+		if (memberDetails == null) throw new StorePaymentParamEmptyException();
+
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StoreViewUnauthorizedException();
+			throw new StorePaymentViewUnauthorizedException();
 		}
 		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
 			.orElseThrow(StoreNotFoundException::new);
@@ -61,10 +66,11 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	@Transactional
 	public StorePaymentReadDto updateStorePayment(StorePaymentUpdateRequest request, MemberDetails memberDetails) {
 		if (request == null) throw new StoreParamEmptyException();
+
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StoreViewUnauthorizedException();
+			throw new StorePaymentUpdateUnauthorizedException();
 		}
 		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
 			.orElseThrow(StoreNotFoundException::new);
