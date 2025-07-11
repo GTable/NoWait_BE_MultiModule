@@ -1,9 +1,9 @@
-package com.nowait.domaincorerdb.storePayment.exception;
+package com.nowait.domaincorerdb.storepayment.exception;
 
 import com.nowait.common.exception.ErrorMessage;
 
 public class StorePaymentNotFoundException extends RuntimeException {
-	public StorePaymentNotFoundException(String message) {
+	public StorePaymentNotFoundException() {
 		super(ErrorMessage.STORE_PAYMENT_PARAMETER_EMPTY.getMessage());
 	}
 }

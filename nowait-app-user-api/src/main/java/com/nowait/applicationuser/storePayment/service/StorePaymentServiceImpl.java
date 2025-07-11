@@ -4,9 +4,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.nowait.applicationuser.storePayment.dto.StorePaymentReadDto;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
-import com.nowait.domaincorerdb.storePayment.entity.StorePayment;
-import com.nowait.domaincorerdb.storePayment.exception.StorePaymentParamEmptyException;
-import com.nowait.domaincorerdb.storePayment.repository.StorePaymentRepository;
+import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
+import com.nowait.domaincorerdb.storepayment.exception.StorePaymentParamEmptyException;
+import com.nowait.domaincorerdb.storepayment.repository.StorePaymentRepository;
 
 import lombok.RequiredArgsConstructor;
 

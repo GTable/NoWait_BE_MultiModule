@@ -1,4 +1,4 @@
-package com.nowait.domaincorerdb.storePayment.exception;
+package com.nowait.domaincorerdb.storepayment.exception;
 
 import com.nowait.common.exception.ErrorMessage;
 

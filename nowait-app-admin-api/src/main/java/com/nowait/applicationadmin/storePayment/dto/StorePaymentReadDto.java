@@ -2,7 +2,7 @@ package com.nowait.applicationadmin.storePayment.dto;
 
 import java.time.LocalDateTime;
 
-import com.nowait.domaincorerdb.storePayment.entity.StorePayment;
+import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

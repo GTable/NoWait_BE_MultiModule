@@ -1,8 +1,7 @@
 package com.nowait.applicationadmin.storePayment.dto;
 
-import com.nowait.domaincorerdb.storePayment.entity.StorePayment;
+import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

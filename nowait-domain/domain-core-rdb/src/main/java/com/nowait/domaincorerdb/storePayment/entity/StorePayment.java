@@ -1,4 +1,4 @@
-package com.nowait.domaincorerdb.storePayment.entity;
+package com.nowait.domaincorerdb.storepayment.entity;
 
 import java.time.LocalDateTime;
 
