@@ -49,7 +49,7 @@ public class StorePaymentController {
 	}
 
 	@GetMapping()
-	@Operation(summary = "주점 결제 정보 조회", description = "주점 ID로 주점 결제 정보를 조회합니다.")
+	@Operation(summary = "주점 결제 정보 조회", description = "인증된 사용자의 주점 결제 정보를 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 결제 정보 조회 성공")
 	public ResponseEntity<?> getStorePaymentByStoreId(@AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
