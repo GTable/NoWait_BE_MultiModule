@@ -29,7 +29,7 @@ public class StorePaymentController {
 	@GetMapping(("/{storeId}"))
 	@Operation(summary = "주점 결제 정보 조회", description = "주점 ID로 주점 결제 정보를 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 결제 정보 조회 성공")
-	public ResponseEntity<?> getStorePaymentByStoreId(@Valid @PathVariable Long storeId) {
+	public ResponseEntity<?> getStorePaymentByStoreId(@PathVariable Long storeId) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(

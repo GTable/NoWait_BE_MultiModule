@@ -64,7 +64,7 @@ public class StorePaymentController {
 	@PatchMapping("/update")
 	@Operation(summary = "주점 결제 정보 수정", description = "주점 결제 정보를 수정합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 결제 정보 수정 성공")
-	public ResponseEntity<?> updateStorePayment(@Valid @RequestBody StorePaymentUpdateRequest request, @AuthenticationPrincipal MemberDetails memberDetails) {
+	public ResponseEntity<?> updateStorePayment(@RequestBody StorePaymentUpdateRequest request, @AuthenticationPrincipal MemberDetails memberDetails) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(

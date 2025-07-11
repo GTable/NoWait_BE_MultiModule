@@ -8,8 +8,6 @@ import com.nowait.applicationadmin.storePayment.dto.StorePaymentCreateResponse;
 import com.nowait.applicationadmin.storePayment.dto.StorePaymentReadDto;
 import com.nowait.applicationadmin.storePayment.dto.StorePaymentUpdateRequest;
 import com.nowait.common.enums.Role;
-import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
-import com.nowait.domaincorerdb.store.exception.StoreParamEmptyException;
 import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentAlreadyExistsException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentCreationUnauthorizedException;
@@ -42,7 +40,7 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 		if (storePaymentRepository.findByStoreId(storeId).isPresent()) {
 			throw new StorePaymentAlreadyExistsException();
 		}
-		if (!Role.SUPER_ADMIN.equals(user.getRole())) {
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new StorePaymentCreationUnauthorizedException();
 		}
 		StorePayment toSave = request.toEntity(storeId);
@@ -58,11 +56,11 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
-		if (!Role.SUPER_ADMIN.equals(user.getRole())) {
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new StorePaymentViewUnauthorizedException();
 		}
 		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
-			.orElseThrow(StoreNotFoundException::new);
+			.orElseThrow(StorePaymentNotFoundException::new);
 
 		return StorePaymentReadDto.fromEntity(storePayment);
 	}
@@ -74,11 +72,11 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
-		if (!Role.SUPER_ADMIN.equals(user.getRole())) {
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new StorePaymentUpdateUnauthorizedException();
 		}
 		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
-			.orElseThrow(StoreNotFoundException::new);
+			.orElseThrow(StorePaymentNotFoundException::new);
 
 		storePayment.updatePaymentMethodUrl(
 			request.getTossUrl(),
