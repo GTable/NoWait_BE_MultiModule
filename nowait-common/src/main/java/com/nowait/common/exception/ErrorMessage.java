@@ -57,6 +57,7 @@ public enum ErrorMessage {
 	STORE_PAYMENT_CREATION_UNAUTHORIZED("주점 결제 정보 생성 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment004"),
 	STORE_PAYMENT_UPDATE_UNAUTHORIZED("주점 결제 정보 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment004"),
 	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment005"),
+	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment006"),
 
 
 	// image
