@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.storePayment.dto;
+package com.nowait.applicationuser.storepayment.dto;
 
 import java.time.LocalDateTime;
 

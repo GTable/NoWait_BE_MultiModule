@@ -1,8 +1,8 @@
-package com.nowait.applicationuser.storePayment.service;
+package com.nowait.applicationuser.storepayment.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.nowait.applicationuser.storePayment.dto.StorePaymentReadDto;
+import com.nowait.applicationuser.storepayment.dto.StorePaymentReadDto;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentParamEmptyException;
