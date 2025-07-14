@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.order.dto.OrderSalesSumResponse;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
@@ -55,5 +56,17 @@ public class OrderService {
 		}
 		userOrder.updateStatus(newStatus);
 		return OrderStatusUpdateResponseDto.fromEntity(userOrder);
+	}
+
+	@Transactional(readOnly = true)
+	public OrderSalesSumResponse getSaleSumByStoreId(MemberDetails memberDetails) {
+		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		Long storeId = user.getStoreId();
+
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
+			throw new OrderViewUnauthorizedException();
+		}
+
+		return orderRepository.findSalesSumByStoreId(storeId);
 	}
 }
