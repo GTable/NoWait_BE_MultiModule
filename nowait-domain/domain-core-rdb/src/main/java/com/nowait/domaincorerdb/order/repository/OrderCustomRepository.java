@@ -1,8 +1,8 @@
 package com.nowait.domaincorerdb.order.repository;
 
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumResponse;
+import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
 
 public interface OrderCustomRepository {
 
-	OrderSalesSumResponse findSalesSumByStoreId(Long storeId);
+	OrderSalesSumDetail findSalesSumByStoreId(Long storeId);
 }

@@ -17,7 +17,7 @@ import com.nowait.applicationadmin.order.dto.OrderStatusUpdateRequestDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.applicationadmin.order.service.OrderService;
 import com.nowait.common.api.ApiUtils;
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumResponse;
+import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,51 +32,51 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderService orderService;
+	private final OrderService orderService;
 
-    @GetMapping("/{storeId}")
-    @Operation(summary = "주점별 주문리스트 조회", description = "특정 주점에 대한 예약리스트 조회")
-    @ApiResponse(responseCode = "200", description = "주리스트 조회")
-    public ResponseEntity<?> getOrderListByStoreId(@PathVariable Long storeId,
-        @AuthenticationPrincipal MemberDetails memberDetails) {
-        List<OrderResponseDto> response = orderService.findAllOrders(storeId,memberDetails);
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(
-                ApiUtils.success(
-                    response
-                )
-            );
-    }
+	@GetMapping("/{storeId}")
+	@Operation(summary = "주점별 주문리스트 조회", description = "특정 주점에 대한 예약리스트 조회")
+	@ApiResponse(responseCode = "200", description = "주리스트 조회")
+	public ResponseEntity<?> getOrderListByStoreId(@PathVariable Long storeId,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+		List<OrderResponseDto> response = orderService.findAllOrders(storeId, memberDetails);
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
+	}
 
-    @PatchMapping("/status/{orderId}")
-    @Operation(summary = "주문 상태 변경", description = "특정 주문의 상태를 변경.")
-    @ApiResponse(responseCode = "200", description = "주문 상태 변경 성공")
-    @ApiResponse(responseCode = "400", description = "주문을 찾을 수 없음")
-    public ResponseEntity<?> updateOrderStatus(
-        @PathVariable Long orderId,
-        @RequestBody@Valid OrderStatusUpdateRequestDto requestDto,
-        @AuthenticationPrincipal MemberDetails memberDetails
-    ) {
-        OrderStatusUpdateResponseDto response = orderService.updateOrderStatus(
-            orderId,requestDto.getOrderStatus(),memberDetails);
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(ApiUtils.success(response));
-    }
+	@PatchMapping("/status/{orderId}")
+	@Operation(summary = "주문 상태 변경", description = "특정 주문의 상태를 변경.")
+	@ApiResponse(responseCode = "200", description = "주문 상태 변경 성공")
+	@ApiResponse(responseCode = "400", description = "주문을 찾을 수 없음")
+	public ResponseEntity<?> updateOrderStatus(
+		@PathVariable Long orderId,
+		@RequestBody @Valid OrderStatusUpdateRequestDto requestDto,
+		@AuthenticationPrincipal MemberDetails memberDetails
+	) {
+		OrderStatusUpdateResponseDto response = orderService.updateOrderStatus(
+			orderId, requestDto.getOrderStatus(), memberDetails);
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(ApiUtils.success(response));
+	}
 
-    @GetMapping("/sales")
-    @Operation(summary = "오늘의 매출 조회", description = "오늘의 매출을 조회합니다.")
-    @ApiResponse(responseCode = "200", description = "오늘의 매출 조회 성공")
-    public ResponseEntity<?> getTodaySales(@AuthenticationPrincipal MemberDetails memberDetails) {
-        OrderSalesSumResponse sales = orderService.getSaleSumByStoreId(memberDetails);
+	@GetMapping("/sales")
+	@Operation(summary = "오늘의 매출 조회", description = "오늘의 매출을 조회합니다.")
+	@ApiResponse(responseCode = "200", description = "오늘의 매출 조회 성공")
+	public ResponseEntity<?> getTodaySales(@AuthenticationPrincipal MemberDetails memberDetails) {
+		OrderSalesSumDetail sales = orderService.getSaleSumByStoreId(memberDetails);
 
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .body(
-                ApiUtils.success(
-                    sales
-                )
-            );
-    }
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					sales
+				)
+			);
+	}
 }

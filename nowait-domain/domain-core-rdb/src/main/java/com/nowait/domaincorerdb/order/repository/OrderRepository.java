@@ -7,10 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.nowait.domaincorerdb.order.entity.UserOrder;
+
 @Repository
-public interface OrderRepository extends JpaRepository<UserOrder,Long>, OrderCustomRepository {
+public interface OrderRepository extends JpaRepository<UserOrder, Long>, OrderCustomRepository {
 	boolean existsBySignatureAndCreatedAtAfter(String signature, LocalDateTime createdAt);
 
 	List<UserOrder> findByStore_StoreIdAndTableIdAndSessionId(Long storeId, Long tableId, String sessionId);
+
 	List<UserOrder> findAllByStore_StoreId(Long storeId);
 }

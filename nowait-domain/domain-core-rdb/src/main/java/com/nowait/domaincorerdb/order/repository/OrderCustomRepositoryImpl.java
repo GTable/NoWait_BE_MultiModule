@@ -5,7 +5,7 @@ import static com.nowait.domaincorerdb.order.entity.OrderStatus.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumResponse;
+import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
 import com.nowait.domaincorerdb.order.entity.QUserOrder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
@@ -20,7 +20,7 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 	QUserOrder u = QUserOrder.userOrder;
 
 	@Override
-	public OrderSalesSumResponse findSalesSumByStoreId(Long storeId) {
+	public OrderSalesSumDetail findSalesSumByStoreId(Long storeId) {
 		// 1. 날짜 기준 설정 (시작은 자정, 끝은 다음 날 자정)
 		LocalDate today = LocalDate.now();
 		LocalDate yesterday = today.minusDays(1);
@@ -71,6 +71,6 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 		if (previousDaySales == null) previousDaySales = 0;
 
 		// 4. 응답 객체 생성
-		return new OrderSalesSumResponse(storeId, todaySum, yesterdaySum, previousDaySales);
+		return new OrderSalesSumDetail(storeId, todaySum, yesterdaySum, previousDaySales);
 	}
 }

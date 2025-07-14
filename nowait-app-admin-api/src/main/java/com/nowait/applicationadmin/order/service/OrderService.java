@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.common.enums.Role;
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumResponse;
+import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
@@ -34,13 +34,13 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> findAllOrders(Long storeId, MemberDetails memberDetails) {
-		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		storeRepository.findByStoreIdAndDeletedFalse(storeId)
-			.orElseThrow(StoreNotFoundException::new);
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		storeRepository.findByStoreIdAndDeletedFalse(storeId).orElseThrow(StoreNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new OrderViewUnauthorizedException();
 		}
-		return orderRepository.findAllByStore_StoreId(storeId).stream()
+		return orderRepository.findAllByStore_StoreId(storeId)
+			.stream()
 			.map(OrderResponseDto::fromEntity)
 			.collect(Collectors.toList());
 	}
@@ -48,9 +48,8 @@ public class OrderService {
 	@Transactional
 	public OrderStatusUpdateResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus,
 		MemberDetails memberDetails) {
-		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		UserOrder userOrder = orderRepository.findById(orderId)
-			.orElseThrow(OrderNotFoundException::new);
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(userOrder.getStore().getStoreId())) {
 			throw new OrderUpdateUnauthorizedException();
 		}
@@ -59,8 +58,8 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public OrderSalesSumResponse getSaleSumByStoreId(MemberDetails memberDetails) {
-		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	public OrderSalesSumDetail getSaleSumByStoreId(MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
 
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
