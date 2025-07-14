@@ -1,4 +1,4 @@
-package com.nowait.applicationadmin.storePayment.controller;
+package com.nowait.applicationadmin.storepayment.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentCreateRequest;
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentCreateResponse;
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentUpdateRequest;
-import com.nowait.applicationadmin.storePayment.service.StorePaymentService;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateRequest;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateResponse;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentUpdateRequest;
+import com.nowait.applicationadmin.storepayment.service.StorePaymentService;
 import com.nowait.common.api.ApiUtils;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 

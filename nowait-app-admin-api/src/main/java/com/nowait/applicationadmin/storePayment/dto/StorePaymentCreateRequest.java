@@ -1,4 +1,5 @@
-package com.nowait.applicationadmin.storePayment.dto;
+package com.nowait.applicationadmin.storepayment.dto;
+
 
 import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 

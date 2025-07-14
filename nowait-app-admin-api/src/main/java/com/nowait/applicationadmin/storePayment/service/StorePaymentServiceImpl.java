@@ -1,12 +1,12 @@
-package com.nowait.applicationadmin.storePayment.service;
+package com.nowait.applicationadmin.storepayment.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentCreateRequest;
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentCreateResponse;
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentReadDto;
-import com.nowait.applicationadmin.storePayment.dto.StorePaymentUpdateRequest;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateRequest;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateResponse;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentReadDto;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentUpdateRequest;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentAlreadyExistsException;
