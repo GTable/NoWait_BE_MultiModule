@@ -31,6 +31,12 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+    //QueryDsl
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
     // SWAGGER
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
@@ -38,7 +44,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
 
     // Jackson
-    api 'com.fasterxml.jackson.core:jackson-databind:2.15.2'           // Jackson 핵심
+    api 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
     api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
