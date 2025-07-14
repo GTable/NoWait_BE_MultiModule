@@ -17,6 +17,7 @@ import com.nowait.applicationadmin.order.dto.OrderStatusUpdateRequestDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.applicationadmin.order.service.OrderService;
 import com.nowait.common.api.ApiUtils;
+import com.nowait.domaincorerdb.order.dto.OrderSalesSumResponse;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,5 +63,20 @@ public class OrderController {
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(ApiUtils.success(response));
+    }
+
+    @GetMapping("/sales")
+    @Operation(summary = "오늘의 매출 조회", description = "오늘의 매출을 조회합니다.")
+    @ApiResponse(responseCode = "200", description = "오늘의 매출 조회 성공")
+    public ResponseEntity<?> getTodaySales(@AuthenticationPrincipal MemberDetails memberDetails) {
+        OrderSalesSumResponse sales = orderService.getSaleSumByStoreId(memberDetails);
+
+        return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(
+                ApiUtils.success(
+                    sales
+                )
+            );
     }
 }
