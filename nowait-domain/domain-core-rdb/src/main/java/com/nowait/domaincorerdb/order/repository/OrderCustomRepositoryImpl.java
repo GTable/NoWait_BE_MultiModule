@@ -68,7 +68,7 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 			)
 			.fetchOne();
 
-		Integer previousDaySales = queryFactory
+		Integer cumulativeSalesBeforeYesterday = queryFactory
 			.select(u.totalPrice.sum())
 			.from(u)
 			.where(
@@ -83,11 +83,11 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 			todaySum = 0;
 		if (yesterdaySum == null)
 			yesterdaySum = 0;
-		if (previousDaySales == null)
-			previousDaySales = 0;
+		if (cumulativeSalesBeforeYesterday == null)
+			cumulativeSalesBeforeYesterday = 0;
 
 		// 4. 응답 객체 생성
-		return new OrderSalesSumDetail(storeId, todaySum, yesterdaySum, previousDaySales);
+		return new OrderSalesSumDetail(storeId, todaySum, yesterdaySum, cumulativeSalesBeforeYesterday);
 	}
 
 	@Override
@@ -243,14 +243,14 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 	// 한 번에 학과 이름을 가져오는 메서드
 	private Map<Long, String> getDepartmentNames(Set<Long> departmentIds) {
 		List<Tuple> departmentTuples = queryFactory
-			.select(d.Id, d.name)
+			.select(d.id, d.name)
 			.from(d)
-			.where(d.Id.in(departmentIds))
+			.where(d.id.in(departmentIds))
 			.fetch();
 
 		Map<Long, String> departmentNameMap = new HashMap<>();
 		for (Tuple t : departmentTuples) {
-			departmentNameMap.put(t.get(d.Id), t.get(d.name));
+			departmentNameMap.put(t.get(d.id), t.get(d.name));
 		}
 		return departmentNameMap;
 	}

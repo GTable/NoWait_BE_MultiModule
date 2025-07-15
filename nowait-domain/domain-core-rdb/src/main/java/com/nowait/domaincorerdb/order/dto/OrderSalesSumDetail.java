@@ -9,13 +9,13 @@ public class OrderSalesSumDetail {
 	private Long storeId;
 	private Integer todaySalesSum;
 	private Integer yesterdaySalesSum;
-	private Integer previousDaySales;
+	private Integer cumulativeSalesBeforeYesterday;
 
 	public OrderSalesSumDetail(Long storeId, Integer todaySalesSum, Integer yesterdaySalesSum,
-		Integer previousDaySales) {
+		Integer cumulativeSalesBeforeYesterday) {
 		this.storeId = storeId;
 		this.todaySalesSum = todaySalesSum;
 		this.yesterdaySalesSum = yesterdaySalesSum;
-		this.previousDaySales = previousDaySales;
+		this.cumulativeSalesBeforeYesterday = cumulativeSalesBeforeYesterday;
 	}
 }
