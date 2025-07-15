@@ -19,7 +19,5 @@ public class ApiResult<T> {
 		return response;
 	}
 
-	public ApiError getError() {
-		return error;
-	}
+	// public ApiError getError() { return success ? null : error; }
 }
