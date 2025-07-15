@@ -28,9 +28,9 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 		this.queryFactory = queryFactory;
 	}
 
-	QUserOrder u = QUserOrder.userOrder;
-	QStore s = QStore.store;
-	QDepartment d = QDepartment.department;
+	private static final QUserOrder u = QUserOrder.userOrder;
+	private static final QStore s = QStore.store;
+	private static final QDepartment d = QDepartment.department;
 
 	@Override
 	public OrderSalesSumDetail findSalesSumByStoreId(Long storeId) {
@@ -222,13 +222,14 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 			.where(s.storeId.eq(userStoreId))
 			.fetchOne();
 
+		if (zeroTuple == null)
+			return null;
+
 		Long departmentId = zeroTuple.get(u.store.departmentId);
 		// departmentId에 대한 학과 이름을 한번에 가져오기
 		Map<Long, String> departmentNameMap = getDepartmentNames(Set.of(departmentId));
 		String departmentName = departmentNameMap.getOrDefault(departmentId, "Unknown");
 
-		if (zeroTuple == null)
-			return null;
 		return new TopSalesStoresDetail(
 			zeroTuple.get(s.storeId),
 			zeroTuple.get(s.name),
