@@ -6,10 +6,10 @@ import lombok.Getter;
 @Getter
 @Builder
 public class OrderSalesSumDetail {
-	Long storeId;
-	Integer todaySalesSum;
-	Integer yesterdaySalesSum;
-	Integer previousDaySales;
+	private Long storeId;
+	private Integer todaySalesSum;
+	private Integer yesterdaySalesSum;
+	private Integer previousDaySales;
 
 	public OrderSalesSumDetail(Long storeId, Integer todaySalesSum, Integer yesterdaySalesSum,
 		Integer previousDaySales) {
