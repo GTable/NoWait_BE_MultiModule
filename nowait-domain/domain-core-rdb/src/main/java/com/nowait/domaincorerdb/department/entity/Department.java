@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class Department {
 
 	@Id
-	private Long Id;
+	private Long id;
 
 	@Column(nullable = false)
 	private String name;
