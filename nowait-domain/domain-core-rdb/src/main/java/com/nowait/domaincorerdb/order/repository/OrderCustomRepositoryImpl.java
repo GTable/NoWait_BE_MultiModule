@@ -196,14 +196,15 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 			.findFirst()
 			.orElse(null);
 
+		if (myStore == null)
+			return null;
+
 		Long departmentId = myStore.get(u.store.departmentId);
 
 		// departmentId에 대한 학과 이름을 한번에 가져오기
 		Map<Long, String> departmentNameMap = getDepartmentNames(Set.of(departmentId));
 		String departmentName = departmentNameMap.getOrDefault(departmentId, "Unknown");
 
-		if (myStore == null)
-			return null;
 		Long storeId = myStore.get(u.store.storeId);
 		return new TopSalesStoresDetail(
 			storeId,
