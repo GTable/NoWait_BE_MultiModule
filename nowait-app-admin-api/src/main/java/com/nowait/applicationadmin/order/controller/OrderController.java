@@ -82,6 +82,8 @@ public class OrderController {
 	}
 
 	@GetMapping("/top-sales")
+	@Operation(summary = "오늘의 매출 상위 5개 주점 조회", description = "오늘의 매출이 가장 높은 상위 5개 주점을 조회합니다.")
+	@ApiResponse(responseCode = "200", description = "오늘의 매출 상위 5개 주점 조회 성공")
 	public ResponseEntity<?> getTopSalesStores(@AuthenticationPrincipal MemberDetails memberDetails) {
 		List<TopSalesStoresDetail> topSalesStoresDetail =  orderService.getTop5StoresBySalesToday(memberDetails);
 
