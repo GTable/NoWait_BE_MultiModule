@@ -18,6 +18,7 @@ import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.applicationadmin.order.service.OrderService;
 import com.nowait.common.api.ApiUtils;
 import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
+import com.nowait.domaincorerdb.order.dto.TopSalesStoresDetail;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -76,6 +77,19 @@ public class OrderController {
 			.body(
 				ApiUtils.success(
 					sales
+				)
+			);
+	}
+
+	@GetMapping("/top-sales")
+	public ResponseEntity<?> getTopSalesStores(@AuthenticationPrincipal MemberDetails memberDetails) {
+		List<TopSalesStoresDetail> topSalesStoresDetail =  orderService.getTop5StoresBySalesToday(memberDetails);
+
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					topSalesStoresDetail
 				)
 			);
 	}
