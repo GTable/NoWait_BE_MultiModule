@@ -29,7 +29,7 @@ public class StoreImageController {
 
 	private final StoreImageService storeImageService;
 
-	@PostMapping("/store-images/{storeId}")
+	@PostMapping("/banner-images/{storeId}")
 	@Operation(
 		summary = "주점 이미지 업로드",
 		description = "주점에 이미지를 업로드합니다. 최대 10개의 이미지 파일을 업로드할 수 있습니다."
@@ -40,21 +40,32 @@ public class StoreImageController {
 		@RequestParam("files") List<MultipartFile> files
 	) {
 		// TODO 관련 정책 확정되면 메서드로 분리 예정
-		// 파일 개수 제한 검증
-		if (files.isEmpty() || files.size() > 10) {
-			throw new IllegalArgumentException("파일은 1개 이상 10개 이하로 업로드해 주세요.");
-		}
 		// 파일 크기 검증
-		for (MultipartFile file : files) {
-			if (file.isEmpty()) {
-				throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
-			}
-			if (file.getSize() > 10 * 1024 * 1024) { // 10MB 제한
-				throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
-			}
-		}
+		validateFiles(files);
 
 		List<StoreImageUploadResponse> response = storeImageService.saveAll(storeId, files);
+		return ResponseEntity
+			.status(HttpStatus.CREATED)
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
+	}
+
+	@PostMapping("/profile-images/{storeId}")
+	@Operation(
+		summary = "주점 프로필 이미지 업로드",
+		description = "주점의 프로필 이미지를 업로드합니다. 단일 이미지 파일을 업로드할 수 있습니다."
+	)
+	@ApiResponse(responseCode = "201", description = "주점 프로필 이미지 업로드 성공")
+	public ResponseEntity<?> uploadStoreProfileImage(
+		@PathVariable Long storeId,
+		@RequestParam("file") MultipartFile file
+	) {
+		validateFileSize(file);
+
+		StoreImageUploadResponse response = storeImageService.saveProfileImage(storeId, file);
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
 			.body(
@@ -80,5 +91,23 @@ public class StoreImageController {
 						"Store image deleted successfully."
 					)
 			);
+	}
+
+	private void validateFileSize(MultipartFile file) {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
+		}
+		if (file.getSize() > 10 * 1024 * 1024) { // 10MB 제한
+			throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
+		}
+	}
+
+	private void validateFiles(List<MultipartFile> files) {
+		if (files.isEmpty() || files.size() > 10) {
+			throw new IllegalArgumentException("파일은 1개 이상 10개 이하로 업로드해 주세요.");
+		}
+		for (MultipartFile file : files) {
+			validateFileSize(file);
+		}
 	}
 }

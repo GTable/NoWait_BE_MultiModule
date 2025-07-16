@@ -27,7 +27,6 @@ public class StoreController {
 
 	private final StoreService storeService;
 
-
 	@GetMapping("/all-stores")
 	@Operation(summary = "모든 주점 조회", description = "모든 주점을 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "모든 주점 조회 성공")
@@ -50,7 +49,11 @@ public class StoreController {
 	public ResponseEntity<?> getAllStores(Pageable pageable) {
 		return ResponseEntity
 			.ok()
-			.body(ApiUtils.success(storeService.getAllStoresByPage(pageable)));
+			.body(
+				ApiUtils.success(
+					storeService.getAllStoresByPage(pageable)
+				)
+			);
 	}
 
 	@GetMapping("/{storeId}")

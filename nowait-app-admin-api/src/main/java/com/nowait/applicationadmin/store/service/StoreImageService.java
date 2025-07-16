@@ -2,6 +2,7 @@ package com.nowait.applicationadmin.store.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nowait.applicationadmin.store.dto.StoreImageUploadResponse;
 
+import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.entity.StoreImage;
 import com.nowait.domaincorerdb.store.exception.StoreImageEmptyException;
@@ -31,7 +33,8 @@ public class StoreImageService {
 
 	@Transactional
 	public List<StoreImageUploadResponse> saveAll(Long storeId, List<MultipartFile> files) {
-		if (files == null || files.isEmpty()) throw new StoreImageEmptyException();
+		if (files == null || files.isEmpty())
+			throw new StoreImageEmptyException();
 
 		String type = "store";
 		Store store = storeRepository.findById(storeId)
@@ -60,6 +63,7 @@ public class StoreImageService {
 				.store(store)
 				.imageUrl(uploadResult.url())
 				.fileKey(uploadResult.key())
+				.imageType(ImageType.BANNER)
 				.build();
 
 			storeImageRepository.save(storeImage);
@@ -67,6 +71,36 @@ public class StoreImageService {
 		}
 
 		return imageUploadResponses;
+	}
+
+	@Transactional
+	public StoreImageUploadResponse saveProfileImage(Long storeId, MultipartFile file) {
+
+		String type = "store";
+		Store store = storeRepository.findById(storeId)
+			.orElseThrow(StoreNotFoundException::new);
+
+		Optional<StoreImage> existingProfileImage = storeImageRepository.findByStoreStoreIdAndImageType(store.getStoreId(),
+			ImageType.PROFILE);
+
+		existingProfileImage.ifPresent(profile -> {
+			s3Service.delete(profile.getFileKey());
+			storeImageRepository.delete(profile);
+		});
+
+		S3Service.S3UploadResult uploadResult = s3Service.upload(type, storeId, file).join();
+
+		// StoreImage 엔티티 생성 및 저장
+		StoreImage storeImage = StoreImage.builder()
+			.store(store)
+			.imageUrl(uploadResult.url())
+			.fileKey(uploadResult.key())
+			.imageType(ImageType.PROFILE)
+			.build();
+
+		storeImageRepository.save(storeImage);
+
+		return StoreImageUploadResponse.fromEntity(storeImage);
 	}
 
 	@Transactional
