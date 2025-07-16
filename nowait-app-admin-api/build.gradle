@@ -21,6 +21,7 @@ dependencies {
     implementation project(':nowait-infra')
     implementation project(':nowait-domain:domain-admin-rdb')
     implementation project(':nowait-domain:domain-core-rdb')
+    implementation project(':nowait-domain:domain-redis')
 
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -35,6 +36,9 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     // SWAGGER
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
