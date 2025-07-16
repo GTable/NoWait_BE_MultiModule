@@ -12,7 +12,10 @@ public enum ImageType {
 	PROFILE("프로필 사진"),
 
 	@Schema(description = "주점 배너 사진")
-	BANNER("배너 사진");
+	BANNER("배너 사진"),
+
+	@Schema(description = "주점 배너 사진")
+	NONE("이미지 없음");
 
 	private final String description;
 }
