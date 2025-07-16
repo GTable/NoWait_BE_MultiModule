@@ -50,7 +50,6 @@ public enum ErrorMessage {
 	STORE_WAITING_DISABLED("해당 주점은 대기 비활성화된 주점입니다.", "store006"),
 
 	// storePayment
-
 	STORE_PAYMENT_PARAMETER_EMPTY("주점 결제 생성 시 파라미터 정보가 없습니다.", "storePayment001"),
 	STORE_PAYMENT_NOT_FOUND("해당 주점 결제 정보를 찾을 수 없습니다.", "storePayment002"),
 	STORE_PAYMENT_VIEW_UNAUTHORIZED("주점 결제 정보 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment003"),
@@ -59,6 +58,8 @@ public enum ErrorMessage {
 	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment005"),
 	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment006"),
 
+	// Statistics
+	STATISTIC_VIEW_UNAUTHORIZED("통계 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "statistics001"),
 
 	// image
 	IMAGE_FILE_EMPTY("이미지 파일을 업로드 해주세요", "image001"),
