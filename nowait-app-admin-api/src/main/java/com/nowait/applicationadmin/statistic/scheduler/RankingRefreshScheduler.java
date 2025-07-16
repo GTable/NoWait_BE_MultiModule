@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,7 +34,7 @@ public class RankingRefreshScheduler {
 		refresh();
 	}
 
-	@Scheduled(cron = "0 */5 * * * *") // 매 5분마다 실행
+	@Scheduled(cron = "* */5 * * * *") // 매 5분마다 실행
 	public void refresh() {
 		log.info("RankingRefreshScheduler.refresh() called at {}", LocalDateTime.now());
 
@@ -71,12 +72,21 @@ public class RankingRefreshScheduler {
 
 	private void rotateKeys(String currentKey, String previousKey, String nextKey) {
 		try {
-			if (redis.hasKey(currentKey)) {
-				redis.rename(currentKey, previousKey);
-			}
-			if (redis.hasKey(nextKey)) {
-				redis.rename(nextKey, currentKey);
-			}
+			redis.execute((RedisCallback<Object>)connection -> {
+				// 현재 스냅샷 키를 이전 스냅샷 키로 이동하고, 다음 스냅샷 키를 현재 스냅샷 키로 이동
+				if (redis.hasKey(previousKey)) {
+					redis.delete(previousKey);
+				}
+				// 현재 스냅샷 키를 다음 스냅샷 키로 이동
+				if (redis.hasKey(currentKey)) {
+					redis.rename(currentKey, previousKey);
+				}
+				// 다음 스냅샷 키가 존재하면 현재 스냅샷 키로 이동
+				if (redis.hasKey(nextKey)) {
+					redis.rename(nextKey, currentKey);
+				}
+				return null;
+			});
 			log.info("Keys rotated: current -> {}, previous -> {}, next -> {}", currentKey, previousKey, nextKey);
 		} catch (Exception e) {
 			log.error("Redis 키 교체 중 오류 발생", e);
