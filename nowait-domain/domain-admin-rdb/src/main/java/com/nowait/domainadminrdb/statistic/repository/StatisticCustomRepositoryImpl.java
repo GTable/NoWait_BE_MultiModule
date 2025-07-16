@@ -1,6 +1,7 @@
-package com.nowait.domaincorerdb.order.repository;
+package com.nowait.domainadminrdb.statistic.repository;
 
 import static com.nowait.domaincorerdb.order.entity.OrderStatus.*;
+import static com.nowait.domaincorerdb.store.entity.QStore.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,24 +13,29 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Repository;
+
+import com.nowait.domainadminrdb.statistic.dto.OrderSalesSumDetail;
+import com.nowait.domainadminrdb.statistic.dto.StoreInfo;
+import com.nowait.domainadminrdb.statistic.dto.StoreSales;
+import com.nowait.domainadminrdb.statistic.dto.TopSalesStoresDetail;
 import com.nowait.domaincorerdb.department.entity.QDepartment;
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
-import com.nowait.domaincorerdb.order.dto.TopSalesStoresDetail;
 import com.nowait.domaincorerdb.order.entity.QUserOrder;
 import com.nowait.domaincorerdb.store.entity.QStore;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
-public class OrderCustomRepositoryImpl implements OrderCustomRepository {
+@Repository
+public class StatisticCustomRepositoryImpl implements StatisticCustomRepository {
 
 	private final JPAQueryFactory queryFactory;
 
-	public OrderCustomRepositoryImpl(JPAQueryFactory queryFactory) {
+	public StatisticCustomRepositoryImpl(JPAQueryFactory queryFactory) {
 		this.queryFactory = queryFactory;
 	}
 
 	private static final QUserOrder u = QUserOrder.userOrder;
-	private static final QStore s = QStore.store;
+	private static final QStore s = store;
 	private static final QDepartment d = QDepartment.department;
 
 	@Override
@@ -254,5 +260,53 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
 			departmentNameMap.put(t.get(d.id), t.get(d.name));
 		}
 		return departmentNameMap;
+	}
+
+
+
+	// redis 사용하는 부분
+	@Override
+	public List<StoreSales> findTotalSales() {
+		// 오늘 자정
+		LocalDate today = LocalDate.now();
+		LocalDateTime todayStart = today.atStartOfDay();
+		LocalDateTime todayEnd = today.plusDays(1).atStartOfDay(); // 내일 00:00:00
+
+		List<Tuple> rows = queryFactory
+			.select(u.store.storeId, u.totalPrice.sum().coalesce(0))
+			.from(u)
+			.where(
+				u.createdAt.goe(todayStart),
+				u.createdAt.lt(todayEnd),
+				u.status.eq(COOKED)
+			)
+			.groupBy(u.store.storeId)
+			.fetch();
+
+		return rows.stream()
+			.map(t -> new StoreSales(
+				t.get(u.store.storeId),
+				t.get(u.totalPrice.sum().coalesce(0))
+			))
+			.collect(Collectors.toList());
+	}
+
+	@Override
+	public List<StoreInfo> findStoreInfoByIds(List<Long> storeIds) {
+		List<Tuple> tuples = queryFactory
+			.select(s.storeId, s.name, store.departmentId, d.name)
+			.from(store)
+			.join(d).on(store.departmentId.eq(d.id))
+			.where(store.storeId.in(storeIds))
+			.fetch();
+
+		return tuples.stream()
+			.map(t -> new StoreInfo(
+				t.get(store.storeId),
+				t.get(store.name),
+				t.get(store.departmentId),
+				t.get(d.name)
+			))
+			.collect(Collectors.toList());
 	}
 }

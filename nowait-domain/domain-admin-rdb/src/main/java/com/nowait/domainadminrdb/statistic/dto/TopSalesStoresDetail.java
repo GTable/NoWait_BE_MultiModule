@@ -1,4 +1,4 @@
-package com.nowait.domaincorerdb.order.dto;
+package com.nowait.domainadminrdb.statistic.dto;
 
 import lombok.Builder;
 import lombok.Getter;
