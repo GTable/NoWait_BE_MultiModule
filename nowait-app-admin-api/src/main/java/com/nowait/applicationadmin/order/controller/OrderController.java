@@ -17,8 +17,6 @@ import com.nowait.applicationadmin.order.dto.OrderStatusUpdateRequestDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.applicationadmin.order.service.OrderService;
 import com.nowait.common.api.ApiUtils;
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
-import com.nowait.domaincorerdb.order.dto.TopSalesStoresDetail;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,35 +62,5 @@ public class OrderController {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(ApiUtils.success(response));
-	}
-
-	@GetMapping("/sales")
-	@Operation(summary = "오늘의 매출 조회", description = "오늘의 매출을 조회합니다.")
-	@ApiResponse(responseCode = "200", description = "오늘의 매출 조회 성공")
-	public ResponseEntity<?> getTodaySales(@AuthenticationPrincipal MemberDetails memberDetails) {
-		OrderSalesSumDetail sales = orderService.getSaleSumByStoreId(memberDetails);
-
-		return ResponseEntity
-			.status(HttpStatus.OK)
-			.body(
-				ApiUtils.success(
-					sales
-				)
-			);
-	}
-
-	@GetMapping("/top-sales")
-	@Operation(summary = "오늘의 매출 상위 5개 주점 조회", description = "오늘의 매출이 가장 높은 상위 5개 주점을 조회합니다.")
-	@ApiResponse(responseCode = "200", description = "오늘의 매출 상위 5개 주점 조회 성공")
-	public ResponseEntity<?> getTopSalesStores(@AuthenticationPrincipal MemberDetails memberDetails) {
-		List<TopSalesStoresDetail> topSalesStoresDetail =  orderService.getTop5StoresBySalesToday(memberDetails);
-
-		return ResponseEntity
-			.status(HttpStatus.OK)
-			.body(
-				ApiUtils.success(
-					topSalesStoresDetail
-				)
-			);
 	}
 }
