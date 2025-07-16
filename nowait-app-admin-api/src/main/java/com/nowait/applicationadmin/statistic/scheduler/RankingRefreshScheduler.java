@@ -37,6 +37,15 @@ public class RankingRefreshScheduler {
 	public void refresh() {
 		log.info("RankingRefreshScheduler.refresh() called at {}", LocalDateTime.now());
 
+		try {
+			doRefresh();
+		} catch (Exception e) {
+			log.error("랭킹 데이터 갱신 중 오류 발생", e);
+			// 예외 발생 시 알림 또는 로깅 처리
+		}
+	}
+
+	private void doRefresh() {
 		String nextKey = RedisKeyUtils.buildNextKey();
 		String currentKey = RedisKeyUtils.buildCurrentKey();
 		String previousKey = RedisKeyUtils.buildPreviousKey();
@@ -47,16 +56,31 @@ public class RankingRefreshScheduler {
 		// 2) DB에서 매출 합계 가져와 ZADD
 		List<StoreSales> salesList = statisticCustomRepository.findTotalSales();
 
+		if (salesList.isEmpty()) {
+			log.warn("매출 데이터가 없습니다. 다음 스냅샷 키를 초기화합니다.");
+			return;
+		}
+
 		salesList.forEach(s ->
 			rankingQueryRepository.addToRanking(nextKey, s.getStoreId(), s.getTotalSales())
 		);
 
 		// 3) 현재 스냅샷 키를 이전 스냅샷 키로 이동
-		if (redis.hasKey(currentKey)) {
-			redis.rename(currentKey, previousKey);
-		}
-		if (redis.hasKey(nextKey)) {
-			redis.rename(nextKey, currentKey);
+		rotateKeys(currentKey, previousKey, nextKey);
+	}
+
+	private void rotateKeys(String currentKey, String previousKey, String nextKey) {
+		try {
+			if (redis.hasKey(currentKey)) {
+				redis.rename(currentKey, previousKey);
+			}
+			if (redis.hasKey(nextKey)) {
+				redis.rename(nextKey, currentKey);
+			}
+			log.info("Keys rotated: current -> {}, previous -> {}, next -> {}", currentKey, previousKey, nextKey);
+		} catch (Exception e) {
+			log.error("Redis 키 교체 중 오류 발생", e);
+			throw new RuntimeException("랭킹 데이터 갱신 실패", e);
 		}
 	}
 }

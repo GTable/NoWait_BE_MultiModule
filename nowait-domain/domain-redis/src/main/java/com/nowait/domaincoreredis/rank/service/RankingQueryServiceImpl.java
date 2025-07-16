@@ -1,6 +1,7 @@
 package com.nowait.domaincoreredis.rank.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -19,26 +20,33 @@ public class RankingQueryServiceImpl implements RankingQueryService {
 	@Override
 	public List<RankingEntry> getRankings(Long userStoreId, int topN) {
 		// 1) 현재 스냅샷에서 상위 topN 주점 조회
-		List<RankingEntry> entries = rankingQueryRepository.findTopStores(RedisKeyUtils.buildCurrentKey(), topN);
+		List<RankingEntry> entries = getCurrentRankings(userStoreId, topN);
+		// 2) 이전 스냅샷에서 등락 정보 조회
+		return calculateRankingDeltas(entries);
+	}
 
-		// 2) 사용자 주점이 topN 밖이면 4위까지 + 사용자 주점
-		entries = rankingQueryRepository.findTopStoresWithUser(RedisKeyUtils.buildCurrentKey(), userStoreId, topN, entries);
+	private List<RankingEntry> getCurrentRankings(Long userStoreId, int topN) {
+		String currentKey = RedisKeyUtils.buildCurrentKey();
+		List<RankingEntry> entries = rankingQueryRepository.findTopStores(currentKey, topN);
+		return rankingQueryRepository.findTopStoresWithUser(currentKey, userStoreId, topN, entries);
+	}
 
-		// 3) 이전 스냅샷에서 등락 정보 조회
-		for (int i = 0; i < entries.size(); i++) {
-			var entry = entries.get(i);
-			Long prevZero = rankingQueryRepository.findPrevRank(RedisKeyUtils.buildPreviousKey(), entry.getStoreId());
-			long prevRank = (prevZero == null ? entry.getCurrentRank() : prevZero + 1);
-			int delta = (int)(prevRank - entry.getCurrentRank());
+	private List<RankingEntry> calculateRankingDeltas(List<RankingEntry> entries) {
+		String previousKey = RedisKeyUtils.buildPreviousKey();
+		return entries.stream()
+			.map(entry -> calculateDeltaForEntry(entry, previousKey))
+			.collect(Collectors.toList());
+	}
 
-			entries.set(i, new RankingEntry(
-				entry.getStoreId(),
-				entry.getTotalSales(),
-				entry.getCurrentRank(),
-				delta
-			));
-		}
-
-		return entries;
+	private RankingEntry calculateDeltaForEntry(RankingEntry entry, String previousKey) {
+		Long prevZero = rankingQueryRepository.findPrevRank(previousKey, entry.getStoreId());
+		long prevRank = (prevZero == null ? entry.getCurrentRank() : prevZero + 1);
+		int delta = (int)(prevRank - entry.getCurrentRank());
+		return new RankingEntry(
+			entry.getStoreId(),
+			entry.getTotalSales(),
+			entry.getCurrentRank(),
+			delta
+		);
 	}
 }
