@@ -50,7 +50,8 @@ public class RankingQueryRepositoryImpl implements RankingQueryRepository {
 
 		if (userZero != null && userZero >= topN) {
 			List<RankingEntry> top4 = entries.subList(0, topN - 1);
-			Integer userSales = redisTemplate.opsForZSet().score(key, userStoreId.toString()).intValue();
+			Double userScore = redisTemplate.opsForZSet().score(key, userStoreId.toString());
+			Integer userSales = userScore != null ? userScore.intValue() : 0;
 
 			top4.add(new RankingEntry(
 				userStoreId,
