@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 import com.nowait.domainadminrdb.statistic.dto.StoreSales;
 import com.nowait.domainadminrdb.statistic.repository.StatisticCustomRepository;
@@ -18,8 +19,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Configuration
-@EnableScheduling
+
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class RankingRefreshScheduler {
