@@ -40,19 +40,8 @@ public class StoreImageController {
 		@RequestParam("files") List<MultipartFile> files
 	) {
 		// TODO 관련 정책 확정되면 메서드로 분리 예정
-		// 파일 개수 제한 검증
-		if (files.isEmpty() || files.size() > 10) {
-			throw new IllegalArgumentException("파일은 1개 이상 10개 이하로 업로드해 주세요.");
-		}
 		// 파일 크기 검증
-		for (MultipartFile file : files) {
-			if (file.isEmpty()) {
-				throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
-			}
-			if (file.getSize() > 10 * 1024 * 1024) { // 10MB 제한
-				throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
-			}
-		}
+		validateFiles(files);
 
 		List<StoreImageUploadResponse> response = storeImageService.saveAll(storeId, files);
 		return ResponseEntity
@@ -74,12 +63,7 @@ public class StoreImageController {
 		@PathVariable Long storeId,
 		@RequestParam("file") MultipartFile file
 	) {
-		if (file == null || file.isEmpty()) {
-			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
-		}
-		if (file.getSize() > 10 * 1024 * 1024) { // 10MB 제한
-			throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
-		}
+		validateFileSize(file);
 
 		StoreImageUploadResponse response = storeImageService.saveProfileImage(storeId, file);
 		return ResponseEntity
@@ -107,5 +91,23 @@ public class StoreImageController {
 						"Store image deleted successfully."
 					)
 			);
+	}
+
+	private void validateFileSize(MultipartFile file) {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
+		}
+		if (file.getSize() > 10 * 1024 * 1024) { // 10MB 제한
+			throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
+		}
+	}
+
+	private void validateFiles(List<MultipartFile> files) {
+		if (files.isEmpty() || files.size() > 10) {
+			throw new IllegalArgumentException("파일은 1개 이상 10개 이하로 업로드해 주세요.");
+		}
+		for (MultipartFile file : files) {
+			validateFileSize(file);
+		}
 	}
 }
