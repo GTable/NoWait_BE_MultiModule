@@ -29,7 +29,7 @@ public class StoreImageController {
 
 	private final StoreImageService storeImageService;
 
-	@PostMapping("/store-images/{storeId}")
+	@PostMapping("/banner-images/{storeId}")
 	@Operation(
 		summary = "주점 이미지 업로드",
 		description = "주점에 이미지를 업로드합니다. 최대 10개의 이미지 파일을 업로드할 수 있습니다."
@@ -55,6 +55,33 @@ public class StoreImageController {
 		}
 
 		List<StoreImageUploadResponse> response = storeImageService.saveAll(storeId, files);
+		return ResponseEntity
+			.status(HttpStatus.CREATED)
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
+	}
+
+	@PostMapping("/profile-images/{storeId}")
+	@Operation(
+		summary = "주점 프로필 이미지 업로드",
+		description = "주점의 프로필 이미지를 업로드합니다. 단일 이미지 파일을 업로드할 수 있습니다."
+	)
+	@ApiResponse(responseCode = "201", description = "주점 프로필 이미지 업로드 성공")
+	public ResponseEntity<?> uploadStoreProfileImage(
+		@PathVariable Long storeId,
+		@RequestParam("file") MultipartFile file
+	) {
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
+		}
+		if (file.getSize() > 10 * 1024 * 1024) { // 10MB 제한
+			throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
+		}
+
+		StoreImageUploadResponse response = storeImageService.saveProfileImage(storeId, file);
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
 			.body(
