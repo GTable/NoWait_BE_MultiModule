@@ -9,8 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.common.enums.Role;
-import com.nowait.domaincorerdb.order.dto.OrderSalesSumDetail;
-import com.nowait.domaincorerdb.order.dto.TopSalesStoresDetail;
+import com.nowait.domainadminrdb.statistic.dto.OrderSalesSumDetail;
+import com.nowait.domainadminrdb.statistic.dto.TopSalesStoresDetail;
+import com.nowait.domainadminrdb.statistic.repository.StatisticCustomRepository;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderService {
 	private final OrderRepository orderRepository;
+	private final StatisticCustomRepository statisticCustomRepository;
 	private final UserRepository userRepository;
 	private final StoreRepository storeRepository;
 
@@ -67,7 +69,7 @@ public class OrderService {
 			throw new OrderViewUnauthorizedException();
 		}
 
-		return orderRepository.findSalesSumByStoreId(storeId);
+		return statisticCustomRepository.findSalesSumByStoreId(storeId);
 	}
 
 	@Transactional(readOnly = true)
@@ -79,6 +81,6 @@ public class OrderService {
 			throw new OrderViewUnauthorizedException();
 		}
 
-		return orderRepository.getTop4PlusMine(storeId);
+		return statisticCustomRepository.getTop4PlusMine(storeId);
 	}
 }
