@@ -3,6 +3,7 @@ package com.nowait.applicationadmin.store.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.Store;
 
 import lombok.AllArgsConstructor;
@@ -18,12 +19,23 @@ public class StoreReadDto {
 	private String name;
 	private String location;
 	private String description;
-	private List<StoreImageUploadResponse> images;
+	private StoreImageUploadResponse profileImage;
+	private List<StoreImageUploadResponse> bannerImages;
 	private Boolean isActive;
 	private Boolean deleted;
 	private LocalDateTime createdAt;
 
-	public static StoreReadDto fromEntity(Store store, List<StoreImageUploadResponse> images) {
+	public static StoreReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages) {
+
+		StoreImageUploadResponse profile = allImages.stream()
+			.filter(image -> image.getImageType() == ImageType.PROFILE)
+			.findFirst()
+			.orElse(null);
+
+		List<StoreImageUploadResponse> banners = allImages.stream()
+			.filter(image -> image.getImageType() == ImageType.BANNER)
+			.toList();
+
 		return StoreReadDto.builder()
 			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
@@ -33,7 +45,8 @@ public class StoreReadDto {
 			.description(store.getDescription())
 			.isActive(store.getIsActive())
 			.deleted(store.getDeleted())
-			.images(images)
+			.profileImage(profile)
+			.bannerImages(banners)
 			.build();
 	}
 }
