@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.order.service.OrderService;
+import com.nowait.applicationadmin.statistic.dto.PopularMenuDto;
 import com.nowait.applicationadmin.statistic.dto.StoreRankingDto;
+import com.nowait.applicationadmin.statistic.service.PopularMenuRedisService;
 import com.nowait.applicationadmin.statistic.service.RankingService;
 import com.nowait.common.api.ApiUtils;
 import com.nowait.domainadminrdb.statistic.dto.OrderSalesSumDetail;
@@ -29,6 +31,7 @@ public class StatisticsController {
 
 	private final OrderService orderService;
 	private final RankingService rankingService;
+	private final PopularMenuRedisService popularMenuRedisService;
 
 	@GetMapping("/sales")
 	@Operation(summary = "오늘의 매출 조회", description = "오늘의 매출을 조회합니다.")
@@ -55,6 +58,22 @@ public class StatisticsController {
 			.body(
 				ApiUtils.success(
 					response
+				)
+			);
+	}
+
+	@GetMapping("/popular-menu")
+	@Operation(summary = "인기 메뉴 조회", description = "인기 메뉴를 조회합니다.")
+	@ApiResponse(responseCode = "200", description = "인기 메뉴 조회 성공")
+	public ResponseEntity<?> getPopularMenu(@AuthenticationPrincipal MemberDetails memberDetails) {
+
+		List<PopularMenuDto> popularMenu = popularMenuRedisService.getTodayTop5(memberDetails);
+
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					popularMenu
 				)
 			);
 	}

@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public class StoreRankingDto {
-	private final Long   storeId;
+	private final Long storeId;
 	private final String storeName;
-	private final Long   departmentId;
+	private final Long departmentId;
 	private final String departmentName;
 	private final Integer totalSales;
-	private final Long    currentRank;
+	private final Long currentRank;
 	private final Integer delta;
 	private final String profileUrl;
 

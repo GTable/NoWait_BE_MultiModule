@@ -1,3 +1,5 @@
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 plugins {
     id 'java-library'
 }
@@ -22,12 +24,13 @@ repositories {
 
 dependencies {
     implementation project(':nowait-common')
-    implementation project(':nowait-event')
+    implementation project(':nowait-domain:domain-core-rdb')
 
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'jakarta.persistence:jakarta.persistence-api:3.1.0'
 
-    // SWAGGER
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     compileOnly 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
