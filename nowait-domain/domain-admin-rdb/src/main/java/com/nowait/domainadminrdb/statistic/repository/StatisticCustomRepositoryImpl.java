@@ -21,11 +21,16 @@ import com.nowait.domainadminrdb.statistic.dto.StoreSales;
 import com.nowait.domainadminrdb.statistic.dto.TopSalesStoresDetail;
 import com.nowait.domaincorerdb.department.entity.QDepartment;
 import com.nowait.domaincorerdb.order.entity.QUserOrder;
+import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.QStore;
+import com.nowait.domaincorerdb.store.entity.QStoreImage;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Repository
+@Slf4j
 public class StatisticCustomRepositoryImpl implements StatisticCustomRepository {
 
 	private final JPAQueryFactory queryFactory;
@@ -35,8 +40,9 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 	}
 
 	private static final QUserOrder u = QUserOrder.userOrder;
-	private static final QStore s = store;
+	private static final QStore s = QStore.store;
 	private static final QDepartment d = QDepartment.department;
+	private static final QStoreImage si = QStoreImage.storeImage;
 
 	@Override
 	public OrderSalesSumDetail findSalesSumByStoreId(Long storeId) {
@@ -262,8 +268,6 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 		return departmentNameMap;
 	}
 
-
-
 	// redis 사용하는 부분
 	@Override
 	public List<StoreSales> findTotalSales() {
@@ -294,18 +298,20 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 	@Override
 	public List<StoreInfo> findStoreInfoByIds(List<Long> storeIds) {
 		List<Tuple> tuples = queryFactory
-			.select(s.storeId, s.name, store.departmentId, d.name)
-			.from(store)
-			.join(d).on(store.departmentId.eq(d.id))
-			.where(store.storeId.in(storeIds))
+			.select(s.storeId, s.name, s.departmentId, d.name, si.imageUrl.coalesce(""))
+			.from(s)
+			.join(d).on(s.departmentId.eq(d.id))
+			.leftJoin(si).on(s.storeId.eq(si.store.storeId).and(si.imageType.eq(ImageType.PROFILE)))
+			.where(s.storeId.in(storeIds))
 			.fetch();
 
 		return tuples.stream()
 			.map(t -> new StoreInfo(
-				t.get(store.storeId),
-				t.get(store.name),
-				t.get(store.departmentId),
-				t.get(d.name)
+				t.get(s.storeId),
+				t.get(s.name),
+				t.get(s.departmentId),
+				t.get(d.name),
+				t.get(si.imageUrl.coalesce(""))
 			))
 			.collect(Collectors.toList());
 	}

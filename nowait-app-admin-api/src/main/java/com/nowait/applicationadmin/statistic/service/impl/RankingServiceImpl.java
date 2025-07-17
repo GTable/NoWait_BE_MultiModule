@@ -45,7 +45,7 @@ public class RankingServiceImpl implements RankingService {
 		// 1) Redis에서 Top4+내주점: storeId, totalSales, currentRank, delta
 		List<RankingEntry> entries = rankingQuery.getRankings(userStoreId, 5);
 
-		// 2) DB에서 store 정보 가져오기
+		// 2) redis 에서 storeId 정보 가져오기
 		List<Long> storeIds = entries.stream()
 			.map(RankingEntry::getStoreId)
 			.toList();
@@ -67,7 +67,8 @@ public class RankingServiceImpl implements RankingService {
 					info.getDepartmentName(),
 					e.getTotalSales(),
 					e.getCurrentRank(),
-					e.getDelta()
+					e.getDelta(),
+					info.getProfileUrl()
 				);
 			})
 			.collect(Collectors.toList());
