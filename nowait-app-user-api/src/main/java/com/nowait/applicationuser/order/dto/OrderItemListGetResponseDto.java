@@ -2,6 +2,7 @@ package com.nowait.applicationuser.order.dto;
 
 
 import com.nowait.domaincorerdb.order.entity.OrderItem;
+import com.nowait.domaincorerdb.order.entity.OrderStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,13 +18,15 @@ public class OrderItemListGetResponseDto {
 	private String menuName;
 	private Integer quantity;
 	private Integer price;
+	private OrderStatus status;
 
-	public static OrderItemListGetResponseDto fromEntity(OrderItem orderItem) {
+	public static OrderItemListGetResponseDto fromEntity(OrderItem orderItem,OrderStatus status) {
 		return OrderItemListGetResponseDto.builder()
 			.orderId(orderItem.getUserOrder().getId())
 			.menuName(orderItem.getMenu().getName())
 			.quantity(orderItem.getQuantity())
 			.price(orderItem.getMenu().getPrice())
+			.status(status)
 			.build();
 
 	}
