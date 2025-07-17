@@ -47,7 +47,7 @@ public class MenuCounterServiceImpl implements MenuCounterService {
 
 		} catch (Exception e) {
 			log.error("Failed to increment menu counter for menuId: {}, storeId: {}", + menuId, storeId, e);
-			throw new MenuCounterUpdateException("메뉴 카운터 업데이트 실패");
+			throw new MenuCounterUpdateException();
 		}
 	}
 
