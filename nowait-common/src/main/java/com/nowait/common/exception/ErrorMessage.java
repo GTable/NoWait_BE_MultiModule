@@ -60,6 +60,7 @@ public enum ErrorMessage {
 
 	// Statistics
 	STATISTIC_VIEW_UNAUTHORIZED("통계 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "statistics001"),
+	MENU_COUNTER_UPDATE("메뉴 카운터 업데이트 실패", "statistics002"),
 
 	// image
 	IMAGE_FILE_EMPTY("이미지 파일을 업로드 해주세요", "image001"),
