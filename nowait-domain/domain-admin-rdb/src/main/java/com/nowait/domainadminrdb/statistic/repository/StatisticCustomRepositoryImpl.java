@@ -25,7 +25,6 @@ import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.QStore;
 import com.nowait.domaincorerdb.store.entity.QStoreImage;
 import com.querydsl.core.Tuple;
-import com.querydsl.core.types.Expression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -299,7 +298,7 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 	@Override
 	public List<StoreInfo> findStoreInfoByIds(List<Long> storeIds) {
 		List<Tuple> tuples = queryFactory
-			.select(s.storeId, s.name, store.departmentId, d.name, si.imageUrl.coalesce(""))
+			.select(s.storeId, s.name, s.departmentId, d.name, si.imageUrl.coalesce(""))
 			.from(s)
 			.join(d).on(s.departmentId.eq(d.id))
 			.leftJoin(si).on(s.storeId.eq(si.store.storeId).and(si.imageType.eq(ImageType.PROFILE)))
