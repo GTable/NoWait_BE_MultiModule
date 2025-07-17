@@ -12,11 +12,14 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domaincoreredis.rank.exception.MenuCounterUpdateException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MenuCounterServiceImpl implements MenuCounterService {
 
 	private final String KEY_FMT = RedisKeyUtils.buildMenuKey();
@@ -26,19 +29,25 @@ public class MenuCounterServiceImpl implements MenuCounterService {
 	@Override
 	public void incrementMenuCounter(Long menuId, Long storeId, int qty) {
 
-		String date = LocalDate.now().format(DTF);
-		String key = String.format(KEY_FMT, storeId, date);
+		try	{
+			String date = LocalDate.now().format(DTF);
+			String key = String.format(KEY_FMT, storeId, date);
 
-		redis.opsForZSet().incrementScore(key, menuId.toString(), qty);
+			redis.opsForZSet().incrementScore(key, menuId.toString(), qty);
 
-		Long expirationTime = redis.getExpire(key);
-		if (expirationTime == null || expirationTime < 0) {
-			long secondsUntilMidnight = Duration.between(
-				LocalDateTime.now(),
-				LocalDate.now().plusDays(1).atStartOfDay()
-			).getSeconds();
+			Long expirationTime = redis.getExpire(key);
+			if (expirationTime == null || expirationTime < 0) {
+				long secondsUntilMidnight = Duration.between(
+					LocalDateTime.now(),
+					LocalDate.now().plusDays(1).atStartOfDay()
+				).getSeconds();
 
-			redis.expire(key, secondsUntilMidnight, TimeUnit.SECONDS);
+				redis.expire(key, Duration.ofSeconds(secondsUntilMidnight));
+			}
+
+		} catch (Exception e) {
+			log.error("Failed to increment menu counter for menuId: {}, storeId: {}", + menuId, storeId, e);
+			throw new MenuCounterUpdateException("메뉴 카운터 업데이트 실패");
 		}
 	}
 
