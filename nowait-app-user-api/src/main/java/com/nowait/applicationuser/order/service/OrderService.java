@@ -99,8 +99,8 @@ public class OrderService {
 
 		// 2. OrderItem으로 변환
 		return userOrders.stream()
-			.flatMap(order -> order.getOrderItems().stream())
-			.map(OrderItemListGetResponseDto::fromEntity)
+			.flatMap(order -> order.getOrderItems().stream()
+				.map(orderItem -> OrderItemListGetResponseDto.fromEntity(orderItem, order.getStatus())))
 			.toList();
 	}
 
