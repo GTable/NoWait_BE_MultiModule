@@ -3,6 +3,7 @@ package com.nowait.applicationadmin.order.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.nowaitevent.order.event.CookingCompleteEvent;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +36,7 @@ public class OrderService {
 	private final StatisticCustomRepository statisticCustomRepository;
 	private final UserRepository userRepository;
 	private final StoreRepository storeRepository;
+	private final ApplicationEventPublisher publisher;
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> findAllOrders(Long storeId, MemberDetails memberDetails) {
@@ -57,6 +60,23 @@ public class OrderService {
 			throw new OrderUpdateUnauthorizedException();
 		}
 		userOrder.updateStatus(newStatus);
+
+		if (OrderStatus.COOKED.equals(newStatus)) {
+			List<CookingCompleteEvent.Item> items = userOrder.getOrderItems().stream()
+				.map(item -> new CookingCompleteEvent.Item(
+					item.getMenu().getId(),
+					item.getQuantity()
+				))
+				.toList();
+
+			publisher.publishEvent(
+				new CookingCompleteEvent(
+					userOrder.getStore().getStoreId(),
+					items
+				)
+			);
+		}
+
 		return OrderStatusUpdateResponseDto.fromEntity(userOrder);
 	}
 
