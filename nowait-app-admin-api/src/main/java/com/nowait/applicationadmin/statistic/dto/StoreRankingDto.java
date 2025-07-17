@@ -11,9 +11,10 @@ public class StoreRankingDto {
 	private final Integer totalSales;
 	private final Long    currentRank;
 	private final Integer delta;
+	private final String profileUrl;
 
 	public StoreRankingDto(Long storeId, String storeName, Long departmentId, String departmentName, Integer totalSales,
-		Long currentRank, Integer delta) {
+		Long currentRank, Integer delta, String profileUrl) {
 		this.storeId = storeId;
 		this.storeName = storeName;
 		this.departmentId = departmentId;
@@ -21,5 +22,6 @@ public class StoreRankingDto {
 		this.totalSales = totalSales;
 		this.currentRank = currentRank;
 		this.delta = delta;
+		this.profileUrl = profileUrl;
 	}
 }

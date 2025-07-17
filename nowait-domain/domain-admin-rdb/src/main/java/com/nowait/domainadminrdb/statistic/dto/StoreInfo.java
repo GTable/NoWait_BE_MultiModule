@@ -8,11 +8,13 @@ public class StoreInfo {
 	private final String storeName;
 	private final Long departmentId;
 	private final String departmentName;
+	private final String profileUrl;
 
-	public StoreInfo(Long storeId, String storeName, Long departmentId, String departmentName) {
+	public StoreInfo(Long storeId, String storeName, Long departmentId, String departmentName, String profileUrl) {
 		this.storeId = storeId;
 		this.storeName = storeName;
 		this.departmentId = departmentId;
 		this.departmentName = departmentName;
+		this.profileUrl = profileUrl;
 	}
 }
