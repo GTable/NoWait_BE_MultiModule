@@ -90,20 +90,24 @@ public class OrderService {
 		orderItemRepository.saveAll(orderItems);
 
 		// 5. 응답 반환
-		return OrderCreateResponseDto.fromEntity(savedOrder);
+		return OrderCreateResponseDto.fromEntity(savedOrder,orderItems);
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderItemGroupByStatusResponseDto> getOrderItemsGroupByStatus(Long storeId, Long tableId, String sessionId) {
+	public List<OrderItemGroupByStatusResponseDto> getOrderItemsGroupByStatus(
+		Long storeId, Long tableId, String sessionId) {
 		List<UserOrder> userOrders = orderRepository.findByStore_StoreIdAndTableIdAndSessionId(storeId, tableId, sessionId);
 
-		// flatMap으로 OrderItem + status로 펼친 뒤, status별로 groupBy
 		Map<OrderStatus, List<OrderItemListGetResponseDto>> grouped = userOrders.stream()
-			.flatMap(order -> order.getOrderItems().stream()
-				.map(orderItem -> OrderItemListGetResponseDto.fromEntity(orderItem, order.getStatus())))
-			.collect(Collectors.groupingBy(OrderItemListGetResponseDto::getStatus));
+			.flatMap(order -> order.getOrderItems().stream())
+			.collect(Collectors.groupingBy(
+				orderItem -> orderItem.getUserOrder().getStatus(),
+				Collectors.mapping(
+					OrderItemListGetResponseDto::fromEntity,
+					Collectors.toList()
+				)
+			));
 
-		// status별로 responseDto로 변환
 		return grouped.entrySet().stream()
 			.map(entry -> OrderItemGroupByStatusResponseDto.builder()
 				.status(entry.getKey())
@@ -111,6 +115,9 @@ public class OrderService {
 				.build())
 			.toList();
 	}
+
+
+
 
 
 
