@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 public class WaitingRedisRepository {
 	private final StringRedisTemplate redisTemplate;
 
-
 	// 중복 등록 방지: 이미 있으면 추가X
 	public boolean addToWaitingQueue(Long storeId, String userId, Integer partySize, long timestamp) {
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
@@ -33,16 +32,7 @@ public class WaitingRedisRepository {
 
 	public Long getRank(Long storeId, String userId) {
 		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
-		Set<String> members = redisTemplate.opsForZSet().range(key, 0, -1);
-		if (members == null) return null;
-		int idx = 0;
-		for (String m : members) {
-			if (m.startsWith(userId + ":")) {
-				return (long) idx;
-			}
-			idx++;
-		}
-		return null;
+		return redisTemplate.opsForZSet().rank(key, userId);
 	}
 
 	public Long getWaitingCount(Long storeId) {
@@ -50,9 +40,12 @@ public class WaitingRedisRepository {
 		return redisTemplate.opsForZSet().zCard(key);
 	}
 
-	public void removeWaiting(Long storeId, String userId) {
+	public boolean removeWaiting(Long storeId, String userId) {
 		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		redisTemplate.opsForZSet().remove(key, userId);
+		redisTemplate.opsForHash().delete(partyKey, userId);
+		return true;
 	}
 }
 
