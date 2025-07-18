@@ -27,7 +27,7 @@ public class WaitingRedisRepository {
 	public Integer getPartySize(Long storeId, String userId) {
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		Object value = redisTemplate.opsForHash().get(partyKey, userId);
-		return value == null ? null : Integer.valueOf(value.toString());
+		return Integer.valueOf(value.toString());
 	}
 
 	public Long getRank(Long storeId, String userId) {

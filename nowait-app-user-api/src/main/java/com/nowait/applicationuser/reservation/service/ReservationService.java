@@ -11,6 +11,7 @@ import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
 import com.nowait.applicationuser.reservation.repository.WaitingRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
+import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
@@ -42,6 +43,12 @@ public class ReservationService {
 			.orElseThrow(StoreNotFoundException::new);
 		if (Boolean.FALSE.equals(store.getIsActive()))
 			throw new StoreWaitingDisabledException();
+		// User Role 검증 추가
+		User user = userRepository.findById(customOAuth2User.getUserId())
+			.orElseThrow(UserNotFoundException::new);
+		if (user.getRole() == Role.MANAGER) {
+			throw new IllegalArgumentException("Manager cannot register waiting");
+		}
 
 		String userId = customOAuth2User.getUserId().toString();
 		long timestamp = System.currentTimeMillis();
@@ -59,9 +66,10 @@ public class ReservationService {
 			.build();
 	}
 
-	public WaitingResponseDto myWaitingInfo(Long storeId, String userId) {
+	public WaitingResponseDto myWaitingInfo(Long storeId, CustomOAuth2User customOAuth2User) {
+		String userId = customOAuth2User.getUserId().toString();
 		// 입력 검증 추가
-		if (storeId == null || userId == null || userId.trim().isEmpty()) {
+		if (storeId == null || userId.trim().isEmpty()) {
 		throw new IllegalArgumentException("Invalid storeId or userId");
 		}
 		Long rank = waitingRedisRepository.getRank(storeId, userId);
@@ -72,8 +80,9 @@ public class ReservationService {
 			.build();
 	}
 
-	public boolean cancelWaiting(Long storeId, String userId) {
-		if (storeId == null || userId == null || userId.trim().isEmpty()) {
+	public boolean cancelWaiting(Long storeId, CustomOAuth2User customOAuth2User) {
+		String userId = customOAuth2User.getUserId().toString();
+		if (storeId == null || userId.trim().isEmpty()) {
 			throw new IllegalArgumentException("Invalid storeId or userId");
 		}
 		// 대기열에서 제거 및 결과 반환
