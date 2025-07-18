@@ -18,9 +18,8 @@ public class OrderItemListGetResponseDto {
 	private String menuName;
 	private Integer quantity;
 	private Integer price;
-	private OrderStatus status;
 
-	public static OrderItemListGetResponseDto fromEntity(OrderItem orderItem,OrderStatus status) {
+	public static OrderItemListGetResponseDto fromEntity(OrderItem orderItem) {
 		return OrderItemListGetResponseDto.builder()
 			.orderId(orderItem.getUserOrder().getId())
 			.menuName(orderItem.getMenu().getName())

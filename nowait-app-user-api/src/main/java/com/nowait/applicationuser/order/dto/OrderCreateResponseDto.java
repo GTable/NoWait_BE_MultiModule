@@ -2,6 +2,7 @@ package com.nowait.applicationuser.order.dto;
 
 import java.util.List;
 
+import com.nowait.domaincorerdb.order.entity.OrderItem;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 
@@ -22,14 +23,14 @@ public class OrderCreateResponseDto {
 	private OrderStatus status;
 	private Integer totalPrice;
 
-	public static OrderCreateResponseDto fromEntity(UserOrder order) {
+	public static OrderCreateResponseDto fromEntity(UserOrder order,List<OrderItem> items) {
 		return OrderCreateResponseDto.builder()
 			.orderId(order.getId())
 			.storeId(order.getStore().getStoreId())
 			.storeName(order.getStore().getName())
 			.sessionId(order.getSessionId())
 			.depositorName(order.getDepositorName())
-			.orderItems(List.of())
+			.orderItems(items.stream().map(OrderItemResponseDTO::fromEntity).toList())
 			.status(order.getStatus())
 			.totalPrice(order.getTotalPrice())
 			.build();
