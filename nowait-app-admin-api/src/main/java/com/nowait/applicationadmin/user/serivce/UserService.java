@@ -43,7 +43,6 @@ public class UserService {
 	@Transactional
 	public ManagerSignupResponseDto signup(ManagerSignupRequestDto managerSignupRequestDto) {
 		validateEmailDuplicated(managerSignupRequestDto);
-		validateNickNameDuplicated(managerSignupRequestDto.getNickname());
 		User user = managerSignupRequestDto.toEntity();
 		user.encodePassword(passwordEncoder);
 
@@ -52,12 +51,6 @@ public class UserService {
 	}
 	private void validateEmailDuplicated(ManagerSignupRequestDto managerSignupRequestDto) {
 		userRepository.findByEmail(managerSignupRequestDto.getEmail()).ifPresent(member -> {
-				throw new IllegalArgumentException();
-			}
-		);
-	}
-	private void validateNickNameDuplicated(String nickName) {
-		userRepository.findByNickname(nickName).ifPresent(member -> {
 				throw new IllegalArgumentException();
 			}
 		);

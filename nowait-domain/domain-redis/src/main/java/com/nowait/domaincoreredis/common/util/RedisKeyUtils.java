@@ -13,6 +13,10 @@ public class RedisKeyUtils {
 	private static final String KEY_FMT = "popular:%d:%s";
 	private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMdd");
 
+	// Waiting keys
+	private static final String WAITING_KEY_PREFIX = "waiting:";
+	private static final String WAITING_PARTYSIZE_KEY_PREFIX = "waiting:party:";
+
 
 	private RedisKeyUtils() {
 		throw new UnsupportedOperationException("유틸리티 서비스는 인스턴스화 할 수 없습니다.");
@@ -33,4 +37,7 @@ public class RedisKeyUtils {
 	public static String buildMenuKey() { return KEY_FMT; }
 
 	public static DateTimeFormatter buildMenuDateKey() { return DTF; }
+
+	public static String buildWaitingKeyPrefix() { return WAITING_KEY_PREFIX; }
+	public static String buildWaitingPartySizeKeyPrefix() { return WAITING_PARTYSIZE_KEY_PREFIX; }
 }

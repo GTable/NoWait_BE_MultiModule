@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
+import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.repository.WaitingRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
@@ -30,6 +32,57 @@ public class ReservationService {
 	private final ReservationRepository reservationRepository;
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
+	private final WaitingRedisRepository waitingRedisRepository;
+
+	public WaitingResponseDto registerWaiting(
+		Long storeId,CustomOAuth2User customOAuth2User,ReservationCreateRequestDto requestDto
+	) {
+		// Store 유효성 검증 추가
+		Store store = storeRepository.findById(storeId)
+			.orElseThrow(StoreNotFoundException::new);
+		if (Boolean.FALSE.equals(store.getIsActive()))
+			throw new StoreWaitingDisabledException();
+
+		String userId = customOAuth2User.getUserId().toString();
+		long timestamp = System.currentTimeMillis();
+
+		// 예약 신청 유저 큐(queue)에 추가
+		boolean added = waitingRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(), timestamp);
+		if (!added) {
+			throw new IllegalArgumentException("Failed to add to waiting queue");
+		}
+		// 신규 등록/기존 등록 관계없이 내 순번, 전체 인원 반환
+		Long rank = waitingRedisRepository.getRank(storeId, userId);
+		return WaitingResponseDto.builder()
+			.rank(rank == null ? -1 : rank.intValue() + 1)
+			.partySize(requestDto.getPartySize() == null ? 0 : requestDto.getPartySize())
+			.build();
+	}
+
+	public WaitingResponseDto myWaitingInfo(Long storeId, String userId) {
+		// 입력 검증 추가
+		if (storeId == null || userId == null || userId.trim().isEmpty()) {
+		throw new IllegalArgumentException("Invalid storeId or userId");
+		}
+		Long rank = waitingRedisRepository.getRank(storeId, userId);
+		Integer partySize = waitingRedisRepository.getPartySize(storeId, userId);
+		return WaitingResponseDto.builder()
+			.rank(rank == null ? -1 : rank.intValue() + 1)
+			.partySize(partySize == null ? 0 : partySize)
+			.build();
+	}
+
+	public boolean cancelWaiting(Long storeId, String userId) {
+		if (storeId == null || userId == null || userId.trim().isEmpty()) {
+			throw new IllegalArgumentException("Invalid storeId or userId");
+		}
+		// 대기열에서 제거 및 결과 반환
+		boolean removed = waitingRedisRepository.removeWaiting(storeId, userId);
+		if (!removed) {
+			throw new IllegalArgumentException("Waiting not found");
+		}
+		return removed;
+	}
 
 	@Transactional
 	public ReservationCreateResponseDto create(Long storeId, CustomOAuth2User customOAuth2User,

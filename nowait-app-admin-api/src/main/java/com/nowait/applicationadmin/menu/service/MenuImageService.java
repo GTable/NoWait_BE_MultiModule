@@ -23,7 +23,6 @@ public class MenuImageService {
 	private final MenuRepository menuRepository;
 	private final MenuImageRepository menuImageRepository;
 	private final S3Service s3Service;
-
 	@Transactional
 	public MenuImageUploadResponse save(Long menuId, MultipartFile file) {
 		if (file == null || file.isEmpty()) {

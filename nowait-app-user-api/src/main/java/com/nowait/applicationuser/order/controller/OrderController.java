@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationuser.order.dto.OrderCreateRequestDto;
 import com.nowait.applicationuser.order.dto.OrderCreateResponseDto;
+import com.nowait.applicationuser.order.dto.OrderItemGroupByStatusResponseDto;
 import com.nowait.applicationuser.order.dto.OrderItemListGetResponseDto;
 import com.nowait.applicationuser.order.service.OrderService;
 import com.nowait.common.api.ApiUtils;
@@ -58,7 +59,7 @@ public class OrderController {
 		HttpSession session
 	) {
 		String sessionId = session.getId();
-		List<OrderItemListGetResponseDto> orderItems = orderService.getOrderItems(storeId, tableId, sessionId);
+		List<OrderItemGroupByStatusResponseDto> orderItems = orderService.getOrderItemsGroupByStatus(storeId, tableId, sessionId);
 		return ResponseEntity.
 			status(HttpStatus.OK)
 			.body(
