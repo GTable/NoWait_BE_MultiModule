@@ -22,6 +22,7 @@ dependencies {
     implementation project(':nowait-infra')           // 사용자 관련 도메인
     implementation project(':nowait-domain:domain-user-rdb')
     implementation project(':nowait-domain:domain-core-rdb')
+    implementation project(':nowait-domain:domain-redis')
 
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -47,6 +48,10 @@ dependencies {
 
     // SWAGGER
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
 
     // 기타 필요 라이브러리 (예: Lombok)
     compileOnly 'org.projectlombok:lombok'

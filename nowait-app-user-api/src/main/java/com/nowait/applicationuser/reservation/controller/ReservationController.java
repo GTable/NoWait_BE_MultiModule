@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
+import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
 import com.nowait.applicationuser.reservation.service.ReservationService;
 import com.nowait.common.api.ApiUtils;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
@@ -36,6 +37,24 @@ public class ReservationController {
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
 		@RequestBody ReservationCreateRequestDto requestDto) {
 		ReservationCreateResponseDto response = reservationService.create(storeId, customOAuth2User, requestDto);
+		return ResponseEntity
+			.status(HttpStatus.CREATED)
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
+	}
+
+	@PostMapping("/create/redis/{storeId}")
+	@Operation(summary = "예약 생성", description = "특정 주점에 대한 예약하기 생성")
+	@ApiResponse(responseCode = "201", description = "예약 생성")
+	public ResponseEntity<?> createQueue(
+		@PathVariable Long storeId,
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
+		@RequestBody ReservationCreateRequestDto requestDto
+	) {
+		WaitingResponseDto response = reservationService.registerWaiting(storeId,customOAuth2User,requestDto);
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
 			.body(

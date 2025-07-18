@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
+import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.repository.WaitingRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
@@ -30,6 +32,38 @@ public class ReservationService {
 	private final ReservationRepository reservationRepository;
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
+	private final WaitingRedisRepository waitingRedisRepository;
+
+	public WaitingResponseDto registerWaiting(
+		Long storeId,CustomOAuth2User customOAuth2User,ReservationCreateRequestDto requestDto
+	) {
+		String userId = customOAuth2User.getUserId().toString();
+		long timestamp = System.currentTimeMillis();
+
+		// 중복 등록 방지
+		if (waitingRedisRepository.getRank(storeId, userId) != null)
+			throw new IllegalArgumentException("Already registered");
+
+		// 예약 신청 유저 큐(queue)에 추가
+		boolean added = waitingRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(), timestamp);
+		// 신규 등록/기존 등록 관계없이 내 순번, 전체 인원 반환
+		Long rank = waitingRedisRepository.getRank(storeId, userId);
+		return WaitingResponseDto.builder()
+			.rank(rank == null ? -1 : rank.intValue() + 1)
+			.partySize(requestDto.getPartySize() == null ? 0 : requestDto.getPartySize())
+			.build();
+	}
+
+	public WaitingResponseDto myWaitingInfo(Long storeId, String userId) {
+		Long rank = waitingRedisRepository.getRank(storeId, userId);
+		return WaitingResponseDto.builder()
+			.rank(rank == null ? -1 : rank.intValue() + 1)
+			.build();
+	}
+
+	public void cancelWaiting(Long storeId, String userId) {
+		waitingRedisRepository.removeWaiting(storeId, userId);
+	}
 
 	@Transactional
 	public ReservationCreateResponseDto create(Long storeId, CustomOAuth2User customOAuth2User,

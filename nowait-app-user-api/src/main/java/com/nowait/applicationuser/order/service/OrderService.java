@@ -14,6 +14,7 @@ import org.springframework.util.DigestUtils;
 import com.nowait.applicationuser.order.dto.CartItemDto;
 import com.nowait.applicationuser.order.dto.OrderCreateRequestDto;
 import com.nowait.applicationuser.order.dto.OrderCreateResponseDto;
+import com.nowait.applicationuser.order.dto.OrderItemGroupByStatusResponseDto;
 import com.nowait.applicationuser.order.dto.OrderItemListGetResponseDto;
 import com.nowait.domaincorerdb.menu.entity.Menu;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
@@ -93,16 +94,24 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderItemListGetResponseDto> getOrderItems(Long storeId, Long tableId, String sessionId) {
-		// 1. UserOrder 목록 조회 (storeId, tableId, sessionId 기준)
+	public List<OrderItemGroupByStatusResponseDto> getOrderItemsGroupByStatus(Long storeId, Long tableId, String sessionId) {
 		List<UserOrder> userOrders = orderRepository.findByStore_StoreIdAndTableIdAndSessionId(storeId, tableId, sessionId);
 
-		// 2. OrderItem으로 변환
-		return userOrders.stream()
+		// flatMap으로 OrderItem + status로 펼친 뒤, status별로 groupBy
+		Map<OrderStatus, List<OrderItemListGetResponseDto>> grouped = userOrders.stream()
 			.flatMap(order -> order.getOrderItems().stream()
 				.map(orderItem -> OrderItemListGetResponseDto.fromEntity(orderItem, order.getStatus())))
+			.collect(Collectors.groupingBy(OrderItemListGetResponseDto::getStatus));
+
+		// status별로 responseDto로 변환
+		return grouped.entrySet().stream()
+			.map(entry -> OrderItemGroupByStatusResponseDto.builder()
+				.status(entry.getKey())
+				.items(entry.getValue())
+				.build())
 			.toList();
 	}
+
 
 
 	private static void parameterValidation(Long storeId, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {

@@ -26,7 +26,6 @@ public class OrderItemListGetResponseDto {
 			.menuName(orderItem.getMenu().getName())
 			.quantity(orderItem.getQuantity())
 			.price(orderItem.getMenu().getPrice())
-			.status(status)
 			.build();
 
 	}
