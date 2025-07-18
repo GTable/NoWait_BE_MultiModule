@@ -3,6 +3,8 @@ package com.nowait.applicationuser.reservation.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -60,6 +62,39 @@ public class ReservationController {
 			.body(
 				ApiUtils.success(
 					response
+				)
+			);
+	}
+
+	@GetMapping("/get/queue/redis/{storeId}")
+	@Operation(summary = "본인 대기열 조회", description = "특정 주점에 대한 본인 대기열 조회")
+	@ApiResponse(responseCode = "200", description = "본인 대기열 조회")
+	public ResponseEntity<?> getQueue(
+		@PathVariable Long storeId,
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User
+	) {
+		WaitingResponseDto response = reservationService.myWaitingInfo(storeId,customOAuth2User);
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
+	}
+
+	@DeleteMapping("/delete/queue/redis/{storeId}")
+	@Operation(summary = "내 대기열 취소", description = "특정 주점에 대한 대기열 취소")
+	@ApiResponse(responseCode = "200", description = "대기열 취소")
+	public ResponseEntity<?> deleteQueue(
+		@PathVariable Long storeId,
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User
+	) {
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					reservationService.cancelWaiting(storeId,customOAuth2User)
 				)
 			);
 	}
