@@ -28,7 +28,7 @@ public class WaitingRedisRepository {
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		redisTemplate.opsForHash().put(statusKey, userId, status);
 		// WAITING -> CALLING 으로 변경 시 TTL 12h에서 10m로 변경
-		if (status.equals("CALLING")) {
+		if ("CALLING".equals(status)) {
 			redisTemplate.expire(queueKey, Duration.ofMinutes(10));
 			redisTemplate.expire(partyKey, Duration.ofMinutes(10));
 			redisTemplate.expire(statusKey, Duration.ofMinutes(10));

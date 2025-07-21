@@ -27,6 +27,7 @@ public class WaitingUserRedisRepository {
 		Boolean added = redisTemplate.opsForZSet().addIfAbsent(queueKey, userId, timestamp);
 		if (Boolean.TRUE.equals(added)) {
 			redisTemplate.opsForHash().put(partyKey, userId, partySize.toString());
+			redisTemplate.opsForHash().put(statusKey, userId, "WAITING");
 			// TTL 12시간(43200초) 설정
 			redisTemplate.expire(queueKey, Duration.ofHours(12));
 			redisTemplate.expire(partyKey, Duration.ofHours(12));
@@ -49,8 +50,10 @@ public class WaitingUserRedisRepository {
 	public boolean removeWaiting(Long storeId, String userId) {
 		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
+		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		redisTemplate.opsForZSet().remove(key, userId);
 		redisTemplate.opsForHash().delete(partyKey, userId);
+		redisTemplate.opsForHash().delete(statusKey, userId);
 		return true;
 	}
 	// 예약 등록 시간

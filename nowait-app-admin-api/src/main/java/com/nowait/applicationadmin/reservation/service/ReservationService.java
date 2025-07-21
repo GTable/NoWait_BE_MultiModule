@@ -77,14 +77,12 @@ public class ReservationService {
 			reservation.updateStatus(requestDto.getStatus());
 		return CallGetResponseDto.fromEntity(reservation);
 	}
-	@Transactional
 	public CallingWaitingResponseDto callWaiting(Long storeId, String userId, MemberDetails memberDetails) {
 		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new ReservationViewUnauthorizedException();
 		}
 		String status = waitingRedisRepository.getWaitingStatus(storeId, userId);
-		System.out.println(status);
 		if (!"WAITING".equals(status)) {
 			throw new IllegalStateException("이미 호출되었거나 없는 예약입니다.");
 		}
