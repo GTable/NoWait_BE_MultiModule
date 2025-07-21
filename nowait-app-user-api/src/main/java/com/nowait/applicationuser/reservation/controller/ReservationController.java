@@ -1,5 +1,7 @@
 package com.nowait.applicationuser.reservation.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
@@ -67,7 +70,7 @@ public class ReservationController {
 	}
 
 	@GetMapping("/get/queue/redis/{storeId}")
-	@Operation(summary = "본인 대기열 조회", description = "특정 주점에 대한 본인 대기열 조회")
+	@Operation(summary = "특정 주점의 본인 대기열 조회", description = "특정 주점에 대한 본인 대기열 조회")
 	@ApiResponse(responseCode = "200", description = "본인 대기열 조회")
 	public ResponseEntity<?> getQueue(
 		@PathVariable Long storeId,
@@ -98,4 +101,13 @@ public class ReservationController {
 				)
 			);
 	}
+
+	@GetMapping("/my/waitings")
+	@Operation(summary = "내 모든 대기열 리스트 확인", description = "내가 신청한 모든 대기열 리스트 확인")
+	@ApiResponse(responseCode = "200", description = "대기열 리스트 조회")
+	public ResponseEntity<?> getAllMyWaitings(@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
+		List<MyWaitingQueueDto> response = reservationService.getAllMyWaitings(customOAuth2User);
+		return ResponseEntity.ok(ApiUtils.success(response));
+	}
+
 }

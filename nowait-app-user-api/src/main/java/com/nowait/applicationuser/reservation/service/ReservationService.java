@@ -1,17 +1,27 @@
 package com.nowait.applicationuser.reservation.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
 import com.nowait.applicationuser.reservation.repository.WaitingRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.department.entity.Department;
+import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
@@ -34,6 +44,7 @@ public class ReservationService {
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
+	private final DepartmentRepository departmentRepository;
 
 	public WaitingResponseDto registerWaiting(
 		Long storeId,CustomOAuth2User customOAuth2User,ReservationCreateRequestDto requestDto
@@ -92,6 +103,53 @@ public class ReservationService {
 		}
 		return removed;
 	}
+	//TODO 성능 개선 필요
+	public List<MyWaitingQueueDto> getAllMyWaitings(CustomOAuth2User customOAuth2User) {
+		String userId = customOAuth2User.getUserId().toString();
+		List<Long> userWaitingStoreIds = waitingRedisRepository.getUserWaitingStoreIds(userId);
+
+		List<MyWaitingQueueDto> result = new ArrayList<>();
+		if (!userWaitingStoreIds.isEmpty()) {
+			// Store, Department 배치 조회
+			List<Store> stores = storeRepository.findAllById(userWaitingStoreIds);
+			Map<Long, Store> storeMap = stores.stream()
+				.collect(Collectors.toMap(Store::getStoreId, Function.identity()));
+
+			Set<Long> departmentIds = stores.stream()
+				.map(Store::getDepartmentId)
+				.collect(Collectors.toSet());
+			Map<Long, String> departmentNameMap = departmentRepository.findAllById(departmentIds).stream()
+				.collect(Collectors.toMap(Department::getId, Department::getName));
+
+			for (Long storeId : userWaitingStoreIds) {
+				Store store = storeMap.get(storeId);
+				if (store == null) continue;
+
+				Long rank = waitingRedisRepository.getRank(storeId, userId);
+				Integer partySize = waitingRedisRepository.getPartySize(storeId, userId);
+				Long timestamp = waitingRedisRepository.getWaitingTimestamp(storeId, userId);
+
+				LocalDateTime registeredAt = timestamp != null
+					? LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of("Asia/Seoul"))
+					: null;
+
+				result.add(MyWaitingQueueDto.builder()
+					.storeId(storeId)
+					.storeName(store.getName())
+					.departmentName(departmentNameMap.get(store.getDepartmentId()))
+					.rank(rank != null ? rank.intValue() + 1 : 0)
+					.teamsAhead(rank != null ? rank.intValue() : 0)
+					.partySize(partySize != null ? partySize : 0)
+					.status("WAITING") // 필요시 redis에 상태값이 있으면 조회해서 세팅
+					.registeredAt(registeredAt)
+					.location(store.getLocation())
+					.profileImageUrl(customOAuth2User.getUser().getProfileImage())
+					.build());
+			}
+		}
+		return result;
+	}
+
 
 	@Transactional
 	public ReservationCreateResponseDto create(Long storeId, CustomOAuth2User customOAuth2User,
