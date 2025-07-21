@@ -16,6 +16,7 @@ public class RedisKeyUtils {
 	// Waiting keys
 	private static final String WAITING_KEY_PREFIX = "waiting:";
 	private static final String WAITING_PARTYSIZE_KEY_PREFIX = "waiting:party:";
+	private static final String WAITING_STATUS_KEY_PREFIX = "waiting:status:";
 
 
 	private RedisKeyUtils() {
@@ -40,4 +41,5 @@ public class RedisKeyUtils {
 
 	public static String buildWaitingKeyPrefix() { return WAITING_KEY_PREFIX; }
 	public static String buildWaitingPartySizeKeyPrefix() { return WAITING_PARTYSIZE_KEY_PREFIX; }
+	public static String buildWaitingStatusKeyPrefix() { return WAITING_STATUS_KEY_PREFIX; }
 }

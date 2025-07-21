@@ -17,7 +17,7 @@ import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
-import com.nowait.applicationuser.reservation.repository.WaitingRedisRepository;
+import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.department.entity.Department;
@@ -43,7 +43,7 @@ public class ReservationService {
 	private final ReservationRepository reservationRepository;
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
-	private final WaitingRedisRepository waitingRedisRepository;
+	private final WaitingUserRedisRepository waitingUserRedisRepository;
 	private final DepartmentRepository departmentRepository;
 
 	public WaitingResponseDto registerWaiting(
@@ -65,12 +65,12 @@ public class ReservationService {
 		long timestamp = System.currentTimeMillis();
 
 		// 예약 신청 유저 큐(queue)에 추가
-		boolean added = waitingRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(), timestamp);
+		boolean added = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(), timestamp);
 		if (!added) {
 			throw new IllegalArgumentException("Failed to add to waiting queue");
 		}
 		// 신규 등록/기존 등록 관계없이 내 순번, 전체 인원 반환
-		Long rank = waitingRedisRepository.getRank(storeId, userId);
+		Long rank = waitingUserRedisRepository.getRank(storeId, userId);
 		return WaitingResponseDto.builder()
 			.rank(rank == null ? -1 : rank.intValue() + 1)
 			.partySize(requestDto.getPartySize() == null ? 0 : requestDto.getPartySize())
@@ -83,8 +83,8 @@ public class ReservationService {
 		if (storeId == null || userId.trim().isEmpty()) {
 		throw new IllegalArgumentException("Invalid storeId or userId");
 		}
-		Long rank = waitingRedisRepository.getRank(storeId, userId);
-		Integer partySize = waitingRedisRepository.getPartySize(storeId, userId);
+		Long rank = waitingUserRedisRepository.getRank(storeId, userId);
+		Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
 		return WaitingResponseDto.builder()
 			.rank(rank == null ? -1 : rank.intValue() + 1)
 			.partySize(partySize == null ? 0 : partySize)
@@ -97,7 +97,7 @@ public class ReservationService {
 			throw new IllegalArgumentException("Invalid storeId or userId");
 		}
 		// 대기열에서 제거 및 결과 반환
-		boolean removed = waitingRedisRepository.removeWaiting(storeId, userId);
+		boolean removed = waitingUserRedisRepository.removeWaiting(storeId, userId);
 		if (!removed) {
 			throw new IllegalArgumentException("Waiting not found");
 		}
@@ -106,7 +106,7 @@ public class ReservationService {
 	//TODO 성능 개선 필요
 	public List<MyWaitingQueueDto> getAllMyWaitings(CustomOAuth2User customOAuth2User) {
 		String userId = customOAuth2User.getUserId().toString();
-		List<Long> userWaitingStoreIds = waitingRedisRepository.getUserWaitingStoreIds(userId);
+		List<Long> userWaitingStoreIds = waitingUserRedisRepository.getUserWaitingStoreIds(userId);
 
 		List<MyWaitingQueueDto> result = new ArrayList<>();
 		if (!userWaitingStoreIds.isEmpty()) {
@@ -125,9 +125,9 @@ public class ReservationService {
 				Store store = storeMap.get(storeId);
 				if (store == null) continue;
 
-				Long rank = waitingRedisRepository.getRank(storeId, userId);
-				Integer partySize = waitingRedisRepository.getPartySize(storeId, userId);
-				Long timestamp = waitingRedisRepository.getWaitingTimestamp(storeId, userId);
+				Long rank = waitingUserRedisRepository.getRank(storeId, userId);
+				Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
+				Long timestamp = waitingUserRedisRepository.getWaitingTimestamp(storeId, userId);
 
 				LocalDateTime registeredAt = timestamp != null
 					? LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of("Asia/Seoul"))
@@ -140,7 +140,7 @@ public class ReservationService {
 					.rank(rank != null ? rank.intValue() + 1 : 0)
 					.teamsAhead(rank != null ? rank.intValue() : 0)
 					.partySize(partySize != null ? partySize : 0)
-					.status("WAITING") // 필요시 redis에 상태값이 있으면 조회해서 세팅
+					.status(waitingUserRedisRepository.getWaitingStatus(storeId, userId)) // 필요시 redis에 상태값이 있으면 조회해서 세팅
 					.registeredAt(registeredAt)
 					.location(store.getLocation())
 					.profileImageUrl(customOAuth2User.getUser().getProfileImage())
