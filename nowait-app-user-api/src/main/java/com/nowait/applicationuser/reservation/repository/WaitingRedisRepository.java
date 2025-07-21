@@ -47,6 +47,13 @@ public class WaitingRedisRepository {
 		redisTemplate.opsForHash().delete(partyKey, userId);
 		return true;
 	}
+
+	public Long getWaitingTimestamp(Long storeId, String userId) {
+		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		Double score = redisTemplate.opsForZSet().score(key, userId);
+		return score == null ? null : score.longValue();
+	}
+
 }
 
 

@@ -3,8 +3,8 @@ package com.nowait.applicationuser.order.dto;
 import java.util.List;
 
 import com.nowait.domaincorerdb.order.entity.OrderItem;
-import com.nowait.domaincorerdb.order.entity.UserOrder;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
+import com.nowait.domaincorerdb.order.entity.UserOrder;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
