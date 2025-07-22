@@ -125,18 +125,22 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreReadDto getStoreByStoreId(Long storeId) {
+	public StorePageReadDto getStoreByStoreId(Long storeId) {
 		if (storeId == null) throw new StoreParamEmptyException();
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
+
+		String departmentName = departmentRepository.findById(store.getDepartmentId())
+			.map(Department::getName)
+			.orElse("Unknown Department");
 
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
 			.map(StoreImageUploadResponse::fromEntity)
 			.toList();
 
-		return StoreReadDto.fromEntity(store, imageDto);
+		return StorePageReadDto.fromEntity(store, imageDto, departmentName);
 	}
 
 	@Override
