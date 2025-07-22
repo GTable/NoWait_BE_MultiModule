@@ -110,6 +110,7 @@ public class OrderService {
 						.map(OrderMenuDto::fromEntity)
 						.toList()
 				)
+				.totalPrice(order.getTotalPrice())
 				.build())
 			.toList();
 	}

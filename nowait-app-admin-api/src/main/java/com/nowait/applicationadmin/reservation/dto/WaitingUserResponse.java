@@ -4,20 +4,35 @@ import java.time.LocalDateTime;
 
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+
 @Getter
 @AllArgsConstructor
 @Builder
+@Schema(description = "대기 사용자 응답 DTO")
 public class WaitingUserResponse {
-	private String id;          // userId
+
+	@Schema(description = "유저 ID", example = "1201")
+	private String id; // userId
+
+	@Schema(description = "파티 인원", example = "3")
 	private Integer partySize;
+
+	@Schema(description = "사용자 이름(닉네임)", example = "혜민이")
 	private String userName;
+
+	@Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
 	private LocalDateTime createdAt;
+
+	@Schema(description = "대기 상태", example = "CALLING")
 	private String status;
-	private Double score;       // (필요시, 대기열 정렬 등)
+
+	@Schema(description = "대기 순번/점수", example = "2.0")
+	private Double score;
 
 	public static WaitingUserResponse fromEntity(Reservation reservation) {
 		return WaitingUserResponse.builder()
