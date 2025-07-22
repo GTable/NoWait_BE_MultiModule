@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 
+import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
+import com.nowait.applicationuser.store.dto.StorePageReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadResponse;
 
@@ -13,8 +15,10 @@ public interface StoreService {
 
 	StoreReadResponse getAllStoresByPage(Pageable pageable);
 
+	StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable);
+
 	StoreReadDto getStoreByStoreId(Long storeId);
 
-	List<StoreReadDto> searchStoresByName(String name);
+	List<StorePageReadDto> searchStoresByName(String name);
 
 }
