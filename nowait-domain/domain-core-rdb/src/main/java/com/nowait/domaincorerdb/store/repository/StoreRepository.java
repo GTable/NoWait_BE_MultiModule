@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.nowait.domaincorerdb.store.entity.Store;
@@ -21,4 +22,8 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 	List<Store> findByNameContainingIgnoreCaseAndDeletedFalse(String name);
 
 	Slice<Store> findAllByDeletedFalseOrderByStoreIdAsc(Pageable pageable);
+
+	// TODO queryDSL으로 전환?
+	@Query("select s.storeId from Store s where s.isActive = true and s.deleted = false")
+	List<Long> findAllActiveStoreIds();
 }
