@@ -8,9 +8,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.reservation.dto.CallGetResponseDto;
+import com.nowait.applicationadmin.reservation.dto.CallingWaitingResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusSummaryDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateRequestDto;
 import com.nowait.applicationadmin.reservation.service.ReservationService;
@@ -59,6 +61,22 @@ public class ReservationController {
 					response
 				)
 			);
+	}
+
+	@PatchMapping("/admin/calling/redis/{storeId}")
+	@Operation(summary = "예약팀 호출", description = "특정 예약에 대한 호출 진행(호출하는 순간 10분 타임어택)")
+	@ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  WAITING -> CALLING")
+	public ResponseEntity<?> callWaiting(@PathVariable Long storeId,
+		@RequestParam String userId,
+		@AuthenticationPrincipal MemberDetails memberDetails) {
+		CallingWaitingResponseDto response = reservationService.callWaiting(storeId, userId, memberDetails);
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					response
+				)
+	);
 	}
 
 
