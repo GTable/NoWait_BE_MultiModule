@@ -4,17 +4,31 @@ import java.time.LocalDateTime;
 
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@Schema(description = "예약 상세 조회 응답 DTO")
 public class ReservationGetResponseDto {
+
+	@Schema(description = "예약 ID", example = "123")
 	private Long id;
+
+	@Schema(description = "매장 ID", example = "99")
 	private Long storeId;
+
+	@Schema(description = "사용자 이름(닉네임)", example = "혜민이")
 	private String userName;
+
+	@Schema(description = "예약 요청 시각", example = "2025-07-22T14:45:09.492253")
 	private LocalDateTime requestedAt;
+
+	@Schema(description = "예약 상태", example = "WAITING")
 	private String status;
+
+	@Schema(description = "파티 인원", example = "2")
 	private Integer partySize;
 
 	public static ReservationGetResponseDto fromEntity(Reservation reservation) {
