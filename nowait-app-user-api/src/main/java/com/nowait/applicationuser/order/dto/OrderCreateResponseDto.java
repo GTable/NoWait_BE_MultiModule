@@ -1,5 +1,6 @@
 package com.nowait.applicationuser.order.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.nowait.domaincorerdb.order.entity.OrderItem;
@@ -22,6 +23,7 @@ public class OrderCreateResponseDto {
 	private List<OrderItemResponseDTO> orderItems;  // 주문 항목 목록
 	private OrderStatus status;
 	private Integer totalPrice;
+	private LocalDateTime createdAt;
 
 	public static OrderCreateResponseDto fromEntity(UserOrder order,List<OrderItem> items) {
 		return OrderCreateResponseDto.builder()
@@ -33,6 +35,7 @@ public class OrderCreateResponseDto {
 			.orderItems(items.stream().map(OrderItemResponseDTO::fromEntity).toList())
 			.status(order.getStatus())
 			.totalPrice(order.getTotalPrice())
+			.createdAt(order.getCreatedAt())
 			.build();
 	}
 }

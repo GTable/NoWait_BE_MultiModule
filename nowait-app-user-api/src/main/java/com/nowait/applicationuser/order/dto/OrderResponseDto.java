@@ -1,5 +1,6 @@
 package com.nowait.applicationuser.order.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
@@ -13,8 +14,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderItemGroupByStatusResponseDto {
+public class OrderResponseDto {
+	private Long orderId;
 	private OrderStatus status;
-	private List<OrderItemListGetResponseDto> items;
+	private LocalDateTime createdAt;
+	private List<OrderMenuDto> items;
 }
-
