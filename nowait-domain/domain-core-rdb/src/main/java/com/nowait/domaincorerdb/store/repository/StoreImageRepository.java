@@ -15,5 +15,7 @@ public interface StoreImageRepository extends JpaRepository<StoreImage, Long> {
 
 	List<StoreImage> findByStore(Store store);
 
+	List<StoreImage> findByStore_StoreIdIn(List<Long> storeIds);
+
 	Optional<StoreImage> findByStoreStoreIdAndImageType(Long storeId, ImageType imageType);
 }
