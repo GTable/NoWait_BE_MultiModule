@@ -31,7 +31,6 @@ public class RankingServiceImpl implements RankingService {
 	private final UserRepository userRepository;
 	private final RankingQueryService rankingQuery;
 
-
 	@Override
 	@Transactional(readOnly = true)
 	public List<StoreRankingDto> getStatisticsRankings(MemberDetails memberDetails) {
@@ -45,27 +44,32 @@ public class RankingServiceImpl implements RankingService {
 		// 1) Redis에서 Top4+내주점: storeId, totalSales, currentRank, delta
 		List<RankingEntry> entries = rankingQuery.getRankings(userStoreId, 5);
 
-		// 2) redis 에서 storeId 정보 가져오기
+		// 2) 주문 건수 조회
 		List<Long> storeIds = entries.stream()
 			.map(RankingEntry::getStoreId)
 			.toList();
 
+		Map<Long, Integer> orderCountMap = statisticCustomRepository.findOrderCountByStoreIds(storeIds);
+
+		// 3) redis 에서 storeId 정보 가져오기
 		List<StoreInfo> infos = statisticCustomRepository.findStoreInfoByIds(storeIds);
 
 		// StoreInfo를 storeId로 매핑
 		Map<Long, StoreInfo> infoMap = infos.stream()
 			.collect(Collectors.toMap(StoreInfo::getStoreId, Function.identity()));
 
-		// 3) 매핑 → 최종 DTO
+		// 4) 매핑 → 최종 DTO
 		return entries.stream()
 			.map(e -> {
 				StoreInfo info = infoMap.get(e.getStoreId());
+				Integer orderCount = orderCountMap.getOrDefault(e.getStoreId(), 0);
 				return new StoreRankingDto(
 					e.getStoreId(),
 					info.getStoreName(),
 					info.getDepartmentId(),
 					info.getDepartmentName(),
 					e.getTotalSales(),
+					orderCount,
 					e.getCurrentRank(),
 					e.getDelta(),
 					info.getProfileUrl()

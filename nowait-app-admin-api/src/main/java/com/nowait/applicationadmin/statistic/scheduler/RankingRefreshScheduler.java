@@ -35,7 +35,7 @@ public class RankingRefreshScheduler {
 		refresh();
 	}
 
-	@Scheduled(cron = "*/30 * * * * *") // 매 5분마다 실행
+	@Scheduled(cron = "0 */5 * * * *") // 매 5분마다 실행
 	public void refresh() {
 		log.info("RankingRefreshScheduler.refresh() called at {}", LocalDateTime.now());
 

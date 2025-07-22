@@ -45,25 +45,19 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 	private static final QStoreImage si = QStoreImage.storeImage;
 
 	@Override
-	public OrderSalesSumDetail findSalesSumByStoreId(Long storeId) {
-		// 1. 날짜 기준 설정 (시작은 자정, 끝은 다음 날 자정)
-		LocalDate today = LocalDate.now();
-		LocalDate yesterday = today.minusDays(1);
+	public OrderSalesSumDetail findSalesSumByStoreId(Long storeId, LocalDate date) {
+		// 1) 시작, 끝 날짜 설정
+		LocalDateTime start = date.atStartOfDay(); // 해당 날짜의 자정
+		LocalDateTime end = date.plusDays(1).atStartOfDay();
 
-		LocalDateTime todayStart = today.atStartOfDay();
-		LocalDateTime todayEnd = today.plusDays(1).atStartOfDay(); // 내일 00:00:00
-
-		LocalDateTime yesterdayStart = yesterday.atStartOfDay();
-		LocalDateTime yesterdayEnd = today.atStartOfDay();
-
-		// 2. 오늘 매출 합산
-		Integer todaySum = queryFactory
+		// 2) target 날짜 해당하는 매출 합산
+		Integer targetSum = queryFactory
 			.select(u.totalPrice.sum())
 			.from(u)
 			.where(
 				u.store.storeId.eq(storeId),
-				u.createdAt.goe(todayStart),
-				u.createdAt.lt(todayEnd),
+				u.createdAt.goe(start),
+				u.createdAt.lt(end),
 				u.status.eq(COOKED)
 			)
 			.fetchOne();
@@ -74,8 +68,8 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 			.from(u)
 			.where(
 				u.store.storeId.eq(storeId),
-				u.createdAt.goe(yesterdayStart),
-				u.createdAt.lt(yesterdayEnd),
+				u.createdAt.goe(start),
+				u.createdAt.lt(start.minusDays(1)),
 				u.status.eq(COOKED)
 			)
 			.fetchOne();
@@ -85,21 +79,21 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 			.from(u)
 			.where(
 				u.store.storeId.eq(storeId),
-				u.createdAt.lt(yesterdayEnd),
+				u.createdAt.lt(start),
 				u.status.eq(COOKED)
 			)
 			.fetchOne();
 
 		// null 방어 처리
-		if (todaySum == null)
-			todaySum = 0;
+		if (targetSum == null)
+			targetSum = 0;
 		if (yesterdaySum == null)
 			yesterdaySum = 0;
 		if (cumulativeSalesBeforeYesterday == null)
 			cumulativeSalesBeforeYesterday = 0;
 
 		// 4. 응답 객체 생성
-		return new OrderSalesSumDetail(storeId, todaySum, yesterdaySum, cumulativeSalesBeforeYesterday);
+		return new OrderSalesSumDetail(storeId, targetSum, yesterdaySum, cumulativeSalesBeforeYesterday, date);
 	}
 
 	@Override
@@ -146,6 +140,32 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 			.collect(Collectors.toList());
 
 		return result;
+	}
+
+	@Override
+	public Map<Long, Integer> findOrderCountByStoreIds(List<Long> storeIds) {
+		LocalDate today = LocalDate.now();
+		LocalDateTime start = today.atStartOfDay();
+		LocalDateTime end = today.plusDays(1).atStartOfDay();
+
+		List<Tuple> rows = queryFactory
+			.select(u.store.storeId, u.count())
+			.from(u)
+			.where(
+				u.store.storeId.in(storeIds),
+				u.createdAt.goe(start),
+				u.createdAt.lt(end),
+				u.status.eq(COOKED)
+			)
+			.groupBy(u.store.storeId)
+			.fetch();
+
+		// Tuple → Map<Long,Integer>
+		return rows.stream()
+			.collect(Collectors.toMap(
+				t -> t.get(u.store.storeId),
+				t -> t.get(u.count()).intValue()
+			));
 	}
 
 	private List<Tuple> getAllStores(LocalDateTime todayStart, LocalDateTime todayEnd) {
