@@ -1,8 +1,6 @@
 package com.nowait.applicationuser.order.dto;
 
-
 import com.nowait.domaincorerdb.order.entity.OrderItem;
-import com.nowait.domaincorerdb.order.entity.OrderStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,19 +11,18 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderItemListGetResponseDto {
-	private Long orderId;
+public class OrderMenuDto {
+	private Long menuId;
 	private String menuName;
 	private Integer quantity;
 	private Integer price;
 
-	public static OrderItemListGetResponseDto fromEntity(OrderItem orderItem) {
-		return OrderItemListGetResponseDto.builder()
-			.orderId(orderItem.getUserOrder().getId())
+	public static OrderMenuDto fromEntity(OrderItem orderItem) {
+		return OrderMenuDto.builder()
+			.menuId(orderItem.getMenu().getId())
 			.menuName(orderItem.getMenu().getName())
 			.quantity(orderItem.getQuantity())
 			.price(orderItem.getMenu().getPrice())
 			.build();
-
 	}
 }

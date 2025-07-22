@@ -14,8 +14,8 @@ import org.springframework.util.DigestUtils;
 import com.nowait.applicationuser.order.dto.CartItemDto;
 import com.nowait.applicationuser.order.dto.OrderCreateRequestDto;
 import com.nowait.applicationuser.order.dto.OrderCreateResponseDto;
-import com.nowait.applicationuser.order.dto.OrderItemGroupByStatusResponseDto;
-import com.nowait.applicationuser.order.dto.OrderItemListGetResponseDto;
+import com.nowait.applicationuser.order.dto.OrderMenuDto;
+import com.nowait.applicationuser.order.dto.OrderResponseDto;
 import com.nowait.domaincorerdb.menu.entity.Menu;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.order.entity.OrderItem;
@@ -94,27 +94,26 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderItemGroupByStatusResponseDto> getOrderItemsGroupByStatus(
+	public List<OrderResponseDto> getOrderItemsGroupByOrderId(
 		Long storeId, Long tableId, String sessionId) {
+
 		List<UserOrder> userOrders = orderRepository.findByStore_StoreIdAndTableIdAndSessionId(storeId, tableId, sessionId);
 
-		Map<OrderStatus, List<OrderItemListGetResponseDto>> grouped = userOrders.stream()
-			.flatMap(order -> order.getOrderItems().stream())
-			.collect(Collectors.groupingBy(
-				orderItem -> orderItem.getUserOrder().getStatus(),
-				Collectors.mapping(
-					OrderItemListGetResponseDto::fromEntity,
-					Collectors.toList()
+		// orderId 기준으로 바로 변환
+		return userOrders.stream()
+			.map(order -> OrderResponseDto.builder()
+				.orderId(order.getId())
+				.status(order.getStatus())
+				.createdAt(order.getCreatedAt())
+				.items(
+					order.getOrderItems().stream()
+						.map(OrderMenuDto::fromEntity)
+						.toList()
 				)
-			));
-
-		return grouped.entrySet().stream()
-			.map(entry -> OrderItemGroupByStatusResponseDto.builder()
-				.status(entry.getKey())
-				.items(entry.getValue())
 				.build())
 			.toList();
 	}
+
 
 
 
