@@ -131,7 +131,7 @@ public class ReservationService {
 			.toList();
 	}
 
-
+	// 대기 객체 호출 (WAITING -> CALLING)
 	@Transactional
 	public CallingWaitingResponseDto callWaiting(Long storeId, String userId, MemberDetails memberDetails) {
 		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
@@ -163,6 +163,7 @@ public class ReservationService {
 			.calledAt(reservation.getRequestedAt())
 			.build();
 	}
+	// 대기 객체 상태 변경
 	@Transactional
 	public String processEntryStatus(Long storeId, String userId, MemberDetails memberDetails, ReservationStatus status) {
 		// (권한 체크 필요시 여기에 추가)

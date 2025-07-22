@@ -19,4 +19,5 @@ public class OrderResponseDto {
 	private OrderStatus status;
 	private LocalDateTime createdAt;
 	private List<OrderMenuDto> items;
+	private Integer totalPrice;
 }
