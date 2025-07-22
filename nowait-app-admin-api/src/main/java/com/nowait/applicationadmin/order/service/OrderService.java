@@ -1,5 +1,6 @@
 package com.nowait.applicationadmin.order.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,7 +82,7 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public OrderSalesSumDetail getSaleSumByStoreId(MemberDetails memberDetails) {
+	public OrderSalesSumDetail getSaleSumByStoreId(MemberDetails memberDetails, LocalDate date) {
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
 
@@ -89,7 +90,7 @@ public class OrderService {
 			throw new OrderViewUnauthorizedException();
 		}
 
-		return statisticCustomRepository.findSalesSumByStoreId(storeId);
+		return statisticCustomRepository.findSalesSumByStoreId(storeId, date);
 	}
 
 	@Transactional(readOnly = true)

@@ -1,12 +1,15 @@
 package com.nowait.applicationadmin.statistic.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.order.service.OrderService;
@@ -34,10 +37,18 @@ public class StatisticsController {
 	private final PopularMenuRedisService popularMenuRedisService;
 
 	@GetMapping("/sales")
-	@Operation(summary = "오늘의 매출 조회", description = "오늘의 매출을 조회합니다.")
+	@Operation(summary = "지정일 매출 조회", description = "날짜(date) 파라미터로 매출을 조회합니다. 포맷: yyyy-MM-dd")
 	@ApiResponse(responseCode = "200", description = "오늘의 매출 조회 성공")
-	public ResponseEntity<?> getTodaySales(@AuthenticationPrincipal MemberDetails memberDetails) {
-		OrderSalesSumDetail sales = orderService.getSaleSumByStoreId(memberDetails);
+	public ResponseEntity<?> getTodaySales(
+		@AuthenticationPrincipal MemberDetails memberDetails,
+		@RequestParam(value = "date", required = false)
+		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+		LocalDate targetDate = (date != null ? date : LocalDate.now());
+		OrderSalesSumDetail sales = orderService.getSaleSumByStoreId(memberDetails, targetDate);
+
+		if (sales.isAllZero()) {
+			return ResponseEntity.ok(ApiUtils.success("해당일 매출 데이터가 없습니다."));
+		}
 
 		return ResponseEntity
 			.status(HttpStatus.OK)
