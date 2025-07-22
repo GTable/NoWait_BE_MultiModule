@@ -60,6 +60,10 @@ public class RankingRefreshScheduler {
 
 		if (salesList.isEmpty()) {
 			log.warn("매출 데이터가 없습니다. 다음 스냅샷 키를 초기화합니다.");
+			redis.delete(currentKey);
+			redis.delete(previousKey);
+			redis.delete(nextKey);
+
 			return;
 		}
 
