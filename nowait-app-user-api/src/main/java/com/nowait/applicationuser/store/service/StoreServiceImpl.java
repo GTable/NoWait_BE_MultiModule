@@ -144,13 +144,14 @@ public class StoreServiceImpl implements StoreService {
 	}
 
 	@Override
-	public List<StorePageReadDto> searchStoresByName(String name) {
-		if (name == null || name.isBlank()) {
+	public List<StorePageReadDto> searchByKeywordNative(String keyword) {
+		if (keyword == null || keyword.isBlank()) {
 			throw new StoreParamEmptyException();
 		}
 
 		// 1) 페이징된 Store 스냅샷 조회
-		List<Store> stores = storeRepository.findByNameContainingIgnoreCaseAndDeletedFalse(name);
+		// List<Store> stores = storeRepository.findByNameContainingIgnoreCaseAndDeletedFalse(keyword);
+		List<Store> stores = storeRepository.searchByKeywordNative(keyword);
 
 		// 2) 각 StoreId / Department ID 추출
 		List<Long> storeIds = stores.stream()

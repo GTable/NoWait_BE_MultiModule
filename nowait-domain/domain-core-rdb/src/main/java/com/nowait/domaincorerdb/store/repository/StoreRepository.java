@@ -8,22 +8,30 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.nowait.domaincorerdb.store.entity.Store;
 
 @Repository
-public interface StoreRepository extends JpaRepository<Store, Long> {
+public interface StoreRepository extends JpaRepository<Store, Long>, StoreCustomRepository {
 
 	List<Store> findAllByDeletedFalse();
 
 	Optional<Store> findByStoreIdAndDeletedFalse(Long storeId);
 
-	List<Store> findByNameContainingIgnoreCaseAndDeletedFalse(String name);
-
 	Slice<Store> findAllByDeletedFalseOrderByStoreIdAsc(Pageable pageable);
 
-	// TODO queryDSL으로 전환?
-	@Query("select s.storeId from Store s where s.isActive = true and s.deleted = false")
-	List<Long> findAllActiveStoreIds();
+	@Query(value = """
+        SELECT DISTINCT s.*
+          FROM stores s
+          LEFT JOIN departments d ON s.department_id = d.id
+         WHERE s.deleted = false
+           AND (
+             MATCH(s.name) AGAINST(:kw)
+          OR MATCH(d.name) AGAINST(:kw)
+           )
+        """,
+		nativeQuery = true)
+	List<Store> searchByKeywordNative(@Param("kw") String booleanKeyword);
 }
