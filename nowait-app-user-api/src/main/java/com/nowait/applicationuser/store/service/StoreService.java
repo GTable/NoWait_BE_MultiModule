@@ -19,6 +19,6 @@ public interface StoreService {
 
 	StorePageReadDto getStoreByStoreId(Long storeId);
 
-	List<StorePageReadDto> searchStoresByName(String name);
+	List<StorePageReadDto> searchByKeywordNative(String name);
 
 }

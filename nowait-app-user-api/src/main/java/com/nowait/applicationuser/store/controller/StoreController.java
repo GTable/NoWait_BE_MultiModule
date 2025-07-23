@@ -88,12 +88,12 @@ public class StoreController {
 	@GetMapping("/search")
 	@Operation(summary = "주점 이름으로 주점 검색", description = "주점 이름을 기준으로 주점을 검색합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 검색 성공")
-	public ResponseEntity<?> searchStores(@RequestParam("name") String name) {
+	public ResponseEntity<?> searchStores(@RequestParam("keyword") String keyword) {
 		return ResponseEntity
 			.ok()
 			.body(
 				ApiUtils.success(
-					storeService.searchStoresByName(name)
+					storeService.searchByKeywordNative(keyword)
 				)
 			);
 	}

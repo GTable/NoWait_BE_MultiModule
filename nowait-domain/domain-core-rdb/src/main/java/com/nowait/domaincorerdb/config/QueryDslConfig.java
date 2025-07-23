@@ -1,4 +1,4 @@
-package com.nowait.domainadminrdb.config;
+package com.nowait.domaincorerdb.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -28,7 +28,7 @@ public class ManagerSignupRequestDto {
 	private String password;
 
 	@NotBlank
-	@Pattern(regexp = "^[a-zA-Z가-힣]{2,12}$")
+	@Pattern(regexp = "^[a-zA-Z가-힣0-9]{2,12}$", message = "2~12자 사이의 영문, 한글, 숫자만 입력 가능합니다.")
 	@Schema(description = "이름(예시)", example = "김노웻")
 	private String nickname;
 
