@@ -39,7 +39,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
 
     //QueryDsl
-    // TODO Q클래스 생성시 오류 발생 해결 필요
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
