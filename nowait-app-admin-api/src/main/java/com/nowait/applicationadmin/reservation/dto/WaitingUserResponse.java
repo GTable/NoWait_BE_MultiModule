@@ -16,8 +16,11 @@ import lombok.Getter;
 @Schema(description = "대기 사용자 응답 DTO")
 public class WaitingUserResponse {
 
-	@Schema(description = "유저 ID", example = "1201")
-	private String id; // userId
+	@Schema(description = "예약 ID", example = "1201")
+	private String id; // reservationId
+
+	@Schema(description = "유저 ID", example = "16")
+	private String userId;
 
 	@Schema(description = "파티 인원", example = "3")
 	private Integer partySize;
@@ -37,6 +40,7 @@ public class WaitingUserResponse {
 	public static WaitingUserResponse fromEntity(Reservation reservation) {
 		return WaitingUserResponse.builder()
 			.id(reservation.getId().toString())
+			.userId(reservation.getUser().getId().toString())
 			.partySize(reservation.getPartySize())
 			.userName(reservation.getUser().getNickname())
 			.createdAt(reservation.getRequestedAt())
