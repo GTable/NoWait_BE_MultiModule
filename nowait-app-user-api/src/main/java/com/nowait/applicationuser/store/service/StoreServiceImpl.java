@@ -202,7 +202,7 @@ public class StoreServiceImpl implements StoreService {
 
 		List<StoreWaitingInfo> result = keys.stream()
 			.filter(key -> key.startsWith("waiting:") && !key.startsWith("waiting:party:"))
-			.filter(key -> "zset".equals(redisTemplate.type(key).code())) // 타입 확인 확실히!
+			.filter(key -> "zset".equals(redisTemplate.type(key).code()))
 			.map(key -> {
 				Long count = redisTemplate.opsForZSet().zCard(key);
 				String storeId = key.replace("waiting:", "");
@@ -211,7 +211,9 @@ public class StoreServiceImpl implements StoreService {
 					.orElse("UNKNOWN");
 				return new StoreWaitingInfo(storeId, storeName, count != null ? count : 0);
 			})
-			.sorted((a, b) -> b.getWaitingCount().compareTo(a.getWaitingCount()))
+			.sorted((a, b) -> desc ?
+			    b.getWaitingCount().compareTo(a.getWaitingCount()) :
+			    a.getWaitingCount().compareTo(b.getWaitingCount()))
 			.toList();
 
 		return result;
