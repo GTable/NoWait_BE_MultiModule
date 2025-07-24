@@ -8,6 +8,7 @@ import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
 import com.nowait.applicationuser.store.dto.StorePageReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadResponse;
+import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 
 public interface StoreService {
 
@@ -20,5 +21,7 @@ public interface StoreService {
 	StorePageReadDto getStoreByStoreId(Long storeId);
 
 	List<StorePageReadDto> searchStoresByName(String name);
+
+	List<StoreWaitingInfo> getStoresByWaitingCount(boolean desc);
 
 }

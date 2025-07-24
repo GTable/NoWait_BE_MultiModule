@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.applicationuser.store.service.StoreService;
 import com.nowait.common.api.ApiUtils;
 
@@ -94,6 +95,22 @@ public class StoreController {
 			.body(
 				ApiUtils.success(
 					storeService.searchStoresByName(name)
+				)
+			);
+	}
+
+	@GetMapping("/waiting-list")
+	@Operation(summary = "예약 많은순/적은순 주점 리스트 조회", description = "desc(대기 많은순) , asc(대기 적은순)")
+	@ApiResponse(responseCode = "200", description = "주점 대기순 정렬")
+	public ResponseEntity<?> getStoreWaitingList(
+		@RequestParam(defaultValue = "desc") String order) {
+		boolean desc = !"asc".equalsIgnoreCase(order); // 기본: 대기 많은 순
+
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					storeService.getStoresByWaitingCount(desc)
 				)
 			);
 	}
