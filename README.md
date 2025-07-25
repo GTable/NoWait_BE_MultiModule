@@ -11,22 +11,29 @@
 ## 👨‍👩‍👧‍👦 팀원 소개
 <table>
     <tr align="center">
-        <td><B>Backend</B></td>
-        <td><B>Backend</B></td>
-    </tr>
-    <tr align="center">
-        <td><a href="https://github.com/hseong3243">김지훈</a></td>
-        <td><a href="https://github.com/seminchoi">정혜민</a></td>
+        <td><b>Backend</b></td>
+        <td><b>Backend</b></td>
     </tr>
     <tr align="center">
         <td>
-            <img src="https://avatars.githubusercontent.com/u/100821696?v=4?size=50">
+            <a href="https://github.com/hseong3243">김지훈</a>
         </td>
         <td>
-            <img src="https://avatars.githubusercontent.com/u/114489245?v=4?size=50">
+            <a href="https://github.com/seminchoi">정혜민</a>
+        </td>
+    </tr>
+    <tr align="center">
+        <td>
+            <img src="https://avatars.githubusercontent.com/u/100821696?v=4?size=300"
+                 width="100" height="100" alt="김지훈 프로필">
+        </td>
+        <td>
+            <img src="https://avatars.githubusercontent.com/u/114489245?v=4?size=300"
+                 width="100" height="100" alt="정혜민 프로필">
         </td>
     </tr>
 </table>
+
 
 ## 사용 기술
 
