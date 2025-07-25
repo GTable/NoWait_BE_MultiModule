@@ -8,6 +8,12 @@ import lombok.Getter;
 @AllArgsConstructor
 @Schema(description = "주점 대기 현황 정보 DTO")
 public class StoreWaitingInfo {
+	@Schema(description = "배너 첫번째 이미지", example = "https://cdn.gtable.com/profile/user1.jpg")
+	private String bannerImageUrl;
+
+	@Schema(description = "학과 이름", example = "경영학과")
+	private String departmentName;
+
 	@Schema(description = "주점 ID", example = "1")
 	private String storeId;
 

@@ -25,6 +25,7 @@ import com.nowait.applicationuser.store.dto.StorePageReadDto;
 import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
+import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.entity.StoreImage;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
@@ -237,7 +238,20 @@ public class StoreServiceImpl implements StoreService {
 					.map(Store::getName)
 					.orElse(UNKNOWN_STORE_NAME);
 
-				result.add(new StoreWaitingInfo(storeId, storeName, count != null ? count : 0));
+				Store store = storeRepository.findById(Long.valueOf(storeId))
+					.orElseThrow(StoreNotFoundException::new);
+				Department department = departmentRepository.getReferenceById(store.getDepartmentId());
+				List<StoreImage> storeImageList = storeImageRepository.findByStoreAndImageType(store, ImageType.BANNER);
+
+				String imageUrl = storeImageList.isEmpty() ? null : storeImageList.get(0).getImageUrl();
+
+				result.add(new StoreWaitingInfo(
+					imageUrl,
+					department.getName(),
+					storeId,
+					storeName,
+					count != null ? count : 0
+				));
 			}
 		}
 
