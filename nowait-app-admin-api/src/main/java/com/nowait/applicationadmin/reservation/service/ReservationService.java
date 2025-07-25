@@ -1,6 +1,8 @@
 package com.nowait.applicationadmin.reservation.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -150,7 +152,7 @@ public class ReservationService {
 			.orElse(
 				Reservation.builder()
 					.store(storeRepository.getReferenceById(storeId))
-					.user(user)
+					.user(userRepository.findById(Long.valueOf(userId)).get())
 					.requestedAt(LocalDateTime.now())
 					.partySize(partySize)
 					.build()
@@ -174,11 +176,21 @@ public class ReservationService {
 			throw new ReservationViewUnauthorizedException();
 		}
 		// 1. DB status 업데이트
-		Reservation reservation = reservationRepository.findByStore_StoreIdAndUserId(storeId, Long.valueOf(userId))
-			.orElseThrow(() -> new IllegalArgumentException("해당 예약이 존재하지 않습니다."));
-		reservation.updateStatus(status);
+		LocalDate today = LocalDate.now();
+		LocalDateTime startOfDay = today.atStartOfDay();
+		LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+		Reservation reservation = reservationRepository
+			.findByStore_StoreIdAndUserIdAndRequestedAtBetween(
+				storeId,
+				Long.valueOf(userId),
+				startOfDay,
+				endOfDay
+			)
+			.orElseThrow(() -> new IllegalArgumentException("오늘 날짜의 예약이 존재하지 않습니다."));
 		// 2. Redis에서 삭제
 		waitingRedisRepository.deleteWaiting(storeId, userId);
+		reservation.updateStatus(status);
 
 		// 메시지 동적 반환
 		String action = (status == ReservationStatus.CONFIRMED) ? "입장 완료" : "입장 취소";

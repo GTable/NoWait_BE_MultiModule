@@ -1,5 +1,6 @@
 package com.nowait.domaincorerdb.reservation.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	boolean existsByUserAndStoreAndStatusIn(User user, Store store, List<ReservationStatus> statuses);
 
 	Optional<Reservation> findByStore_StoreIdAndUserId(Long storeId, Long userId);
+
+	Optional<Reservation> findByStore_StoreIdAndUserIdAndRequestedAtBetween(Long storeId, Long userId, LocalDateTime start, LocalDateTime end);
+
 
 	List<Reservation> findAllByStore_StoreId(Long storeId);
 
