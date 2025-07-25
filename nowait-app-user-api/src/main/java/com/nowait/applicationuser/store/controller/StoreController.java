@@ -28,18 +28,6 @@ public class StoreController {
 
 	private final StoreService storeService;
 
-	@GetMapping("/all-stores")
-	@Operation(summary = "모든 주점 조회", description = "모든 주점을 조회합니다.")
-	@ApiResponse(responseCode = "200", description = "모든 주점 조회 성공")
-	public ResponseEntity<?> getAllStores() {
-		return ResponseEntity
-			.status(HttpStatus.OK)
-			.body(
-				ApiUtils.success(
-					storeService.getAllStores()
-				)
-			);
-	}
 
 	@GetMapping("/all-stores/infinite-scroll")
 	@Operation(
@@ -53,22 +41,6 @@ public class StoreController {
 			.body(
 				ApiUtils.success(
 					storeService.getAllStoresByPageAndDeparments(pageable)
-				)
-			);
-	}
-
-	@GetMapping("/low-wait/infinite-scroll")
-	@Operation(
-		summary = "모든 주점 페이지네이션 조회",
-		description = "모든 주점을 페이지네이션으로 조회합니다."
-	)
-	@ApiResponse(responseCode = "200", description = "모든 주점 페이지네이션 조회 성공")
-	public ResponseEntity<?> getAllStores(Pageable pageable) {
-		return ResponseEntity
-			.ok()
-			.body(
-				ApiUtils.success(
-					storeService.getAllStoresByPage(pageable)
 				)
 			);
 	}
