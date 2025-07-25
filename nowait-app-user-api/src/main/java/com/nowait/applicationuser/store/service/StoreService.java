@@ -12,10 +12,6 @@ import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 
 public interface StoreService {
 
-	StoreReadResponse getAllStores();
-
-	StoreReadResponse getAllStoresByPage(Pageable pageable);
-
 	StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable);
 
 	StorePageReadDto getStoreByStoreId(Long storeId);

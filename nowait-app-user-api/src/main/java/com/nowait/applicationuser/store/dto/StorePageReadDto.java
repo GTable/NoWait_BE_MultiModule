@@ -15,6 +15,7 @@ import lombok.Getter;
 @Builder
 public class StorePageReadDto {
 	private Long storeId;
+	private Long waitingCount;
 	private Long departmentId;
 	private String departmentName;
 	private String name;
@@ -26,7 +27,7 @@ public class StorePageReadDto {
 	private Boolean deleted;
 	private LocalDateTime createdAt;
 
-	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName) {
+	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount) {
 
 		StoreImageUploadResponse profile = allImages.stream()
 			.filter(image -> image.getImageType() == ImageType.PROFILE)
@@ -40,6 +41,7 @@ public class StorePageReadDto {
 		return StorePageReadDto.builder()
 			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
+			.waitingCount(waitingCount)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)
 			.name(store.getName())
