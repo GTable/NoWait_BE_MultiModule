@@ -1,4 +1,5 @@
 # NoWait
+<img width="348" height="137" alt="Logo-primary" src="https://github.com/user-attachments/assets/a6a86342-f526-4e34-9ef1-4f59305551d5" />
 
 ## 프로젝트 소개
 주점 대기 예약부터 메뉴 주문까지 원격으로 처리할 수 있는 웨이팅 서비스입니다.
@@ -24,11 +25,11 @@
     </tr>
     <tr align="center">
         <td>
-            <img src="https://avatars.githubusercontent.com/u/100821696?v=4?size=300"
+            <img src="https://avatars.githubusercontent.com/u/100821696?v=4"
                  width="100" height="100" alt="김지훈 프로필">
         </td>
         <td>
-            <img src="https://avatars.githubusercontent.com/u/114489245?v=4?size=300"
+            <img src="https://avatars.githubusercontent.com/u/114489245?v=4"
                  width="100" height="100" alt="정혜민 프로필">
         </td>
     </tr>
