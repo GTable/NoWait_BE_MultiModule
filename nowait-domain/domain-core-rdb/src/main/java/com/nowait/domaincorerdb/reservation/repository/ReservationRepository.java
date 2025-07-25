@@ -21,6 +21,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 	Optional<Reservation> findByStore_StoreIdAndUserIdAndRequestedAtBetween(Long storeId, Long userId, LocalDateTime start, LocalDateTime end);
 
+	Optional<Reservation> findByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetween(
+		Long storeId,
+		Long userId,
+		List<ReservationStatus> statuses,
+		LocalDateTime start,
+		LocalDateTime end
+	);
 
 	List<Reservation> findAllByStore_StoreId(Long storeId);
 

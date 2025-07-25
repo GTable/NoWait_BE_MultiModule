@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationadmin.reservation.dto.CallGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.CallingWaitingResponseDto;
+import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusSummaryDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateRequestDto;
@@ -25,6 +26,7 @@ import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundExcepti
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
+import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
@@ -134,68 +136,111 @@ public class ReservationService {
 			.toList();
 	}
 
-	// 대기 객체 호출 (WAITING -> CALLING)
-	@Transactional
-	public CallingWaitingResponseDto callWaiting(Long storeId, String userId, MemberDetails memberDetails) {
-		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new ReservationViewUnauthorizedException();
-		}
-		String status = waitingRedisRepository.getWaitingStatus(storeId, userId);
-		if (!"WAITING".equals(status)) {
-			throw new IllegalStateException("이미 호출되었거나 없는 예약입니다.");
-		}
-		Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
-		waitingRedisRepository.setWaitingStatus(storeId, userId, "CALLING");
-		// [2] DB에 상태 영구 저장 (없으면 생성, 있으면 상태만 변경)
-		Reservation reservation = reservationRepository.findByStore_StoreIdAndUserId(storeId, Long.valueOf(userId))
-			.orElse(
-				Reservation.builder()
-					.store(storeRepository.getReferenceById(storeId))
-					.user(userRepository.findById(Long.valueOf(userId)).get())
-					.requestedAt(LocalDateTime.now())
-					.partySize(partySize)
-					.build()
-			);
-		reservation.updateStatus(ReservationStatus.CALLING); // setter 대신 빌더로 새 객체 or withStatus 패턴 추천
-		reservationRepository.save(reservation);
-		return CallingWaitingResponseDto.builder()
-			.storeId(storeId)
-			.userId(userId)
-			.status(reservation.getStatus().name())
-			.calledAt(reservation.getRequestedAt())
-			.build();
-	}
-	// 대기 객체 상태 변경
-	@Transactional
-	public String processEntryStatus(Long storeId, String userId, MemberDetails memberDetails, ReservationStatus status) {
-		// (권한 체크 필요시 여기에 추가)
-		User user = userRepository.findById(memberDetails.getId())
-			.orElseThrow(UserNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new ReservationViewUnauthorizedException();
-		}
-		// 1. DB status 업데이트
-		LocalDate today = LocalDate.now();
-		LocalDateTime startOfDay = today.atStartOfDay();
-		LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
 
-		Reservation reservation = reservationRepository
-			.findByStore_StoreIdAndUserIdAndRequestedAtBetween(
+	private User authorize(Long storeId, MemberDetails member) {
+		User u = userRepository.findById(member.getId())
+			.orElseThrow(UserNotFoundException::new);
+		if (!Role.SUPER_ADMIN.equals(u.getRole()) && !storeId.equals(u.getStoreId())) {
+			throw new ReservationViewUnauthorizedException();
+		}
+		return u;
+	}
+
+	// 공통: 오늘 날짜 예약 조회
+	private Reservation findTodayReservation(Long storeId, String userId) {
+		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+		LocalDateTime endOfDay   = LocalDate.now().atTime(LocalTime.MAX);
+
+		return reservationRepository
+			.findByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetween(
 				storeId,
 				Long.valueOf(userId),
+				List.of(ReservationStatus.WAITING, ReservationStatus.CALLING),
 				startOfDay,
 				endOfDay
 			)
 			.orElseThrow(() -> new IllegalArgumentException("오늘 날짜의 예약이 존재하지 않습니다."));
-		// 2. Redis에서 삭제
-		waitingRedisRepository.deleteWaiting(storeId, userId);
-		reservation.updateStatus(status);
-
-		// 메시지 동적 반환
-		String action = (status == ReservationStatus.CONFIRMED) ? "입장 완료" : "입장 취소";
-		return user.getNickname() + "님의 예약이 " + action + " 처리되었습니다.";
 	}
+
+	/**
+	 * 상태를 하나의 메서드에서 처리합니다.
+	 * - CALLING   : Redis 상태를 CALLING으로 변경 → DB 저장 → calledAt 반환
+	 * - CONFIRMED : Redis에서 삭제             → DB 저장 → 완료 메시지 반환
+	 * - CANCELLED : Redis에서 삭제             → DB 저장 → 취소 메시지 반환
+	 */
+	@Transactional
+	public EntryStatusResponseDto processEntryStatus(
+		Long              storeId,
+		String            userId,
+		MemberDetails     member,
+		ReservationStatus newStatus
+	) {
+		User manager = authorize(storeId, member);
+		User user = userRepository.findById(Long.valueOf(userId)).orElseThrow(UserNotFoundException::new);
+
+		String        message   = null;
+		Reservation   reservation;
+
+		switch (newStatus) {
+			case CALLING:
+				// 1) Redis 상태 검사 & 변경
+				String curr = waitingRedisRepository.getWaitingStatus(storeId, userId);
+				if (!ReservationStatus.WAITING.name().equals(curr)) {
+					throw new IllegalStateException("이미 호출되었거나 없는 예약입니다.");
+				}
+				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
+
+				// 2) 파티 인원, 호출 시각
+				Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
+				LocalDateTime now  = LocalDateTime.now();
+
+				// 3) DB에 무조건 새로 저장
+				Store store = storeRepository.getReferenceById(storeId);
+				reservation = Reservation.builder()
+					.store(store)
+					.user(user)
+					.partySize(partySize)
+					.requestedAt(now)
+					.status(ReservationStatus.CALLING)
+					.build();
+				reservationRepository.save(reservation);
+
+				break;
+
+			case CONFIRMED:
+			case CANCELLED:
+				// 1) Redis에서 제거
+				waitingRedisRepository.deleteWaiting(storeId, userId);
+
+				// 2) 오늘 날짜 예약 조회 & 상태 변경
+				reservation = findTodayReservation(storeId, userId);
+				reservation.updateStatus(newStatus);
+				reservationRepository.save(reservation);
+
+				// 3) 완료/취소 메시지
+				message = String.format(
+					"%s님의 예약이 %s 처리되었습니다.",
+					user.getNickname(),
+					newStatus == ReservationStatus.CONFIRMED ? "입장 완료" : "입장 취소"
+				);
+				break;
+
+			default:
+				throw new IllegalArgumentException("지원하지 않는 상태입니다: " + newStatus);
+		}
+
+		// 5) 공통 DTO 반환
+		return EntryStatusResponseDto.builder()
+			.id(        reservation.getId().toString())
+			.userId(    userId)
+			.partySize( reservation.getPartySize())
+			.userName(  user.getNickname())
+			.createdAt( reservation.getRequestedAt())
+			.status(    reservation.getStatus().name())
+			.message(   message)
+			.build();
+	}
+
 
 
 }

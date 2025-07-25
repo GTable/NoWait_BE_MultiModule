@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.reservation.dto.CallingWaitingResponseDto;
+import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
 import com.nowait.applicationadmin.reservation.service.ReservationService;
 import com.nowait.common.api.ApiUtils;
@@ -51,21 +52,21 @@ public class ReservationController {
 		return ResponseEntity.ok(response);
 	}
 
-	@PatchMapping("/admin/{storeId}/call/{userId}")
-	@Operation(summary = "예약팀 호출", description = "특정 예약에 대한 호출 진행(호출하는 순간 10분 타임어택)")
-	@ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  WAITING -> CALLING")
-	public ResponseEntity<?> callWaiting(@PathVariable Long storeId,
-		@PathVariable String userId,
-		@AuthenticationPrincipal MemberDetails memberDetails) {
-		CallingWaitingResponseDto response = reservationService.callWaiting(storeId, userId, memberDetails);
-		return ResponseEntity
-			.status(HttpStatus.OK)
-			.body(
-				ApiUtils.success(
-					response
-				)
-	);
-	}
+	// @PatchMapping("/admin/{storeId}/call/{userId}")
+	// @Operation(summary = "예약팀 호출", description = "특정 예약에 대한 호출 진행(호출하는 순간 10분 타임어택)")
+	// @ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  WAITING -> CALLING")
+	// public ResponseEntity<?> callWaiting(@PathVariable Long storeId,
+	// 	@PathVariable String userId,
+	// 	@AuthenticationPrincipal MemberDetails memberDetails) {
+	// 	CallingWaitingResponseDto response = reservationService.callWaiting(storeId, userId, memberDetails);
+	// 	return ResponseEntity
+	// 		.status(HttpStatus.OK)
+	// 		.body(
+	// 			ApiUtils.success(
+	// 				response
+	// 			)
+	// );
+	// }
 	@PatchMapping("/admin/update/{storeId}/{userId}/{status}")
 	@Operation(summary = "예약팀 상태 업데이트 처리", description = "특정 예약에 대한 입장 완료 처리")
 	@ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  CALLING -> CONFIRMED")
@@ -75,7 +76,7 @@ public class ReservationController {
 		@PathVariable ReservationStatus status,
 		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
-		String response = reservationService.processEntryStatus(storeId, userId, memberDetails,status);
+		EntryStatusResponseDto response = reservationService.processEntryStatus(storeId, userId, memberDetails,status);
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
