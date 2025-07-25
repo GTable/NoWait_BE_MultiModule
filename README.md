@@ -7,7 +7,10 @@
 ## 📜 프로젝트 목표
 
 ### 핵심 목표
-- 트래픽이 몰려도 안정적인 대기 및 주문 시스템 설계
+- Redis SortedSet기반 대기열으로 급격한 트래픽에도 서비스 중단 없이 대기열 유지
+- Redis SPOF 해결
+- 멀티 모듈 프로젝트 구조로 서비스 영역을 분리하여 독립 빌드·배포 수행
+
 
 ## 📌 Architecture
 ### 1️⃣ System Architecture
@@ -18,6 +21,14 @@
 
 ### 3️⃣ ERD
 <img width="3142" height="2188" alt="erd" src="https://github.com/user-attachments/assets/12dfe5f0-ae78-4cc9-80eb-8ccdb1f444ba" />
+
+## 🔌 API 문서
+### 관리자 
+<a href="http://43.202.201.254:8085/swagger-ui/index.html#/">Admin Server Swagger</a>
+
+### 사용자
+<a href="http://43.202.201.254:8081/swagger-ui/index.html#/">User Server Swagger</a>
+
 
 ## 🛠️ 사용 기술
 
@@ -52,11 +63,11 @@
     <tr align="center">
         <td>
             <img src="https://avatars.githubusercontent.com/u/100821696?v=4"
-                 width="100" height="100" alt="김지훈 프로필">
+                 width="200" height="200">
         </td>
         <td>
             <img src="https://avatars.githubusercontent.com/u/114489245?v=4"
-                 width="100" height="100" alt="정혜민 프로필">
+                 width="200" height="200">
         </td>
     </tr>
 </table>
