@@ -1,6 +1,11 @@
 # GTable
 대학교 축제 내 주점을 웨이팅할 수 있는 서비스입니다.
 
+---
+# 아키텍처
+![NoWait-Architecture](https://github.com/user-attachments/assets/143e435d-5ad9-4b3c-a4f7-7db5d117ae44)
+---
+
 # 🍺 주점 웨이팅 시스템 기능 명세
 
 축제 기간 주점 운영을 위한 실시간 웨이팅/관리 시스템 기능 목록입니다.  
