@@ -2,8 +2,12 @@
 대학교 축제 내 주점을 웨이팅할 수 있는 서비스입니다.
 
 ---
-# 아키텍처
+# 📌 Architecture
+## System Architecture
 ![NoWait-Architecture](https://github.com/user-attachments/assets/143e435d-5ad9-4b3c-a4f7-7db5d117ae44)
+
+## Multi Module Architecture
+
 ---
 
 # 🍺 주점 웨이팅 시스템 기능 명세
