@@ -3,10 +3,14 @@
 
 ---
 # 📌 Architecture
-## System Architecture
+## 1️⃣ System Architecture
 ![NoWait-Architecture](https://github.com/user-attachments/assets/143e435d-5ad9-4b3c-a4f7-7db5d117ae44)
 
-## Multi Module Architecture
+## 2️⃣ Multi Module Architecture
+![NoWait-MultiModule-Architecture](https://github.com/user-attachments/assets/e30dcaf6-c1dc-4a5b-b2a3-29e22f1536f1)
+
+## 3️⃣ ERD
+<img width="3142" height="2188" alt="erd" src="https://github.com/user-attachments/assets/12dfe5f0-ae78-4cc9-80eb-8ccdb1f444ba" />
 
 ---
 
