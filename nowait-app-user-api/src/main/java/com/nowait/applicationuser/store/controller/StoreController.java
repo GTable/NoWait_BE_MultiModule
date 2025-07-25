@@ -29,7 +29,7 @@ public class StoreController {
 	private final StoreService storeService;
 
 
-	@GetMapping("/all-stores/infinite-scroll")
+	@GetMapping("/all-stores")
 	@Operation(
 		summary = "모든 주점 페이지네이션 조회",
 		description = "모든 주점을 페이지네이션으로 조회합니다."

@@ -59,7 +59,12 @@ public class StoreServiceImpl implements StoreService {
 				Function.identity(),
 				 storeId -> {
 					 String key = "waiting:" + storeId;
-					 return redisTemplate.opsForZSet().zCard(key);
+					 try {
+						 return redisTemplate.opsForZSet().zCard(key);
+					 } catch (Exception e) {
+						 return 0L; // Redis 접근 실패 시 0으로 처리
+					 }
+
 				 }
 			 ));
 
@@ -112,7 +117,12 @@ public class StoreServiceImpl implements StoreService {
 
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		String key = "waiting:" + storeId;
-		Long waitingSize = redisTemplate.opsForZSet().zCard(key);
+		Long waitingSize = 0L;
+		try {
+			redisTemplate.opsForZSet().zCard(key);
+		} catch (Exception e) {
+			waitingSize = 0L; // Redis 접근 실패 시 0으로 처리
+		}
 
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
@@ -149,7 +159,11 @@ public class StoreServiceImpl implements StoreService {
 				Function.identity(),
 				storeId -> {
 					String key = "waiting:" + storeId;
-					return redisTemplate.opsForZSet().zCard(key);
+					try {
+						return redisTemplate.opsForZSet().zCard(key);
+					} catch (Exception e) {
+						return 0L; // Redis 접근 실패 시 0으로 처리
+					}
 				}
 			));
 
