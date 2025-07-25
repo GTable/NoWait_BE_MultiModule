@@ -18,6 +18,8 @@ public class StoreCreateResponse {
 	private String name;
 	private String location;
 	private String description;
+	private String notice;
+	private String openTime;
 	private Boolean isActive;
 	private Boolean deleted;
 	private LocalDateTime createdAt;
@@ -30,6 +32,8 @@ public class StoreCreateResponse {
 			.name(store.getName())
 			.location(store.getLocation())
 			.description(store.getDescription())
+			.notice(store.getNotice())
+			.openTime(store.getOpenTime())
 			.isActive(store.getIsActive())
 			.deleted(store.getDeleted())
 			.build();
