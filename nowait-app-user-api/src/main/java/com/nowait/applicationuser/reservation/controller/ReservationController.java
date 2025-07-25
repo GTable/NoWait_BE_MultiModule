@@ -35,8 +35,6 @@ public class ReservationController {
 	private final ReservationService reservationService;
 
 	@PostMapping("/create/{storeId}")
-	@Operation(summary = "예약 생성", description = "특정 주점에 대한 예약하기 생성")
-	@ApiResponse(responseCode = "201", description = "예약 생성")
 	public ResponseEntity<?> create(
 		@PathVariable Long storeId,
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,

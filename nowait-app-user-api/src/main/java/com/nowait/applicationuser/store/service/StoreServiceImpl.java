@@ -16,6 +16,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,12 @@ import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreParamEmptyException;
 import com.nowait.domaincorerdb.store.repository.StoreImageRepository;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
+import com.nowait.domaincorerdb.user.entity.User;
+import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domainuserrdb.bookmark.repository.BookmarkRepository;
+import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,7 +50,8 @@ public class StoreServiceImpl implements StoreService {
 	private final StoreImageRepository storeImageRepository;
 	private final DepartmentRepository departmentRepository;
 	private final StringRedisTemplate redisTemplate;
-
+	private final BookmarkRepository bookmarkRepository;
+	private final UserRepository userRepository;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -114,8 +121,10 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StorePageReadDto getStoreByStoreId(Long storeId) {
+	public StorePageReadDto getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User) {
 		if (storeId == null) throw new StoreParamEmptyException();
+		User user = userRepository.findById(customOAuth2User.getUserId())
+			.orElseThrow(UserNotFoundException::new);
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
@@ -138,7 +147,11 @@ public class StoreServiceImpl implements StoreService {
 			.map(StoreImageUploadResponse::fromEntity)
 			.toList();
 
-		return StorePageReadDto.fromEntity(store, imageDto, departmentName, waitingSize);
+		if (bookmarkRepository.existsByUserAndStore(user, store)) {
+			return StorePageReadDto.fromEntityWithBookmark(store, imageDto, departmentName, waitingSize, true);
+		} else {
+			return StorePageReadDto.fromEntity(store, imageDto, departmentName, waitingSize);
+		}
 	}
 
 	@Override
