@@ -38,7 +38,7 @@ public class MenuImageService {
 		// MenuImage 엔티티 생성 및 저장
 		MenuImage menuImage = MenuImage.builder()
 			.menu(menu)
-			.imageUrl(uploadResult.url())
+			.imageUrl(uploadResult.resizedUrl())
 			.fileKey(uploadResult.key())
 			.build();
 

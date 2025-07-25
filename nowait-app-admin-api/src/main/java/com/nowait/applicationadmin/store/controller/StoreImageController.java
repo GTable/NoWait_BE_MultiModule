@@ -81,8 +81,8 @@ public class StoreImageController {
 		description = "주점 이미지를 삭제합니다. 이미지 ID를 사용하여 특정 이미지를 삭제할 수 있습니다."
 	)
 	@ApiResponse(responseCode = "200", description = "주점 이미지 삭제 성공")
-	public ResponseEntity<?> deleteStoreImage(@PathVariable Long imageId) {
-		storeImageService.delete(imageId);
+	public ResponseEntity<?> deleteStoreImage(@PathVariable Long storeImageId) {
+		storeImageService.delete(storeImageId);
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(

@@ -61,7 +61,7 @@ public class StoreImageService {
 		for (S3Service.S3UploadResult uploadResult : uploadResults) {
 			StoreImage storeImage = StoreImage.builder()
 				.store(store)
-				.imageUrl(uploadResult.url())
+				.imageUrl(uploadResult.resizedUrl())
 				.fileKey(uploadResult.key())
 				.imageType(ImageType.BANNER)
 				.build();
@@ -93,7 +93,7 @@ public class StoreImageService {
 		// StoreImage 엔티티 생성 및 저장
 		StoreImage storeImage = StoreImage.builder()
 			.store(store)
-			.imageUrl(uploadResult.url())
+			.imageUrl(uploadResult.resizedUrl())
 			.fileKey(uploadResult.key())
 			.imageType(ImageType.PROFILE)
 			.build();

@@ -21,31 +21,40 @@ public class S3Service {
 	private final AmazonS3Client amazonS3Client;
 
 	@Value("${cloud.aws.s3.bucket}")
-	private String bucket;
+	private String originalBucket;
 
-	public record S3UploadResult(String key, String url) {
+	@Value("${cloud.aws.s3.resize-bucket}")
+	private String resizeBucket;
+
+	public record S3UploadResult(String key, String originalUrl, String resizedUrl) {
 	}
 
 	@Bulkhead(name = "s3UploadBulkhead", type = Bulkhead.Type.THREADPOOL)
 	@Async("s3UploadExecutor")
-	public CompletableFuture<S3UploadResult> upload(String type, Long refId, MultipartFile file) {  // TODO MultipartFile 분리 필요 (Spring에 의존하면 안 됨)
+	public CompletableFuture<S3UploadResult> upload(String type, Long refId,
+		MultipartFile file) {  // TODO MultipartFile 분리 필요 (Spring에 의존하면 안 됨)
 		try (InputStream inputStream = file.getInputStream()) {
 			String key = createFileKey(type, refId, file.getOriginalFilename());
 			ObjectMetadata metadata = new ObjectMetadata();
 			metadata.setContentLength(file.getSize());
 
-			amazonS3Client.putObject(bucket, key, inputStream, metadata);
-			String url = amazonS3Client.getUrl(bucket, key).toString();
+			// 1) 원본 버킷에 이미지 업로드
+			amazonS3Client.putObject(originalBucket, key, inputStream, metadata);
 
-			return CompletableFuture.completedFuture(new S3UploadResult(key, url));
+			// 2) 각 버킷의 URL 생성
+			String originalUrl = amazonS3Client.getUrl(originalBucket, key).toString();
+			String resizedUrl = amazonS3Client.getUrl(resizeBucket, key).toString();
+
+			return CompletableFuture.completedFuture(new S3UploadResult(key, originalUrl, resizedUrl));
 		} catch (Exception e) {
 			throw new RuntimeException("S3 업로드 실패", e);
 		}
 	}
 
-	public void delete(String filename) {
+	public void delete(String key) {
 		try {
-			amazonS3Client.deleteObject(bucket, filename);
+			amazonS3Client.deleteObject(originalBucket, key);
+			amazonS3Client.deleteObject(resizeBucket,  key);
 		} catch (Exception e) {
 			throw new RuntimeException("S3 파일 삭제 실패", e);
 		}
