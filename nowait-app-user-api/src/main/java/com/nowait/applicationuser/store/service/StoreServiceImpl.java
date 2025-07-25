@@ -3,6 +3,7 @@ package com.nowait.applicationuser.store.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
@@ -14,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
 import com.nowait.applicationuser.store.dto.StoreImageUploadResponse;
 import com.nowait.applicationuser.store.dto.StorePageReadDto;
-import com.nowait.applicationuser.store.dto.StoreReadDto;
-import com.nowait.applicationuser.store.dto.StoreReadResponse;
 import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
@@ -40,46 +39,6 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreReadResponse getAllStores() {
-		List<Store> stores = storeRepository.findAllByDeletedFalse();
-
-		List<StoreReadDto> storeRead = stores.stream()
-			.map(store -> {
-				List<StoreImage> images = storeImageRepository.findByStore(store);
-				List<StoreImageUploadResponse> imageDto = images.stream()
-					.map(StoreImageUploadResponse::fromEntity)
-					.toList();
-				return StoreReadDto.fromEntity(store, imageDto);
-			})
-			.toList();
-
-		boolean hasNext = false;
-
-		return StoreReadResponse.of(storeRead, hasNext);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public StoreReadResponse getAllStoresByPage(Pageable pageable) {
-		Slice<Store> stores = storeRepository.findAllByDeletedFalseOrderByStoreIdAsc(pageable);
-
-		List<StoreReadDto> storeRead = stores.getContent().stream()
-			.map(store -> {
-				List<StoreImage> images = storeImageRepository.findByStore(store);
-				List<StoreImageUploadResponse> imageDto = images.stream()
-					.map(StoreImageUploadResponse::fromEntity)
-					.toList();
-				return StoreReadDto.fromEntity(store, imageDto);
-			})
-			.toList();
-
-		boolean hasNext = stores.hasNext();
-
-		return StoreReadResponse.of(storeRead, hasNext);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
 	public StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable) {
 		// 1) 페이징된 Store 스냅샷 조회
 		Slice<Store> slice = storeRepository.findAllByDeletedFalseOrderByStoreIdAsc(pageable);
@@ -93,6 +52,16 @@ public class StoreServiceImpl implements StoreService {
 			.map(Store::getDepartmentId)
 			.distinct()
 			.toList();
+
+		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
+		Map<Long, Long> waitingSizeMap = storeIds.stream()
+			 .collect(Collectors.toMap(
+				Function.identity(),
+				 storeId -> {
+					 String key = "waiting:" + storeId;
+					 return redisTemplate.opsForZSet().zCard(key);
+				 }
+			 ));
 
 		// 3) 각 StoreId에 해당하는 이미지 조회
 		List<StoreImage> allImages = storeImageRepository.findByStore_StoreIdIn(storeIds);
@@ -118,7 +87,9 @@ public class StoreServiceImpl implements StoreService {
 					.getOrDefault(store.getStoreId(), List.of());
 				String departmentName = deptNameMap
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
-				return StorePageReadDto.fromEntity(store, imgs, departmentName);
+				Long waitingCount =
+					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
+				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount);
 			})
 			.toList();
 
@@ -139,12 +110,16 @@ public class StoreServiceImpl implements StoreService {
 			.map(Department::getName)
 			.orElse("Unknown Department");
 
+		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
+		String key = "waiting:" + storeId;
+		Long waitingSize = redisTemplate.opsForZSet().zCard(key);
+
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
 			.map(StoreImageUploadResponse::fromEntity)
 			.toList();
 
-		return StorePageReadDto.fromEntity(store, imageDto, departmentName);
+		return StorePageReadDto.fromEntity(store, imageDto, departmentName, waitingSize);
 	}
 
 	@Override
@@ -154,7 +129,9 @@ public class StoreServiceImpl implements StoreService {
 		}
 
 		// 1) 페이징된 Store 스냅샷 조회
+		// Like 사용
 		// List<Store> stores = storeRepository.findByNameContainingIgnoreCaseAndDeletedFalse(keyword);
+		// 풀텍스트인덱스 사용
 		List<Store> stores = storeRepository.searchByKeywordNative(keyword);
 
 		// 2) 각 StoreId / Department ID 추출
@@ -165,6 +142,16 @@ public class StoreServiceImpl implements StoreService {
 			.map(Store::getDepartmentId)
 			.distinct()
 			.toList();
+
+		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
+		Map<Long, Long> waitingSizeMap = storeIds.stream()
+			.collect(Collectors.toMap(
+				Function.identity(),
+				storeId -> {
+					String key = "waiting:" + storeId;
+					return redisTemplate.opsForZSet().zCard(key);
+				}
+			));
 
 		// 3) 각 StoreId에 해당하는 이미지 조회
 		List<StoreImage> allImages = storeImageRepository.findByStore_StoreIdIn(storeIds);
@@ -189,7 +176,9 @@ public class StoreServiceImpl implements StoreService {
 					.getOrDefault(store.getStoreId(), List.of());
 				String departmentName = deptNameMap
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
-				return StorePageReadDto.fromEntity(store, imgs, departmentName);
+				Long waitingCount =
+					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
+				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount);
 			})
 			.toList();
 	}
