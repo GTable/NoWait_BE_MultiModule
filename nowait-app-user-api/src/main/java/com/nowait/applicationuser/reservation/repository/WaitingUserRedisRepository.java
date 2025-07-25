@@ -35,17 +35,20 @@ public class WaitingUserRedisRepository {
 		}
 		return Boolean.TRUE.equals(added);
 	}
+
 	// 예약한 사람이 등록한 동반인원(partySize) 조회
 	public Integer getPartySize(Long storeId, String userId) {
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		Object value = redisTemplate.opsForHash().get(partyKey, userId);
 		return Integer.valueOf(value.toString());
 	}
+
 	// 예약자 대기순위 조회
 	public Long getRank(Long storeId, String userId) {
 		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 		return redisTemplate.opsForZSet().rank(key, userId);
 	}
+
 	// 예약 취소
 	public boolean removeWaiting(Long storeId, String userId) {
 		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
@@ -56,6 +59,7 @@ public class WaitingUserRedisRepository {
 		redisTemplate.opsForHash().delete(statusKey, userId);
 		return true;
 	}
+
 	// 예약 등록 시간
 	public Long getWaitingTimestamp(Long storeId, String userId) {
 		String key = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
@@ -67,7 +71,8 @@ public class WaitingUserRedisRepository {
 	public List<Long> getUserWaitingStoreIds(String userId) {
 		// key pattern으로 모든 매장 대기열 조회 (keys: waiting:*)
 		Set<String> keys = redisTemplate.keys(RedisKeyUtils.buildWaitingKeyPrefix() + "*");
-		if (keys == null) return List.of();
+		if (keys == null)
+			return List.of();
 
 		List<Long> result = new ArrayList<>();
 		for (String key : keys) {
@@ -84,6 +89,7 @@ public class WaitingUserRedisRepository {
 		}
 		return result;
 	}
+
 	// 상태값 조회
 	public String getWaitingStatus(Long storeId, String userId) {
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
@@ -91,6 +97,10 @@ public class WaitingUserRedisRepository {
 		return value == null ? null : value.toString();
 	}
 
+	// 사용자가 해당 스토어 대기열에 있는지 여부 반환
+	public boolean isUserWaiting(Long storeId, String userId) {
+		return getRank(storeId, userId) != null;
+	}
 }
 
 

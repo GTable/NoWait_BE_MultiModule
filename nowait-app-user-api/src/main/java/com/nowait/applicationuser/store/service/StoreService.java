@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 
 import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
+import com.nowait.applicationuser.store.dto.StoreDetailReadResponse;
 import com.nowait.applicationuser.store.dto.StorePageReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadDto;
 import com.nowait.applicationuser.store.dto.StoreReadResponse;
@@ -15,7 +16,7 @@ public interface StoreService {
 
 	StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable);
 
-	StorePageReadDto getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User);
+	StoreDetailReadResponse getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User);
 
 	List<StorePageReadDto> searchByKeywordNative(String name);
 

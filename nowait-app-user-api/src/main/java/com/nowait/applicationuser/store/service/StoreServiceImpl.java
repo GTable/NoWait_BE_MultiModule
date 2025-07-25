@@ -20,7 +20,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
+import com.nowait.applicationuser.store.dto.StoreDetailReadResponse;
 import com.nowait.applicationuser.store.dto.StoreImageUploadResponse;
 import com.nowait.applicationuser.store.dto.StorePageReadDto;
 import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
@@ -52,6 +54,7 @@ public class StoreServiceImpl implements StoreService {
 	private final StringRedisTemplate redisTemplate;
 	private final BookmarkRepository bookmarkRepository;
 	private final UserRepository userRepository;
+	private final WaitingUserRedisRepository waitingRepo;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -121,7 +124,7 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StorePageReadDto getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User) {
+	public StoreDetailReadResponse getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User) {
 		if (storeId == null) throw new StoreParamEmptyException();
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
@@ -135,12 +138,8 @@ public class StoreServiceImpl implements StoreService {
 
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		String key = "waiting:" + storeId;
-		Long waitingSize = 0L;
-		try {
-			redisTemplate.opsForZSet().zCard(key);
-		} catch (Exception e) {
-			waitingSize = 0L; // Redis 접근 실패 시 0으로 처리
-		}
+		long waitingSize = redisTemplate.opsForZSet().zCard(key);
+		boolean userWaiting = waitingRepo.isUserWaiting(storeId, String.valueOf(customOAuth2User.getUserId()));
 
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
@@ -148,9 +147,9 @@ public class StoreServiceImpl implements StoreService {
 			.toList();
 
 		if (bookmarkRepository.existsByUserAndStore(user, store)) {
-			return StorePageReadDto.fromEntityWithBookmark(store, imageDto, departmentName, waitingSize, true);
+			return StoreDetailReadResponse.fromEntityWithBookmark(store, imageDto, departmentName, waitingSize, true, userWaiting);
 		} else {
-			return StorePageReadDto.fromEntity(store, imageDto, departmentName, waitingSize);
+			return StoreDetailReadResponse.fromEntity(store, imageDto, departmentName, waitingSize, userWaiting);
 		}
 	}
 

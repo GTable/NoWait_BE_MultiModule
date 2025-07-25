@@ -13,9 +13,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class StorePageReadDto {
+public class StoreDetailReadResponse {
 	private Long storeId;
 	private Long waitingCount;
+	private Boolean isWaiting;
 	private Long departmentId;
 	private String departmentName;
 	private String name;
@@ -30,7 +31,7 @@ public class StorePageReadDto {
 	private LocalDateTime createdAt;
 	private Boolean isBookmarked;
 
-	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount) {
+	public static StoreDetailReadResponse fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isWaiting) {
 
 		StoreImageUploadResponse profile = allImages.stream()
 			.filter(image -> image.getImageType() == ImageType.PROFILE)
@@ -41,10 +42,11 @@ public class StorePageReadDto {
 			.filter(image -> image.getImageType() == ImageType.BANNER)
 			.toList();
 
-		return StorePageReadDto.builder()
+		return StoreDetailReadResponse.builder()
 			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
 			.waitingCount(waitingCount)
+			.isWaiting(isWaiting)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)
 			.name(store.getName())
@@ -60,8 +62,8 @@ public class StorePageReadDto {
 			.build();
 	}
 
-	public static StorePageReadDto fromEntityWithBookmark(
-		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmarked
+	public static StoreDetailReadResponse fromEntityWithBookmark(
+		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmarked, Boolean isWaiting
 	) {
 
 		StoreImageUploadResponse profile = allImages.stream()
@@ -73,10 +75,11 @@ public class StorePageReadDto {
 			.filter(image -> image.getImageType() == ImageType.BANNER)
 			.toList();
 
-		return StorePageReadDto.builder()
+		return StoreDetailReadResponse.builder()
 			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
 			.waitingCount(waitingCount)
+			.isWaiting(isWaiting)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)
 			.name(store.getName())
