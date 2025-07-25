@@ -47,7 +47,16 @@ public class MenuImageController {
 		}
 
 		MenuImageUploadResponse response = menuImageService.save(menuId, file);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiUtils.success(response));
+		return ResponseEntity
+			.status(
+				HttpStatus.CREATED
+			)
+			.body(
+				ApiUtils
+					.success(
+						response
+					)
+			);
 	}
 
 	@DeleteMapping("/images/{menuImageId}")
