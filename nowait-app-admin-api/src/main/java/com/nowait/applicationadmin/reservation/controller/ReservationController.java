@@ -66,7 +66,7 @@ public class ReservationController {
 				)
 	);
 	}
-	@PostMapping("/admin/update/{storeId}/{userId}/{status}")
+	@PatchMapping("/admin/update/{storeId}/{userId}/{status}")
 	@Operation(summary = "예약팀 상태 업데이트 처리", description = "특정 예약에 대한 입장 완료 처리")
 	@ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  CALLING -> CONFIRMED")
 	public ResponseEntity<?> updateEntry(
