@@ -26,6 +26,7 @@ public class StorePageReadDto {
 	private Boolean isActive;
 	private Boolean deleted;
 	private LocalDateTime createdAt;
+	private Boolean isBookmarked;
 
 	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount) {
 
@@ -51,6 +52,37 @@ public class StorePageReadDto {
 			.deleted(store.getDeleted())
 			.profileImage(profile)
 			.bannerImages(banners)
+			.isBookmarked(false)
+			.build();
+	}
+
+	public static StorePageReadDto fromEntityWithBookmark(
+		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmarked
+	) {
+
+		StoreImageUploadResponse profile = allImages.stream()
+			.filter(image -> image.getImageType() == ImageType.PROFILE)
+			.findFirst()
+			.orElse(null);
+
+		List<StoreImageUploadResponse> banners = allImages.stream()
+			.filter(image -> image.getImageType() == ImageType.BANNER)
+			.toList();
+
+		return StorePageReadDto.builder()
+			.createdAt(store.getCreatedAt())
+			.storeId(store.getStoreId())
+			.waitingCount(waitingCount)
+			.departmentId(store.getDepartmentId())
+			.departmentName(departmentName)
+			.name(store.getName())
+			.location(store.getLocation())
+			.description(store.getDescription())
+			.isActive(store.getIsActive())
+			.deleted(store.getDeleted())
+			.profileImage(profile)
+			.bannerImages(banners)
+			.isBookmarked(isBookmarked)
 			.build();
 	}
 }

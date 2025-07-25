@@ -3,6 +3,7 @@ package com.nowait.applicationuser.store.controller;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.applicationuser.store.service.StoreService;
 import com.nowait.common.api.ApiUtils;
+import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,12 +50,12 @@ public class StoreController {
 	@GetMapping("/{storeId}")
 	@Operation(summary = "주점 ID로 주점 상세 조회", description = "특정 주점을 ID로 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 상세 조회 성공")
-	public ResponseEntity<?> getStoreById(@PathVariable Long storeId) {
+	public ResponseEntity<?> getStoreById(@PathVariable Long storeId, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					storeService.getStoreByStoreId(storeId)
+					storeService.getStoreByStoreId(storeId, customOAuth2User)
 				)
 			);
 	}
