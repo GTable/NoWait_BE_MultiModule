@@ -36,7 +36,7 @@ public class StoreImageService {
 		if (files == null || files.isEmpty())
 			throw new StoreImageEmptyException();
 
-		String type = "store";
+		String type = "banner";
 		Store store = storeRepository.findById(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -76,7 +76,7 @@ public class StoreImageService {
 	@Transactional
 	public StoreImageUploadResponse saveProfileImage(Long storeId, MultipartFile file) {
 
-		String type = "store";
+		String type = "profile";
 		Store store = storeRepository.findById(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
