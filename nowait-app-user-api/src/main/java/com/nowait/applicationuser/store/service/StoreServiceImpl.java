@@ -247,7 +247,9 @@ public class StoreServiceImpl implements StoreService {
 		if (desc) comparator = comparator.reversed();
 		result.sort(comparator);
 
-		return result;
+		return result.stream()
+			.limit(5)
+			.toList();
 	}
 
 	private RedisConnection getSafeConnection() {
