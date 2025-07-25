@@ -1,5 +1,8 @@
 package com.nowait.applicationuser.store.service;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -7,6 +10,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.connection.DataType;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +33,7 @@ import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreParamEmptyException;
 import com.nowait.domaincorerdb.store.repository.StoreImageRepository;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
+import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -196,26 +205,54 @@ public class StoreServiceImpl implements StoreService {
 	// 주점 대기 리스트 반환 (많은 순/적은 순)
 	@Transactional(readOnly = true)
 	public List<StoreWaitingInfo> getStoresByWaitingCount(boolean desc) {
-		// 1. 모든 waiting:{storeId} key 조회 (패턴 탐색)
-		Set<String> keys = redisTemplate.keys("waiting:*");
-		if (keys == null) return List.of();
+		final String PREFIX = RedisKeyUtils.buildWaitingKeyPrefix(); // 예: "waiting:"
+		final String UNKNOWN_STORE_NAME = "UNKNOWN";
 
-		List<StoreWaitingInfo> result = keys.stream()
-			.filter(key -> key.startsWith("waiting:") && !key.startsWith("waiting:party:"))
-			.filter(key -> "zset".equals(redisTemplate.type(key).code()))
-			.map(key -> {
+		RedisConnection connection = getSafeConnection(); // 안전하게 Redis 커넥션 획득
+
+		ScanOptions options = ScanOptions.scanOptions()
+			.match(PREFIX + "[0-9]*") // 숫자로 끝나는 waiting key만 매칭
+			.count(1000)
+			.build();
+
+		List<StoreWaitingInfo> result = new ArrayList<>();
+
+		// 반드시 try-with-resources로 Cursor 닫아줘야 함
+		try (Cursor<byte[]> cursor = connection.scan(options)) {
+			while (cursor.hasNext()) {
+				String key = new String(cursor.next(), StandardCharsets.UTF_8);
+
+				// zset 타입인지 확인
+				DataType type = redisTemplate.type(key);
+				if (type == null || !"zset".equals(type.code())) continue;
+
 				Long count = redisTemplate.opsForZSet().zCard(key);
-				String storeId = key.replace("waiting:", "");
+				String storeId = key.replace(PREFIX, "");
+
+				// DB에서 storeName 조회
 				String storeName = storeRepository.findById(Long.valueOf(storeId))
 					.map(Store::getName)
-					.orElse("UNKNOWN");
-				return new StoreWaitingInfo(storeId, storeName, count != null ? count : 0);
-			})
-			.sorted((a, b) -> desc ?
-			    b.getWaitingCount().compareTo(a.getWaitingCount()) :
-			    a.getWaitingCount().compareTo(b.getWaitingCount()))
-			.toList();
+					.orElse(UNKNOWN_STORE_NAME);
+
+				result.add(new StoreWaitingInfo(storeId, storeName, count != null ? count : 0));
+			}
+		}
+
+		// 정렬 로직: 대기 인원 기준 desc/asc
+		Comparator<StoreWaitingInfo> comparator = Comparator.comparing(StoreWaitingInfo::getWaitingCount);
+		if (desc) comparator = comparator.reversed();
+		result.sort(comparator);
 
 		return result;
 	}
+
+	private RedisConnection getSafeConnection() {
+		RedisConnectionFactory factory = redisTemplate.getConnectionFactory();
+		if (factory == null) {
+			throw new IllegalStateException("RedisConnectionFactory is not configured");
+		}
+		return factory.getConnection();
+	}
+
+
 }
