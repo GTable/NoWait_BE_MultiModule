@@ -20,4 +20,5 @@ public interface StoreService {
 
 	List<StoreWaitingInfo> getStoresByWaitingCount(boolean desc);
 
+	List<StorePageReadDto> getAllStoresByPageAndDeparments(List<Long> storeIds);
 }

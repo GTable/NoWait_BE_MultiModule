@@ -7,10 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.bookmark.dto.BookmarkCreateResponse;
-import com.nowait.applicationuser.bookmark.dto.BookmarkGetResponse;
+import com.nowait.applicationuser.store.dto.StorePageReadDto;
+import com.nowait.applicationuser.store.service.StoreService;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
+import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
 import com.nowait.domainuserrdb.bookmark.repository.BookmarkRepository;
@@ -25,6 +27,8 @@ public class BookmarkService {
 	private final BookmarkRepository bookmarkRepository;
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
+	private final StoreService storeService;
+
 	@Transactional
 	public BookmarkCreateResponse createBookmark(Long storeId, CustomOAuth2User customOAuth2User) {
 		parameterValidation(storeId, customOAuth2User);
@@ -46,13 +50,17 @@ public class BookmarkService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<BookmarkGetResponse> getBookmarks(CustomOAuth2User customOAuth2User) {
+	public List<StorePageReadDto> getBookmarks(CustomOAuth2User customOAuth2User) {
 		User user = userRepository.findById(customOAuth2User.getUserId())
-			.orElseThrow(() -> new EntityNotFoundException("User not found"));
-		return bookmarkRepository.findAllByUser(user)
+			.orElseThrow(UserNotFoundException::new);
+
+		List<Long> storeIds = bookmarkRepository.findAllByUser(user)
 			.stream()
-			.map(BookmarkGetResponse::fromEntity)
+			.map(Bookmark::getStore)
+			.map(Store::getStoreId)
 			.toList();
+
+		return storeService.getAllStoresByPageAndDeparments(storeIds);
 	}
 
 	@Transactional

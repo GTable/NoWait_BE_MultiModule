@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -261,4 +260,63 @@ public class StoreServiceImpl implements StoreService {
 	}
 
 
+	@Override
+	@Transactional(readOnly = true)
+	public List<StorePageReadDto> getAllStoresByPageAndDeparments(List<Long> storeIds) {
+		// 1) 페이징된 Store 스냅샷 조회
+		List<Store> stores = storeRepository.findAllByStoreIdInOrderByStoreIdAsc(storeIds);
+
+		// 2) 각 StoreId / Department ID 추출
+		List<Long> deptIds = stores.stream()
+			.map(Store::getDepartmentId)
+			.distinct()
+			.toList();
+
+		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
+		Map<Long, Long> waitingSizeMap = storeIds.stream()
+			.collect(Collectors.toMap(
+				Function.identity(),
+				storeId -> {
+					String key = "waiting:" + storeId;
+					try {
+						return redisTemplate.opsForZSet().zCard(key);
+					} catch (Exception e) {
+						return 0L; // Redis 접근 실패 시 0으로 처리
+					}
+
+				}
+			));
+
+		// 3) 각 StoreId에 해당하는 이미지 조회
+		List<StoreImage> allImages = storeImageRepository.findByStore_StoreIdIn(storeIds);
+		Map<Long, List<StoreImageUploadResponse>> imageMap = allImages.stream()
+			.map(StoreImageUploadResponse::fromEntity)
+			.collect(Collectors.groupingBy(
+				StoreImageUploadResponse::getStoreId
+			));
+
+
+		// 4) 각 DepartmentId에 해당하는 이름 조회
+		List<Department> allDepts = departmentRepository.findAllById(deptIds);
+		Map<Long, String> deptNameMap = allDepts.stream()
+			.collect(Collectors.toMap(
+				Department::getId,
+				Department::getName
+			));
+
+		// 5) Dto 매핑
+		List<StorePageReadDto> content = stores.stream()
+			.map(store -> {
+				List<StoreImageUploadResponse> imgs = imageMap
+					.getOrDefault(store.getStoreId(), List.of());
+				String departmentName = deptNameMap
+					.getOrDefault(store.getDepartmentId(), "Unknown Department");
+				Long waitingCount =
+					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
+				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount);
+			})
+			.toList();
+
+		return content;
+	}
 }

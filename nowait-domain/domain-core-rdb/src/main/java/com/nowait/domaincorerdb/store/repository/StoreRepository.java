@@ -34,4 +34,6 @@ public interface StoreRepository extends JpaRepository<Store, Long>, StoreCustom
         """,
 		nativeQuery = true)
 	List<Store> searchByKeywordNative(@Param("kw") String booleanKeyword);
+
+	List<Store> findAllByStoreIdInOrderByStoreIdAsc(List<Long> storeIds);
 }
