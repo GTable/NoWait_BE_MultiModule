@@ -1,6 +1,7 @@
 # NoWait
 <img width="348" height="137" alt="Logo-primary" src="https://github.com/user-attachments/assets/a6a86342-f526-4e34-9ef1-4f59305551d5" />
 
+
 ## 프로젝트 소개
 주점 대기 예약부터 메뉴 주문까지 원격으로 처리할 수 있는 웨이팅 서비스입니다.
 
@@ -54,7 +55,7 @@
 
 ## 📌 Architecture
 ### 1️⃣ System Architecture
-![NoWait-Architecture](https://github.com/user-attachments/assets/143e435d-5ad9-4b3c-a4f7-7db5d117ae44)
+![NoWait-Architecture](https://github.com/user-attachments/assets/b85dc5fd-0a42-4f1a-a79e-448044a08c47)
 
 ### 2️⃣ Multi Module Architecture
 ![NoWait-MultiModule-Architecture](https://github.com/user-attachments/assets/e30dcaf6-c1dc-4a5b-b2a3-29e22f1536f1)
