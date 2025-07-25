@@ -1,95 +1,55 @@
-# GTable
-대학교 축제 내 주점을 웨이팅할 수 있는 서비스입니다.
+# NoWait
 
----
-# 📌 Architecture
-## 1️⃣ System Architecture
+## 프로젝트 소개
+주점 대기 예약부터 메뉴 주문까지 원격으로 처리할 수 있는 웨이팅 서비스입니다.
+
+## 프로젝트 목표
+
+### 핵심 목표
+- 트래픽이 몰려도 안정적인 대기 및 주문 시스템 설계
+
+## 👨‍👩‍👧‍👦 팀원 소개
+<table>
+    <tr align="center">
+        <td><B>Backend</B></td>
+        <td><B>Backend</B></td>
+    </tr>
+    <tr align="center">
+        <td><a href="https://github.com/hseong3243">김지훈</a></td>
+        <td><a href="https://github.com/seminchoi">정혜민</a></td>
+    </tr>
+    <tr align="center">
+        <td>
+            <img src="https://avatars.githubusercontent.com/u/100821696?v=4?size=50">
+        </td>
+        <td>
+            <img src="https://avatars.githubusercontent.com/u/114489245?v=4?size=50">
+        </td>
+    </tr>
+</table>
+
+## 사용 기술
+
+<div> 
+  <img src="https://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white">
+  <img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white">
+  <img src="https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+  <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+  <img src="https://img.shields.io/badge/redis-FF4438?style=for-the-badge&logo=redis&logoColor=white">
+  <br/>
+
+  <img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonwebservices&logoColor=white">
+  <img src="https://img.shields.io/badge/ec2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white">
+  <img src="https://img.shields.io/badge/rds-527FFF?style=for-the-badge&logo=amazonrds&logoColor=white">
+  <br/>
+</div>
+
+## 📌 Architecture
+### 1️⃣ System Architecture
 ![NoWait-Architecture](https://github.com/user-attachments/assets/143e435d-5ad9-4b3c-a4f7-7db5d117ae44)
 
-## 2️⃣ Multi Module Architecture
+### 2️⃣ Multi Module Architecture
 ![NoWait-MultiModule-Architecture](https://github.com/user-attachments/assets/e30dcaf6-c1dc-4a5b-b2a3-29e22f1536f1)
 
-## 3️⃣ ERD
+### 3️⃣ ERD
 <img width="3142" height="2188" alt="erd" src="https://github.com/user-attachments/assets/12dfe5f0-ae78-4cc9-80eb-8ccdb1f444ba" />
-
----
-
-# 🍺 주점 웨이팅 시스템 기능 명세
-
-축제 기간 주점 운영을 위한 실시간 웨이팅/관리 시스템 기능 목록입니다.  
-아래는 사용자 및 관리자 기능을 기준으로 정리한 전체 기능 목록입니다.
-
-
----
-
-## 👤 사용자 기능
-
-### 1. 주점 목록 조회
-- 웨이팅 인원이 적은 순으로 정렬된 주점 목록을 노출
-- 매장명, 위치, 오픈 여부, 대표 이미지 제공
-
-### 2. 주점 검색
-- 키워드로 주점 이름 및 설명에서 검색
-- 검색 결과가 없을 경우 안내 문구 노출
-
-### 3. 주점 상세 조회
-- 매장 이미지, 설명, 위치, 영업 상태 확인
-- 영업 중일 경우 웨이팅 신청 버튼 활성화
-
-### 4. 접속 대기열 페이지
-- 접속 폭주 시 진입
-- 현재 대기 인원 수 및 나의 대기 번호 확인 가능
-
-### 5. 메뉴 조회
-- 주점에 등록된 메뉴 목록 확인
-- 메뉴 이름, 가격, 이미지 제공
-- 품절 메뉴는 뱃지 또는 비활성화 처리
-
----
-
-## 🛠 관리자 기능
-
-### 6. 주점 등록
-- 주점명, 썸네일 이미지, 위치, 설명 입력
-- 관리자당 1개 주점만 등록 가능
-
-### 7. 주점 수정
-- 주점 이미지, 이름, 위치, 설명 개별 수정
-- 이미지 5개 이하 등록 가능 (파일 제한 있음)
-
-### 8. 주점 삭제
-- 등록된 주점을 삭제하며 관련 웨이팅도 함께 제거
-- 삭제 전 확인 팝업 제공
-
-### 9. 메뉴 등록
-- 메뉴 이름, 설명, 가격, 이미지(1장), 품절 여부 입력
-- 등록 성공 시 목록에 반영
-
-### 10. 메뉴 수정
-- 이름, 설명, 가격, 이미지 각각 수정 가능
-
-### 11. 메뉴 삭제
-- 특정 메뉴를 삭제
-- 삭제 확인 팝업 포함
-
-### 12. 주문 내역 확인
-- 사용자 주문 목록을 시간순으로 조회
-- 주문 → 조리중 → 완료 상태 전환 가능
-- 수락 시 “입금 확인” 경고 팝업 제공
-
-### 13. 웨이팅 목록 확인
-- 해당 주점의 웨이팅 사용자 목록을 무한스크롤 방식으로 조회
-- 호출, 입장, 취소 등 액션 버튼 포함
-
-### 14. 웨이팅 호출
-- 호출 시 카카오톡 알림 전송
-- 동일 사용자 중복 호출 방지
-
-### 15. 웨이팅 입장 처리
-- 호출된 사용자를 입장 완료 처리
-- 웨이팅 목록에서 제거 후 ‘입장 완료’ 처리
-
-### 16. 웨이팅 취소 처리
-- 노쇼 또는 미입장 사용자를 취소 처리
-- 알림톡 전송 및 목록에서 제거
-
