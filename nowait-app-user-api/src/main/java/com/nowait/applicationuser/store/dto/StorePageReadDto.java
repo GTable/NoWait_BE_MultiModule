@@ -21,6 +21,8 @@ public class StorePageReadDto {
 	private String name;
 	private String location;
 	private String description;
+	private String notice;
+	private String openTime;
 	private StoreImageUploadResponse profileImage;
 	private List<StoreImageUploadResponse> bannerImages;
 	private Boolean isActive;
@@ -48,6 +50,8 @@ public class StorePageReadDto {
 			.name(store.getName())
 			.location(store.getLocation())
 			.description(store.getDescription())
+			.notice(store.getNotice())
+			.openTime(store.getOpenTime())
 			.isActive(store.getIsActive())
 			.deleted(store.getDeleted())
 			.profileImage(profile)
@@ -78,6 +82,8 @@ public class StorePageReadDto {
 			.name(store.getName())
 			.location(store.getLocation())
 			.description(store.getDescription())
+			.notice(store.getNotice())
+			.openTime(store.getOpenTime())
 			.isActive(store.getIsActive())
 			.deleted(store.getDeleted())
 			.profileImage(profile)
