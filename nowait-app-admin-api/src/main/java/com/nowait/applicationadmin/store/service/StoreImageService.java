@@ -36,7 +36,7 @@ public class StoreImageService {
 		if (files == null || files.isEmpty())
 			throw new StoreImageEmptyException();
 
-		String type = "store";
+		String type = "banner";
 		Store store = storeRepository.findById(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -61,7 +61,7 @@ public class StoreImageService {
 		for (S3Service.S3UploadResult uploadResult : uploadResults) {
 			StoreImage storeImage = StoreImage.builder()
 				.store(store)
-				.imageUrl(uploadResult.url())
+				.imageUrl(uploadResult.resizedUrl())
 				.fileKey(uploadResult.key())
 				.imageType(ImageType.BANNER)
 				.build();
@@ -76,7 +76,7 @@ public class StoreImageService {
 	@Transactional
 	public StoreImageUploadResponse saveProfileImage(Long storeId, MultipartFile file) {
 
-		String type = "store";
+		String type = "profile";
 		Store store = storeRepository.findById(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -93,7 +93,7 @@ public class StoreImageService {
 		// StoreImage 엔티티 생성 및 저장
 		StoreImage storeImage = StoreImage.builder()
 			.store(store)
-			.imageUrl(uploadResult.url())
+			.imageUrl(uploadResult.resizedUrl())
 			.fileKey(uploadResult.key())
 			.imageType(ImageType.PROFILE)
 			.build();
