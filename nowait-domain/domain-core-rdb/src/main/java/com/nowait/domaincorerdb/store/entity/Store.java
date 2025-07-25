@@ -40,6 +40,12 @@ public class Store extends BaseTimeEntity {
 	@Column(nullable = true, length = 200)
 	private String description;
 
+	@Column(nullable = true, length = 200)
+	private String notice;
+
+	@Column(nullable = true, length = 200)
+	private String openTime;
+
 	@Column(name = "is_active", nullable = false)
 	private Boolean isActive;
 
@@ -47,21 +53,25 @@ public class Store extends BaseTimeEntity {
 	private Boolean deleted;
 
 	public Store(LocalDateTime createdAt, Long storeId, Long departmentId, String name, String location,
-		String description, Boolean isActive, Boolean deleted) {
+		String description,String notice,String openTime, Boolean isActive, Boolean deleted) {
 		super(createdAt);
 		this.storeId = storeId;
 		this.departmentId = departmentId;
 		this.name = name;
 		this.location = location;
 		this.description = description;
+		this.notice = notice;
+		this.openTime = openTime;
 		this.isActive = isActive;
 		this.deleted = deleted;
 	}
 
-	public void updateInfo(String name, String location, String description) {
+	public void updateInfo(String name, String location, String description, String notice, String openTime) {
 		if (name != null) this.name = name;
 		if (location != null) this.location = location;
 		if (description != null) this.description = description;
+		if (notice != null) this.notice = notice;
+		if (openTime != null) this.openTime = openTime;
 	}
 
 	public void markAsDeleted() {
@@ -71,4 +81,5 @@ public class Store extends BaseTimeEntity {
 	public void toggleActive() {
 		this.isActive = !this.isActive;
 	}
+
 }

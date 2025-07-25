@@ -82,7 +82,9 @@ public class StoreServiceImpl implements StoreService {
 		store.updateInfo(
 			request.getName(),
 			request.getLocation(),
-			request.getDescription()
+			request.getDescription(),
+			request.getNotice(),
+			request.getOpenTime()
 		);
 
 		Store updatedStore = storeRepository.save(store);

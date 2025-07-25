@@ -29,6 +29,8 @@ public class StoreCreateRequest {
 			.name(name)
 			.location(location)
 			.description(description)
+			.notice("")
+			.openTime("00002359")
 			.isActive(false)
 			.deleted(false)
 			.build();
