@@ -3,6 +3,7 @@ package com.nowait.applicationadmin.reservation.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,6 @@ import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
 import com.nowait.applicationadmin.reservation.repository.WaitingRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
-import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
@@ -95,21 +95,21 @@ public class ReservationService {
 				Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
 				String status = waitingRedisRepository.getWaitingStatus(storeId, userId);
 
-				// 2. DB에서 userName, createdAt 조회
+				// 2. DB에서 userName, createdAt, reservationId 조회
 				String userName = null;
 				LocalDateTime createdAt = null;
+				Long reservationId = null;
 
-				// UserName 조회 (예: UserRepository)
-				userName = userRepository.findById(Long.valueOf(userId))
-					.map(User::getNickname)
-					.orElse(null);
-
-				// createAt 조회 (예: ReservationRepository)
-				createdAt = reservationRepository.findByStore_StoreIdAndUserId(storeId, Long.valueOf(userId))
-					.map(Reservation::getRequestedAt)
-					.orElse(null);
+				Optional<Reservation> reservationOpt = reservationRepository.findByStore_StoreIdAndUserId(storeId, Long.valueOf(userId));
+				if (reservationOpt.isPresent()) {
+					Reservation reservation = reservationOpt.get();
+					createdAt = reservation.getRequestedAt();
+					reservationId = reservation.getId();
+					userName = reservation.getUser().getNickname();
+				}
 
 				return new WaitingUserResponse(
+					reservationId != null ? reservationId.toString() : null,
 					userId,
 					partySize,
 					userName,
@@ -119,6 +119,7 @@ public class ReservationService {
 				);
 			})
 			.toList();
+
 	}
 
 	// 완료 or 취소 처리된 대기 리스트 조회
