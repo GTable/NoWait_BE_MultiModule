@@ -66,7 +66,8 @@ public class SecurityConfig {
 					"/api-docs/**",
 					"/swagger-resources/**",
 					"/webjars/**",
-					"/demo-ui.html"
+					"/demo-ui.html",
+					"/v1/menus//all-menus/stores/**"
 				)
 				.permitAll()
 				.anyRequest().authenticated() // 그외 요청은 허가된 사람만 인가
