@@ -36,7 +36,7 @@ public class ReservationController {
 	@GetMapping("/admin/{storeId}/waiting/users")
 	@Operation(summary = "주점별 전체 대기/호출중 리스트 조회", description = "주점에 대한 대기 리스트 조회(WAITING,CALLING)")
 	@ApiResponse(responseCode = "200", description = "주점별 전체 대기 리스트 조회")
-	public ResponseEntity<List<WaitingUserResponse>> getWaitingUsersWithScore(@PathVariable Long storeId) {
+	public ResponseEntity<?> getWaitingUsersWithScore(@PathVariable Long storeId) {
 		List<WaitingUserResponse> response = reservationService.getAllWaitingUserDetails(storeId);
 		return ResponseEntity.ok(response);
 	}
