@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.reservation.dto.CallingWaitingResponseDto;
 import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
+import com.nowait.applicationadmin.reservation.dto.ReservationStatusRequest;
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
 import com.nowait.applicationadmin.reservation.service.ReservationService;
 import com.nowait.common.api.ApiUtils;
@@ -67,16 +69,16 @@ public class ReservationController {
 	// 			)
 	// );
 	// }
-	@PatchMapping("/admin/update/{storeId}/{userId}/{status}")
+	@PatchMapping("/admin/update/{storeId}/{userId}")
 	@Operation(summary = "예약팀 상태 업데이트 처리", description = "특정 예약에 대한 입장 완료 처리")
 	@ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  CALLING -> CONFIRMED")
 	public ResponseEntity<?> updateEntry(
 		@PathVariable Long storeId,
 		@PathVariable String userId,
-		@PathVariable ReservationStatus status,
+		@RequestBody ReservationStatusRequest request,
 		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
-		EntryStatusResponseDto response = reservationService.processEntryStatus(storeId, userId, memberDetails,status);
+		EntryStatusResponseDto response = reservationService.processEntryStatus(storeId, userId, memberDetails, request.getStatus());
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
@@ -84,6 +86,5 @@ public class ReservationController {
 					response
 				));
 	}
-
 
 }

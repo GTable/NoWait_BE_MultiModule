@@ -45,10 +45,11 @@ public class ReservationService {
 	private final UserRepository userRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
 	private final StoreRepository storeRepository;
+
 	//TODO 성능 비교를 위해 남겨둔 로직
 	@Transactional(readOnly = true)
 	public ReservationStatusSummaryDto getReservationListByStoreId(Long storeId, MemberDetails memberDetails) {
-		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new ReservationViewUnauthorizedException();
 		}
@@ -61,10 +62,14 @@ public class ReservationService {
 		int callingCount = 0;
 		List<ReservationGetResponseDto> reservationDtoList = new ArrayList<>();
 		for (Reservation r : reservations) {
-			if (r.getStatus() == ReservationStatus.WAITING) waitingCount++;
-			if (r.getStatus() == ReservationStatus.CONFIRMED) confirmedCount++;
-			if (r.getStatus() == ReservationStatus.CANCELLED) cancelledCount++;
-			if (r.getStatus() == ReservationStatus.CALLING) callingCount++;
+			if (r.getStatus() == ReservationStatus.WAITING)
+				waitingCount++;
+			if (r.getStatus() == ReservationStatus.CONFIRMED)
+				confirmedCount++;
+			if (r.getStatus() == ReservationStatus.CANCELLED)
+				cancelledCount++;
+			if (r.getStatus() == ReservationStatus.CALLING)
+				callingCount++;
 			reservationDtoList.add(ReservationGetResponseDto.fromEntity(r));
 		}
 
@@ -76,18 +81,22 @@ public class ReservationService {
 			.reservationList(reservationDtoList)
 			.build();
 	}
+
 	//TODO 성능 비교를 위해 남겨둔 로직
 	@Transactional
 	public CallGetResponseDto updateReservationStatus(Long reservationId, ReservationStatusUpdateRequestDto requestDto,
 		MemberDetails memberDetails) {
-		User user =  userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(ReservationNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(reservation.getStore().getStoreId())) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		Reservation reservation = reservationRepository.findById(reservationId)
+			.orElseThrow(ReservationNotFoundException::new);
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId()
+			.equals(reservation.getStore().getStoreId())) {
 			throw new ReservationUpdateUnauthorizedException();
 		}
-			reservation.updateStatus(requestDto.getStatus());
+		reservation.updateStatus(requestDto.getStatus());
 		return CallGetResponseDto.fromEntity(reservation);
 	}
+
 	// Redis queue에 있는 주점별 전체 대기열 조회
 	@Transactional(readOnly = true)
 	public List<WaitingUserResponse> getAllWaitingUserDetails(Long storeId) {
@@ -111,7 +120,8 @@ public class ReservationService {
 					ThreadLocalRandom.current().nextInt(1, 100));
 
 				Optional<Reservation> reservationOpt = reservationRepository.findFirstByStore_StoreIdAndUserIdAndRequestedAtBetweenOrderByRequestedAtDesc(
-					storeId, Long.valueOf(userId), LocalDate.now().atStartOfDay(), LocalDate.now().atTime(LocalTime.MAX));
+					storeId, Long.valueOf(userId), LocalDate.now().atStartOfDay(),
+					LocalDate.now().atTime(LocalTime.MAX));
 				if (reservationOpt.isPresent()) {
 					Reservation reservation = reservationOpt.get();
 					createdAt = reservation.getRequestedAt();
@@ -119,8 +129,6 @@ public class ReservationService {
 					userName = reservation.getUser().getNickname();
 				} else {
 				}
-
-
 
 				return new WaitingUserResponse(
 					reservationId != null ? reservationId.toString() : null,
@@ -150,7 +158,6 @@ public class ReservationService {
 			.toList();
 	}
 
-
 	private User authorize(Long storeId, MemberDetails member) {
 		User u = userRepository.findById(member.getId())
 			.orElseThrow(UserNotFoundException::new);
@@ -163,7 +170,7 @@ public class ReservationService {
 	// 공통: 오늘 날짜 예약 조회
 	private Reservation findTodayReservation(Long storeId, String userId) {
 		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-		LocalDateTime endOfDay   = LocalDate.now().atTime(LocalTime.MAX);
+		LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
 
 		return reservationRepository
 			.findByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetween(
@@ -184,16 +191,16 @@ public class ReservationService {
 	 */
 	@Transactional
 	public EntryStatusResponseDto processEntryStatus(
-		Long              storeId,
-		String            userId,
-		MemberDetails     member,
+		Long storeId,
+		String userId,
+		MemberDetails member,
 		ReservationStatus newStatus
 	) {
 		User manager = authorize(storeId, member);
 		User user = userRepository.findById(Long.valueOf(userId)).orElseThrow(UserNotFoundException::new);
 
-		String        message   = null;
-		Reservation   reservation;
+		String message = null;
+		Reservation reservation;
 
 		switch (newStatus) {
 			case CALLING:
@@ -206,7 +213,7 @@ public class ReservationService {
 
 				// 2) 파티 인원, 호출 시각
 				Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
-				LocalDateTime now  = LocalDateTime.now();
+				LocalDateTime now = LocalDateTime.now();
 
 				// 3) DB에 무조건 새로 저장
 				Store store = storeRepository.getReferenceById(storeId);
@@ -245,17 +252,15 @@ public class ReservationService {
 
 		// 5) 공통 DTO 반환
 		return EntryStatusResponseDto.builder()
-			.id(        reservation.getId().toString())
-			.userId(    userId)
-			.partySize( reservation.getPartySize())
-			.userName(  user.getNickname())
-			.createdAt( reservation.getRequestedAt())
-			.status(    reservation.getStatus().name())
-			.message(   message)
+			.id(reservation.getId().toString())
+			.userId(userId)
+			.partySize(reservation.getPartySize())
+			.userName(user.getNickname())
+			.createdAt(reservation.getRequestedAt())
+			.status(reservation.getStatus().name())
+			.message(message)
 			.build();
 	}
-
-
 
 }
 
