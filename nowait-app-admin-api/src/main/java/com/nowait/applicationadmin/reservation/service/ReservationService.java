@@ -94,6 +94,7 @@ public class ReservationService {
 		List<ZSetOperations.TypedTuple<String>> waitingList = waitingRedisRepository.getAllWaitingWithScore(storeId);
 		System.out.println(waitingList);
 
+		// TODO N + 1 발생 -> 개선 필요
 		return waitingList.stream()
 			.map(tuple -> {
 				String userId = tuple.getValue();
@@ -109,7 +110,7 @@ public class ReservationService {
 				String reservationId = String.valueOf(
 					ThreadLocalRandom.current().nextInt(1, 100));
 
-				Optional<Reservation> reservationOpt = reservationRepository.findByStore_StoreIdAndUserIdAndRequestedAtBetween(
+				Optional<Reservation> reservationOpt = reservationRepository.findFirstByStore_StoreIdAndUserIdAndRequestedAtBetweenOrderByRequestedAtDesc(
 					storeId, Long.valueOf(userId), LocalDate.now().atStartOfDay(), LocalDate.now().atTime(LocalTime.MAX));
 				if (reservationOpt.isPresent()) {
 					Reservation reservation = reservationOpt.get();
