@@ -6,6 +6,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
@@ -90,6 +92,7 @@ public class ReservationService {
 	@Transactional(readOnly = true)
 	public List<WaitingUserResponse> getAllWaitingUserDetails(Long storeId) {
 		List<ZSetOperations.TypedTuple<String>> waitingList = waitingRedisRepository.getAllWaitingWithScore(storeId);
+		System.out.println(waitingList);
 
 		return waitingList.stream()
 			.map(tuple -> {
@@ -100,17 +103,23 @@ public class ReservationService {
 				String status = waitingRedisRepository.getWaitingStatus(storeId, userId);
 
 				// 2. DB에서 userName, createdAt, reservationId 조회
-				String userName = null;
-				LocalDateTime createdAt = null;
-				Long reservationId = null;
+				//TODO 개선필요 -> createAt 정확성 및 reservationhId 생성 방법(예약생성부터 DB에 박아야하나....)
+				String userName = userRepository.getReferenceById(Long.valueOf(userId)).getNickname();
+				LocalDateTime createdAt = LocalDateTime.now();
+				String reservationId = String.valueOf(
+					ThreadLocalRandom.current().nextInt(1, 100));
 
-				Optional<Reservation> reservationOpt = reservationRepository.findByStore_StoreIdAndUserId(storeId, Long.valueOf(userId));
+				Optional<Reservation> reservationOpt = reservationRepository.findByStore_StoreIdAndUserIdAndRequestedAtBetween(
+					storeId, Long.valueOf(userId), LocalDate.now().atStartOfDay(), LocalDate.now().atTime(LocalTime.MAX));
 				if (reservationOpt.isPresent()) {
 					Reservation reservation = reservationOpt.get();
 					createdAt = reservation.getRequestedAt();
-					reservationId = reservation.getId();
+					reservationId = reservation.getId().toString();
 					userName = reservation.getUser().getNickname();
+				} else {
 				}
+
+
 
 				return new WaitingUserResponse(
 					reservationId != null ? reservationId.toString() : null,
@@ -129,7 +138,11 @@ public class ReservationService {
 	// 완료 or 취소 처리된 대기 리스트 조회
 	@Transactional(readOnly = true)
 	public List<WaitingUserResponse> getCompletedWaitingUserDetails(Long storeId) {
-		List<Reservation> reservations = reservationRepository.findAllByStore_StoreId(storeId);
+		List<Reservation> reservations = reservationRepository.findAllByStore_StoreIdAndStatusInAndRequestedAtBetween(
+			storeId,
+			List.of(ReservationStatus.CONFIRMED, ReservationStatus.CANCELLED),
+			LocalDate.now().atStartOfDay(),
+			LocalDate.now().atTime(LocalTime.MAX));
 
 		return reservations.stream()
 			.map(r -> WaitingUserResponse.fromEntity(r))
