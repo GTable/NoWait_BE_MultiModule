@@ -18,6 +18,16 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
+ext {
+    set('springCloudVersion', "2025.0.0")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
 dependencies {
     implementation project(':nowait-common')
     implementation project(':nowait-infra')           // 사용자 관련 도메인
@@ -53,12 +63,12 @@ dependencies {
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // 로그
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
-    runtimeOnly 'org.fusesource.jansi:jansi:2.4.0'
-
     // 디스코드 웹훅
     implementation 'com.github.napstr:logback-discord-appender:1.0.0'
+
+    //feign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    implementation group: 'io.github.openfeign', name: 'feign-gson', version: '11.0'
 
     // 기타 필요 라이브러리 (예: Lombok)
     compileOnly 'org.projectlombok:lombok'
