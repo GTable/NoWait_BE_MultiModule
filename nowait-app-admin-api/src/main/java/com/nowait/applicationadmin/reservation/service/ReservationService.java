@@ -287,27 +287,25 @@ public class ReservationService {
 
 					Reservation saved = reservationRepository.save(r);
 					return EntryStatusResponseDto.fromEntity(saved);
+				} else {
+					// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
+					// TODO 메서드로 분리
+					LocalDateTime start = LocalDate.now().atStartOfDay();
+					LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
+					Reservation existing = reservationRepository
+						.findFirstByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetweenOrderByRequestedAtDesc(
+							storeId,
+							Long.valueOf(userId),
+							List.of(ReservationStatus.CANCELLED),
+							start,
+							end
+						).orElseThrow(() -> new IllegalStateException("취소된 예약이 없습니다."));
+
+					existing.markConfirmed(now);
+					existing.updateStatus(ReservationStatus.CONFIRMED);
+					Reservation saved = reservationRepository.save(existing);
+					return EntryStatusResponseDto.fromEntity(saved);
 				}
-
-				// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
-				//    (Redis에는 상태가 남아있지 않으므로 currStatus==null)
-			{
-				LocalDateTime start = LocalDate.now().atStartOfDay();
-				LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
-				Reservation existing = reservationRepository
-					.findFirstByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetweenOrderByRequestedAtDesc(
-						storeId,
-						Long.valueOf(userId),
-						List.of(ReservationStatus.CANCELLED),
-						start,
-						end
-					).orElseThrow(() -> new IllegalStateException("취소된 예약이 없습니다."));
-
-				existing.markConfirmed(now);
-				existing.updateStatus(ReservationStatus.CONFIRMED);
-				Reservation saved = reservationRepository.save(existing);
-				return EntryStatusResponseDto.fromEntity(saved);
-			}
 
 			case CANCELLED:
 				if (!(ReservationStatus.WAITING.name().equals(currStatus)
