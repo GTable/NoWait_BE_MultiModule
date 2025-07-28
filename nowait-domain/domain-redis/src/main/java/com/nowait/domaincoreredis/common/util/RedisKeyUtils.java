@@ -1,6 +1,10 @@
 package com.nowait.domaincoreredis.common.util;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class RedisKeyUtils {
 
@@ -18,7 +22,6 @@ public class RedisKeyUtils {
 	private static final String WAITING_PARTYSIZE_KEY_PREFIX = "waiting:party:";
 	private static final String WAITING_STATUS_KEY_PREFIX = "waiting:status:";
 
-
 	private RedisKeyUtils() {
 		throw new UnsupportedOperationException("유틸리티 서비스는 인스턴스화 할 수 없습니다.");
 	}
@@ -35,11 +38,48 @@ public class RedisKeyUtils {
 		return KEY_NEXT;
 	}
 
-	public static String buildMenuKey() { return KEY_FMT; }
+	public static String buildMenuKey() {
+		return KEY_FMT;
+	}
 
-	public static DateTimeFormatter buildMenuDateKey() { return DTF; }
+	public static DateTimeFormatter buildMenuDateKey() {
+		return DTF;
+	}
 
-	public static String buildWaitingKeyPrefix() { return WAITING_KEY_PREFIX; }
-	public static String buildWaitingPartySizeKeyPrefix() { return WAITING_PARTYSIZE_KEY_PREFIX; }
-	public static String buildWaitingStatusKeyPrefix() { return WAITING_STATUS_KEY_PREFIX; }
+	public static String buildWaitingKeyPrefix() {
+		return WAITING_KEY_PREFIX;
+	}
+
+	public static String buildWaitingPartySizeKeyPrefix() {
+		return WAITING_PARTYSIZE_KEY_PREFIX;
+	}
+
+	public static String buildWaitingStatusKeyPrefix() {
+		return WAITING_STATUS_KEY_PREFIX;
+	}
+
+	// Waiting Reservation Number key
+	public static String buildReservationSeqKey(Long storeId) {
+		return String.format("reservation:seq:%d", storeId);
+	}
+
+	public static String buildReservationNumberKey(Long storeId) {
+		return String.format("reservation:number:%d", storeId);
+	}
+
+	/**
+	 * 대기 호출 시각(hash)에 사용할 키 접두사
+	 */
+	public static String buildWaitingCalledAtKeyPrefix() {
+		return "waiting:calledAt:";
+	}
+
+	public static Date expireAtNext03() {
+		ZoneId zone = ZoneId.of("Asia/Seoul");
+		LocalDateTime now = LocalDateTime.now(zone);
+		LocalDateTime next03 = now.toLocalDate().plusDays(1).atTime(3, 0);
+		Instant instant = next03.atZone(zone).toInstant();
+
+		return Date.from(instant);
+	}
 }
