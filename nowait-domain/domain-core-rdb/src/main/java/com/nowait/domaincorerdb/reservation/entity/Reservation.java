@@ -35,6 +35,9 @@ public class Reservation {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Column(name = "reservation_number", nullable = false, length = 50)
+	private String reservationNumber;
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "store_id")
 	private Store store;
@@ -45,6 +48,15 @@ public class Reservation {
 
 	@Column(name = "requested_at", nullable = false)
 	private LocalDateTime requestedAt;
+
+	@Column(name = "called_at", nullable = true)
+	private LocalDateTime calledAt;      // 호출 시각
+
+	@Column(name = "confirmed_at", nullable = true)
+	private LocalDateTime confirmedAt;   // 확정(입장 완료) 시각
+
+	@Column(name = "cancelled_at", nullable = true)
+	private LocalDateTime cancelledAt;   // 취소 시각
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -57,4 +69,19 @@ public class Reservation {
 		this.status = status;
 	}
 
+	// 상태 전환 메서드
+	public void markCalling(LocalDateTime ts) {
+		this.status   = ReservationStatus.CALLING;
+		this.calledAt = ts;
+	}
+
+	public void markConfirmed(LocalDateTime ts) {
+		this.status      = ReservationStatus.CONFIRMED;
+		this.confirmedAt = ts;
+	}
+
+	public void markCancelled(LocalDateTime ts) {
+		this.status      = ReservationStatus.CANCELLED;
+		this.cancelledAt = ts;
+	}
 }
