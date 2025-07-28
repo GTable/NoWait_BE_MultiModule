@@ -4,16 +4,21 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
+import com.nowait.applicationuser.reservation.dto.MyWaitingStoreInfo;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
@@ -25,13 +30,17 @@ import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
+import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.Store;
+import com.nowait.domaincorerdb.store.entity.StoreImage;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
+import com.nowait.domaincorerdb.store.repository.StoreImageRepository;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 import lombok.RequiredArgsConstructor;
@@ -45,15 +54,18 @@ public class ReservationService {
 	private final UserRepository userRepository;
 	private final WaitingUserRedisRepository waitingUserRedisRepository;
 	private final DepartmentRepository departmentRepository;
+	private final StoreImageRepository storeImageRepository;
+	private final RedisTemplate redisTemplate;
 
 	public WaitingResponseDto registerWaiting(
-		Long storeId,CustomOAuth2User customOAuth2User,ReservationCreateRequestDto requestDto
+		Long storeId, CustomOAuth2User customOAuth2User, ReservationCreateRequestDto requestDto
 	) {
 		// Store 유효성 검증 추가
 		Store store = storeRepository.findById(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 		if (Boolean.FALSE.equals(store.getIsActive()))
 			throw new StoreWaitingDisabledException();
+
 		// User Role 검증 추가
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
@@ -65,13 +77,16 @@ public class ReservationService {
 		long timestamp = System.currentTimeMillis();
 
 		// 예약 신청 유저 큐(queue)에 추가
-		boolean added = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(), timestamp);
-		if (!added) {
-			throw new IllegalArgumentException("Failed to add to waiting queue");
+		String reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(),
+			timestamp);
+		if (reservationId == null) {
+			throw new IllegalStateException("예약 번호 발급 실패");
 		}
+
 		// 신규 등록/기존 등록 관계없이 내 순번, 전체 인원 반환
 		Long rank = waitingUserRedisRepository.getRank(storeId, userId);
 		return WaitingResponseDto.builder()
+			.reservationNumber(reservationId)
 			.rank(rank == null ? -1 : rank.intValue() + 1)
 			.partySize(requestDto.getPartySize() == null ? 0 : requestDto.getPartySize())
 			.build();
@@ -81,11 +96,13 @@ public class ReservationService {
 		String userId = customOAuth2User.getUserId().toString();
 		// 입력 검증 추가
 		if (storeId == null || userId.trim().isEmpty()) {
-		throw new IllegalArgumentException("Invalid storeId or userId");
+			throw new IllegalArgumentException("Invalid storeId or userId");
 		}
 		Long rank = waitingUserRedisRepository.getRank(storeId, userId);
 		Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
+		String reservationId = waitingUserRedisRepository.getReservationId(storeId, userId);
 		return WaitingResponseDto.builder()
+			.reservationNumber(reservationId)
 			.rank(rank == null ? -1 : rank.intValue() + 1)
 			.partySize(partySize == null ? 0 : partySize)
 			.build();
@@ -103,53 +120,101 @@ public class ReservationService {
 		}
 		return removed;
 	}
+
 	//TODO 성능 개선 필요
 	public List<MyWaitingQueueDto> getAllMyWaitings(CustomOAuth2User customOAuth2User) {
 		String userId = customOAuth2User.getUserId().toString();
-		List<Long> userWaitingStoreIds = waitingUserRedisRepository.getUserWaitingStoreIds(userId);
 
-		List<MyWaitingQueueDto> result = new ArrayList<>();
-		if (!userWaitingStoreIds.isEmpty()) {
-			// Store, Department 배치 조회
-			List<Store> stores = storeRepository.findAllById(userWaitingStoreIds);
-			Map<Long, Store> storeMap = stores.stream()
-				.collect(Collectors.toMap(Store::getStoreId, Function.identity()));
+		// 1) 현재 SCAN 기반으로 얻어온 storeId 리스트
+		List<Long> storeIds = waitingUserRedisRepository.getUserWaitingStoreIds(userId);
+		if (storeIds.isEmpty())
+			return Collections.emptyList();
 
-			Set<Long> departmentIds = stores.stream()
-				.map(Store::getDepartmentId)
-				.collect(Collectors.toSet());
-			Map<Long, String> departmentNameMap = departmentRepository.findAllById(departmentIds).stream()
-				.collect(Collectors.toMap(Department::getId, Department::getName));
+		// 2) Store, Department 배치 조회
+		List<Store> stores = storeRepository.findAllWithDepartmentByStoreIdIn(storeIds);
+		Map<Long, Store> storeMap = stores.stream()
+			.collect(Collectors.toMap(Store::getStoreId, Function.identity()));
 
-			for (Long storeId : userWaitingStoreIds) {
-				Store store = storeMap.get(storeId);
-				if (store == null) continue;
+		// 3) Department 이름 조회 (departmentId 기준)
+		Set<Long> deptIds = stores.stream()
+			.map(Store::getDepartmentId)
+			.collect(Collectors.toSet());
+		Map<Long, String> deptNameMap = departmentRepository.findAllById(deptIds).stream()
+			.collect(Collectors.toMap(Department::getId, Department::getName));
 
-				Long rank = waitingUserRedisRepository.getRank(storeId, userId);
-				Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
-				Long timestamp = waitingUserRedisRepository.getWaitingTimestamp(storeId, userId);
+		// 4) StoreImage 조회 (프로필 + 배너)
+		List<ImageType> neededTypes = List.of(ImageType.PROFILE, ImageType.BANNER);
+		List<StoreImage> images = storeImageRepository.findAllByStore_StoreIdInAndImageTypeIn(storeIds, neededTypes);
 
-				LocalDateTime registeredAt = timestamp != null
-					? LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of("Asia/Seoul"))
-					: null;
+		Map<Long, String> profileMap = images.stream()
+			.filter(img -> img.getImageType() == ImageType.PROFILE)
+			.collect(Collectors.toMap(
+				img -> img.getStore().getStoreId(),
+				StoreImage::getImageUrl,
+				(first, second) -> first
+			));
+		Map<Long, List<String>> bannerMap = images.stream()
+			.filter(img -> img.getImageType() == ImageType.BANNER)
+			.collect(Collectors.groupingBy(
+				img -> img.getStore().getStoreId(),
+				Collectors.mapping(StoreImage::getImageUrl, Collectors.toList())
+			));
 
-				result.add(MyWaitingQueueDto.builder()
-					.storeId(storeId)
-					.storeName(store.getName())
-					.departmentName(departmentNameMap.get(store.getDepartmentId()))
-					.rank(rank != null ? rank.intValue() + 1 : 0)
-					.teamsAhead(rank != null ? rank.intValue() : 0)
-					.partySize(partySize != null ? partySize : 0)
-					.status(waitingUserRedisRepository.getWaitingStatus(storeId, userId)) // 필요시 redis에 상태값이 있으면 조회해서 세팅
-					.registeredAt(registeredAt)
-					.location(store.getLocation())
-					.profileImageUrl(customOAuth2User.getUser().getProfileImage())
-					.build());
+		List<Object> pipelineResults = redisTemplate.executePipelined((RedisCallback<Object>)conn -> {
+			byte[] uid = redisTemplate.getStringSerializer().serialize(userId);
+			for (Long storeId : storeIds) {
+				String qk = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+				String pk = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
+				String sk = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
+				String nk = RedisKeyUtils.buildReservationNumberKey(storeId);
+				conn.zRank(qk.getBytes(), uid);      // 순번 (0-based)
+				conn.hGet(pk.getBytes(), uid);       // partySize (String)
+				conn.zScore(qk.getBytes(), uid);     // timestamp (Double)
+				conn.hGet(sk.getBytes(), uid);       // status (String)
+				conn.hGet(nk.getBytes(), uid);       // reservationId (String)
 			}
+			return null;
+		});
+
+		// 4) 결과 매핑
+		List<MyWaitingQueueDto> result = new ArrayList<>(storeIds.size());
+		Iterator<Object> it = pipelineResults.iterator();
+		for (Long storeId : storeIds) {
+			Store store = storeMap.get(storeId);
+			Long rankObj = (Long)it.next(); // null 가능
+			String partyStr = (String)it.next();
+			Double tsScore = (Double)it.next();
+			String status = (String)it.next();
+			String reservationId = (String)it.next();
+
+			int rank = (rankObj != null ? rankObj.intValue() + 1 : 0);
+			int teamsAhead = (rankObj != null ? rankObj.intValue() : 0);
+			int partySize = (partyStr != null ? Integer.parseInt(partyStr) : 0);
+			LocalDateTime registeredAt = tsScore != null
+				? Instant.ofEpochMilli(tsScore.longValue())
+				.atZone(ZoneId.of("Asia/Seoul"))
+				.toLocalDateTime()
+				: null;
+
+			result.add(MyWaitingQueueDto.builder()
+				.reservationId(reservationId)
+				.storeId(storeId)
+				.storeName(store.getName())
+				.departmentName(deptNameMap.get(store.getDepartmentId()))
+				.location(store.getLocation())
+				.profileImageUrl(profileMap.getOrDefault(storeId, ""))
+				.bannerImageUrl(bannerMap.getOrDefault(storeId, Collections.emptyList()))
+				.rank(rank)
+				.teamsAhead(teamsAhead)
+				.partySize(partySize)
+				.status(status)
+				.registeredAt(registeredAt)
+				.build()
+			);
 		}
+
 		return result;
 	}
-
 
 	@Transactional
 	public ReservationCreateResponseDto create(Long storeId, CustomOAuth2User customOAuth2User,
