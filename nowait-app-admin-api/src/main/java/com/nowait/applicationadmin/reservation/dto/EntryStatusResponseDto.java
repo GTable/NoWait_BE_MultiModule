@@ -69,14 +69,5 @@ public class EntryStatusResponseDto {
 			})
 			.build();
 	}
-
-	private String buildMessage(ReservationStatus status, String nickname) {
-		return switch (status) {
-			case CALLING -> nickname + "님을 호출하였습니다.";
-			case CONFIRMED -> nickname + "님의 입장이 완료되었습니다.";
-			case CANCELLED -> nickname + "님의 예약이 취소되었습니다.";
-			default -> "";
-		};
-	}
 }
 

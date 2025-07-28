@@ -16,8 +16,8 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class WaitingRedisRepository {
+
 	private final StringRedisTemplate redisTemplate;
-	private final Date expireAt = RedisKeyUtils.expireAtNext03();
 
 	// 대기열 전체 인원수 조회
 	public List<ZSetOperations.TypedTuple<String>> getAllWaitingWithScore(Long storeId) {
@@ -90,7 +90,7 @@ public class WaitingRedisRepository {
 		String key = RedisKeyUtils.buildWaitingCalledAtKeyPrefix() + storeId;
 		redisTemplate.opsForHash().put(key, userId, String.valueOf(timestamp));
 
-		redisTemplate.expireAt(key, expireAt);
+		redisTemplate.expireAt(key, RedisKeyUtils.expireAtNext03());
 	}
 
 	public Long getWaitingCalledAt(Long storeId, String userId) {
