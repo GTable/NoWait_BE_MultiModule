@@ -1,20 +1,25 @@
 package com.nowait.applicationadmin.reservation.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationadmin.reservation.dto.CallGetResponseDto;
-import com.nowait.applicationadmin.reservation.dto.CallingWaitingResponseDto;
 import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusSummaryDto;
@@ -28,12 +33,12 @@ import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundExcepti
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
-import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +50,7 @@ public class ReservationService {
 	private final UserRepository userRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
 	private final StoreRepository storeRepository;
+	private final RedisTemplate redisTemplate;
 
 	//TODO 성능 비교를 위해 남겨둔 로직
 	@Transactional(readOnly = true)
@@ -98,50 +104,74 @@ public class ReservationService {
 	}
 
 	// Redis queue에 있는 주점별 전체 대기열 조회
+	//TODO 개선필요 -> createAt 정확성 및 reservationhId 생성 방법(예약생성부터 DB에 박아야하나....)
 	@Transactional(readOnly = true)
 	public List<WaitingUserResponse> getAllWaitingUserDetails(Long storeId) {
+
+		// 1) Redis로부터 전체 대기 userId + score(등록 시각)
 		List<ZSetOperations.TypedTuple<String>> waitingList = waitingRedisRepository.getAllWaitingWithScore(storeId);
 		System.out.println(waitingList);
+		if (waitingList.isEmpty()) {
+			return List.of();
+		}
 
-		// TODO N + 1 발생 -> 개선 필요
-		return waitingList.stream()
-			.map(tuple -> {
-				String userId = tuple.getValue();
-
-				// 1. Redis에서 partySize/status 조회
-				Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
-				String status = waitingRedisRepository.getWaitingStatus(storeId, userId);
-
-				// 2. DB에서 userName, createdAt, reservationId 조회
-				//TODO 개선필요 -> createAt 정확성 및 reservationhId 생성 방법(예약생성부터 DB에 박아야하나....)
-				String userName = userRepository.getReferenceById(Long.valueOf(userId)).getNickname();
-				LocalDateTime createdAt = LocalDateTime.now();
-				String reservationId = String.valueOf(
-					ThreadLocalRandom.current().nextInt(1, 100));
-
-				Optional<Reservation> reservationOpt = reservationRepository.findFirstByStore_StoreIdAndUserIdAndRequestedAtBetweenOrderByRequestedAtDesc(
-					storeId, Long.valueOf(userId), LocalDate.now().atStartOfDay(),
-					LocalDate.now().atTime(LocalTime.MAX));
-				if (reservationOpt.isPresent()) {
-					Reservation reservation = reservationOpt.get();
-					createdAt = reservation.getRequestedAt();
-					reservationId = reservation.getId().toString();
-					userName = reservation.getUser().getNickname();
-				} else {
-				}
-
-				return new WaitingUserResponse(
-					reservationId != null ? reservationId.toString() : null,
-					userId,
-					partySize,
-					userName,
-					createdAt,
-					status,
-					tuple.getScore()
-				);
-			})
+		// 2) userId 목록 분리
+		List<String> userIds = waitingList.stream()
+			.map(ZSetOperations.TypedTuple::getValue)
 			.toList();
 
+		// 3) User 닉네임을 한 번에 배치 조회
+		List<Long> userIdLongs = userIds.stream()
+			.map(Long::valueOf)
+			.toList();
+		Map<String, String> nicknameMap = userRepository.findAllById(userIdLongs).stream()
+			.collect(Collectors.toMap(
+				u -> u.getId().toString(),
+				User::getNickname
+			));
+
+		// 4) Redis 파이프라인: partySize, status, reservationId
+		String pk = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
+		String sk = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
+		String nk = RedisKeyUtils.buildReservationNumberKey(storeId);
+		String qk = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+
+		List<Object> pipeline = redisTemplate.executePipelined((RedisCallback<Object>)conn -> {
+			byte[] uid;
+			for (String userId : userIds) {
+				uid = redisTemplate.getStringSerializer().serialize(userId);
+				conn.hGet(pk.getBytes(), uid);   // partySize
+				conn.hGet(sk.getBytes(), uid);   // status
+				conn.hGet(nk.getBytes(), uid);   // reservationId
+				conn.zScore(qk.getBytes(), uid); // score (등록 시각)
+			}
+			return null;
+		});
+
+		// 5) 결과 매핑
+		List<WaitingUserResponse> result = new ArrayList<>(userIds.size());
+		Iterator<Object> it = pipeline.iterator();
+		ZoneId zone = ZoneId.of("Asia/Seoul");
+
+		for (ZSetOperations.TypedTuple<String> tuple : waitingList) {
+			String userId = tuple.getValue();
+			Integer partySize = Optional.ofNullable((String)it.next()).map(Integer::valueOf).orElse(0);
+			String status = (String)it.next();
+			String reservationId = (String)it.next();
+			Double score = (Double)it.next();
+
+			// score → createdAt
+			LocalDateTime createdAt = score != null
+				? Instant.ofEpochMilli(score.longValue()).atZone(zone).toLocalDateTime()
+				: null;
+
+			String userName = nicknameMap.getOrDefault(userId, "Unknown");
+
+			result.add(
+				WaitingUserResponse.fromRedis(reservationId, userId, partySize, userName, createdAt, status, score));
+		}
+
+		return result;
 	}
 
 	// 완료 or 취소 처리된 대기 리스트 조회
@@ -190,77 +220,117 @@ public class ReservationService {
 	 * - CANCELLED : Redis에서 삭제             → DB 저장 → 취소 메시지 반환
 	 */
 	@Transactional
-	public EntryStatusResponseDto processEntryStatus(
-		Long storeId,
-		String userId,
-		MemberDetails member,
-		ReservationStatus newStatus
-	) {
-		User manager = authorize(storeId, member);
-		User user = userRepository.findById(Long.valueOf(userId)).orElseThrow(UserNotFoundException::new);
+	public EntryStatusResponseDto processEntryStatus(Long storeId, String userId, MemberDetails member, ReservationStatus newStatus) {
 
-		String message = null;
-		Reservation reservation;
+		authorize(storeId, member);
+
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+
+		// Redis에서 상태·score·partySize·calledAt 조회
+		String reservationNumber = waitingRedisRepository.getReservationId(storeId, userId);
+		String currStatus = waitingRedisRepository.getWaitingStatus(storeId, userId);
+		Double score = redisTemplate.opsForZSet().score(queueKey, userId);
+		Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
+		Long calledMillis = waitingRedisRepository.getWaitingCalledAt(storeId, userId);
+
+		LocalDateTime requestedAt = score != null
+			? Instant.ofEpochMilli(score.longValue()).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
+			: LocalDateTime.now();
+		LocalDateTime calledAt = calledMillis != null
+			? Instant.ofEpochMilli(calledMillis).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
+			: null;
+		LocalDateTime now = LocalDateTime.now();
 
 		switch (newStatus) {
 			case CALLING:
-				// 1) Redis 상태 검사 & 변경
-				String curr = waitingRedisRepository.getWaitingStatus(storeId, userId);
-				if (!ReservationStatus.WAITING.name().equals(curr)) {
-					throw new IllegalStateException("이미 호출되었거나 없는 예약입니다.");
+				if (!ReservationStatus.WAITING.name().equals(currStatus)) {
+					throw new IllegalStateException("WAITING 상태에서만 CALLING 가능합니다.");
 				}
 				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
+				waitingRedisRepository.setWaitingCalledAt(storeId, userId, now.toInstant(ZoneOffset.ofHours(9)).toEpochMilli());
 
-				// 2) 파티 인원, 호출 시각
-				Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
-				LocalDateTime now = LocalDateTime.now();
 
-				// 3) DB에 무조건 새로 저장
-				Store store = storeRepository.getReferenceById(storeId);
-				reservation = Reservation.builder()
-					.store(store)
-					.user(user)
+				return EntryStatusResponseDto.builder()
+					.reservationNumber(reservationNumber)
+					.userId(userId)
 					.partySize(partySize)
-					.requestedAt(now)
-					.status(ReservationStatus.CALLING)
+					.userName(userRepository.getReferenceById(Long.valueOf(userId)).getNickname())
+					.createdAt(requestedAt)
+					.status("CALLING")
+					.score(score)
+					.calledAt(now)
+					.message("호출되었습니다.")
 					.build();
-				reservationRepository.save(reservation);
-
-				break;
 
 			case CONFIRMED:
+				// 1) 기존 대기 중이거나 호출 중일 때: Redis → DB 최초 저장
+				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name().equals(currStatus)) {
+
+					// Redis 전부 삭제
+					waitingRedisRepository.deleteWaiting(storeId, userId);
+
+					// 새 Reservation 생성 & 저장
+					Reservation r = Reservation.builder()
+						.reservationNumber(reservationNumber)
+						.store(storeRepository.getReferenceById(storeId))
+						.user(userRepository.getReferenceById(Long.valueOf(userId)))
+						.partySize(partySize)
+						.requestedAt(requestedAt)
+						.build();
+					// 호출 시각 반영
+					r.markCalling(calledAt != null ? calledAt : now);
+					if (newStatus == ReservationStatus.CONFIRMED) {
+						r.markConfirmed(now);
+					} else {
+						r.markCancelled(now);
+					}
+
+					Reservation saved = reservationRepository.save(r);
+					return EntryStatusResponseDto.fromEntity(saved);
+				}
+
+				// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
+				//    (Redis에는 상태가 남아있지 않으므로 currStatus==null)
+			{
+				LocalDateTime start = LocalDate.now().atStartOfDay();
+				LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
+				Reservation existing = reservationRepository
+					.findFirstByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetweenOrderByRequestedAtDesc(
+						storeId,
+						Long.valueOf(userId),
+						List.of(ReservationStatus.CANCELLED),
+						start,
+						end
+					).orElseThrow(() -> new IllegalStateException("취소된 예약이 없습니다."));
+
+				existing.markConfirmed(now);
+				existing.updateStatus(ReservationStatus.CONFIRMED);
+				Reservation saved = reservationRepository.save(existing);
+				return EntryStatusResponseDto.fromEntity(saved);
+			}
+
 			case CANCELLED:
-				// 1) Redis에서 제거
+				if (!(ReservationStatus.WAITING.name().equals(currStatus)
+					  || ReservationStatus.CALLING.name().equals(currStatus))) {
+					throw new IllegalStateException("WAITING/CALLING 상태에서만 취소 가능합니다.");
+				}
 				waitingRedisRepository.deleteWaiting(storeId, userId);
 
-				// 2) 오늘 날짜 예약 조회 & 상태 변경
-				reservation = findTodayReservation(storeId, userId);
-				reservation.updateStatus(newStatus);
-				reservationRepository.save(reservation);
-
-				// 3) 완료/취소 메시지
-				message = String.format(
-					"%s님의 예약이 %s 처리되었습니다.",
-					user.getNickname(),
-					newStatus == ReservationStatus.CONFIRMED ? "입장 완료" : "입장 취소"
-				);
-				break;
+				Reservation r = Reservation.builder()
+					.reservationNumber(reservationNumber)
+					.store(storeRepository.getReferenceById(storeId))
+					.user(userRepository.getReferenceById(Long.valueOf(userId)))
+					.partySize(partySize)
+					.requestedAt(requestedAt)
+					.build();
+				r.markCalling(calledAt != null ? calledAt : now);
+				r.markCancelled(now);
+				Reservation saved = reservationRepository.save(r);
+				return EntryStatusResponseDto.fromEntity(saved);
 
 			default:
-				throw new IllegalArgumentException("지원하지 않는 상태입니다: " + newStatus);
+				throw new IllegalArgumentException("지원하지 않는 상태: " + newStatus);
 		}
-
-		// 5) 공통 DTO 반환
-		return EntryStatusResponseDto.builder()
-			.id(reservation.getId().toString())
-			.userId(userId)
-			.partySize(reservation.getPartySize())
-			.userName(user.getNickname())
-			.createdAt(reservation.getRequestedAt())
-			.status(reservation.getStatus().name())
-			.message(message)
-			.build();
 	}
-
 }
 
