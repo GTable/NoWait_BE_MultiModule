@@ -16,8 +16,8 @@ import lombok.Getter;
 @Schema(description = "대기 사용자 응답 DTO")
 public class WaitingUserResponse {
 
-	@Schema(description = "예약 ID", example = "1201")
-	private String id; // reservationId
+	@Schema(description = "예약 ID", example = "16-20240201-0002")
+	private String reservationId;
 
 	@Schema(description = "유저 ID", example = "16")
 	private String userId;
@@ -39,12 +39,24 @@ public class WaitingUserResponse {
 
 	public static WaitingUserResponse fromEntity(Reservation reservation) {
 		return WaitingUserResponse.builder()
-			.id(reservation.getId().toString())
+			.reservationId(reservation.getId().toString())
 			.userId(reservation.getUser().getId().toString())
 			.partySize(reservation.getPartySize())
 			.userName(reservation.getUser().getNickname())
 			.createdAt(reservation.getRequestedAt())
 			.status(reservation.getStatus().name())
+			.build();
+	}
+
+	public static WaitingUserResponse fromRedis(String reservationId, String userId, Integer partySize, String userName, LocalDateTime createdAt, String status, Double score) {
+		return WaitingUserResponse.builder()
+			.reservationId(reservationId)
+			.userId(userId)
+			.partySize(partySize)
+			.userName(userName)
+			.createdAt(createdAt)
+			.status(status)
+			.score(score)
 			.build();
 	}
 }
