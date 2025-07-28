@@ -1,7 +1,5 @@
 package com.nowait.domaincorerdb.store.repository;
 
-import static com.nowait.domaincorerdb.store.entity.ImageType.*;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -23,5 +21,6 @@ public interface StoreImageRepository extends JpaRepository<StoreImage, Long> {
 
 	List<StoreImage> findByStoreAndImageType(Store store, ImageType imageType);
 
+	List<StoreImage> findAllByStore_StoreIdInAndImageTypeIn(List<Long> storeIds, List<ImageType> imageTypes);
 
 }
