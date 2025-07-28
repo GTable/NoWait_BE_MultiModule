@@ -36,4 +36,13 @@ public interface StoreRepository extends JpaRepository<Store, Long>, StoreCustom
 	List<Store> searchByKeywordNative(@Param("kw") String booleanKeyword);
 
 	List<Store> findAllByStoreIdInOrderByStoreIdAsc(List<Long> storeIds);
+
+	@Query(value = """
+		SELECT s
+		  FROM Store s
+		  LEFT JOIN Department d ON s.departmentId = d.id
+		 WHERE s.deleted = false
+		   AND s.storeId IN :ids
+		""")
+	List<Store> findAllWithDepartmentByStoreIdIn(@Param("ids") List<Long> ids);
 }
