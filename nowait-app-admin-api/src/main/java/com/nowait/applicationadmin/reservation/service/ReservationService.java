@@ -247,7 +247,7 @@ public class ReservationService {
 					throw new IllegalStateException("WAITING 상태에서만 CALLING 가능합니다.");
 				}
 				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
-				waitingRedisRepository.setWaitingCalledAt(storeId, userId, now.toInstant(ZoneOffset.ofHours(9)).toEpochMilli());
+				waitingRedisRepository.setWaitingCalledAt(storeId, userId, now.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli());
 
 
 				return EntryStatusResponseDto.builder()
