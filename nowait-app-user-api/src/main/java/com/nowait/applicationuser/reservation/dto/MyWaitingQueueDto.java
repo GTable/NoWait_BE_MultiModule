@@ -1,6 +1,7 @@
 package com.nowait.applicationuser.reservation.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "내 대기 큐 정보 DTO")
 public class MyWaitingQueueDto {
+	@Schema(description = "예약 ID", example = "1-20240720-0001")
+	private String  reservationId;
 	@Schema(description = "주점 ID", example = "1")
 	private Long storeId;
 	@Schema(description = "주점 이름", example = "비어파티")
@@ -34,5 +37,7 @@ public class MyWaitingQueueDto {
 	private String location;
 	@Schema(description = "프로필 이미지 URL", example = "https://cdn.gtable.com/profile/user1.jpg")
 	private String profileImageUrl;
+	@Schema(description = "배너 이미지 URL", example = "https://cdn.gtable.com/profile/user1.jpg")
+	private List<String> bannerImageUrl;
 }
 
