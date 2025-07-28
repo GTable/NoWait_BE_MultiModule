@@ -57,7 +57,7 @@ public class ReservationController {
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
 		@RequestBody ReservationCreateRequestDto requestDto
 	) {
-		WaitingResponseDto response = reservationService.registerWaiting(storeId,customOAuth2User,requestDto);
+		WaitingResponseDto response = reservationService.registerWaiting(storeId, customOAuth2User, requestDto);
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
 			.body(
@@ -74,7 +74,7 @@ public class ReservationController {
 		@PathVariable Long storeId,
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User
 	) {
-		WaitingResponseDto response = reservationService.myWaitingInfo(storeId,customOAuth2User);
+		WaitingResponseDto response = reservationService.myWaitingInfo(storeId, customOAuth2User);
 		return ResponseEntity
 			.ok()
 			.body(
@@ -95,7 +95,7 @@ public class ReservationController {
 			.ok()
 			.body(
 				ApiUtils.success(
-					reservationService.cancelWaiting(storeId,customOAuth2User)
+					reservationService.cancelWaiting(storeId, customOAuth2User)
 				)
 			);
 	}
@@ -105,7 +105,13 @@ public class ReservationController {
 	@ApiResponse(responseCode = "200", description = "대기열 리스트 조회")
 	public ResponseEntity<?> getAllMyWaitings(@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
 		List<MyWaitingQueueDto> response = reservationService.getAllMyWaitings(customOAuth2User);
-		return ResponseEntity.ok(ApiUtils.success(response));
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
 	}
 
 }
