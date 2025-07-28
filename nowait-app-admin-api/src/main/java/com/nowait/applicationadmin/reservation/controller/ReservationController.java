@@ -8,18 +8,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nowait.applicationadmin.reservation.dto.CallingWaitingResponseDto;
 import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusRequest;
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
 import com.nowait.applicationadmin.reservation.service.ReservationService;
 import com.nowait.common.api.ApiUtils;
-import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +37,13 @@ public class ReservationController {
 	@ApiResponse(responseCode = "200", description = "주점별 전체 대기 리스트 조회")
 	public ResponseEntity<?> getWaitingUsersWithScore(@PathVariable Long storeId) {
 		List<WaitingUserResponse> response = reservationService.getAllWaitingUserDetails(storeId);
-		return ResponseEntity.ok(response);
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
 	}
 
 	@GetMapping("/admin/{storeId}/completed")
@@ -51,7 +54,13 @@ public class ReservationController {
 		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
 		List<WaitingUserResponse> response = reservationService.getCompletedWaitingUserDetails(storeId);
-		return ResponseEntity.ok(response);
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
 	}
 
 	// @PatchMapping("/admin/{storeId}/call/{userId}")
