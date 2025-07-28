@@ -17,7 +17,7 @@ import lombok.Getter;
 public class WaitingUserResponse {
 
 	@Schema(description = "예약 ID", example = "16-20240201-0002")
-	private String reservationId;
+	private String reservationNumber;
 
 	@Schema(description = "유저 ID", example = "16")
 	private String userId;
@@ -39,7 +39,7 @@ public class WaitingUserResponse {
 
 	public static WaitingUserResponse fromEntity(Reservation reservation) {
 		return WaitingUserResponse.builder()
-			.reservationId(reservation.getId().toString())
+			.reservationNumber(reservation.getReservationNumber())
 			.userId(reservation.getUser().getId().toString())
 			.partySize(reservation.getPartySize())
 			.userName(reservation.getUser().getNickname())
@@ -50,7 +50,7 @@ public class WaitingUserResponse {
 
 	public static WaitingUserResponse fromRedis(String reservationId, String userId, Integer partySize, String userName, LocalDateTime createdAt, String status, Double score) {
 		return WaitingUserResponse.builder()
-			.reservationId(reservationId)
+			.reservationNumber(reservationId)
 			.userId(userId)
 			.partySize(partySize)
 			.userName(userName)
