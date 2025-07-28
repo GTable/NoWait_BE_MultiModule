@@ -36,8 +36,8 @@ public class WaitingUserRedisRepository {
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 
-		String seqKey        = RedisKeyUtils.buildReservationSeqKey(storeId);
-		String numberMapKey  = RedisKeyUtils.buildReservationNumberKey(storeId);
+		String seqKey = RedisKeyUtils.buildReservationSeqKey(storeId);
+		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
 
 		Boolean added = redisTemplate.opsForZSet().addIfAbsent(queueKey, userId, timestamp);
 		String reservationId;
@@ -64,7 +64,7 @@ public class WaitingUserRedisRepository {
 			redisTemplate.opsForHash().put(partyKey, userId, partySize.toString());
 			redisTemplate.opsForHash().put(statusKey, userId, "WAITING");
 
-			Duration ttl = setTTL(partyKey, statusKey, userId, partySize);
+			Duration ttl = calculateTTLUntilNext03AM();
 
 			redisTemplate.expire(queueKey, ttl);
 			redisTemplate.expire(partyKey, ttl);
@@ -148,7 +148,7 @@ public class WaitingUserRedisRepository {
 
 		// 3) 파이프라인으로 zRank 한 번에 조회
 		List<Object> pipelineResults = redisTemplate.executePipelined(
-			(RedisCallback<Object>) conn -> {
+			(RedisCallback<Object>)conn -> {
 				byte[] uid = redisTemplate.getStringSerializer().serialize(userId);
 				for (String key : zsetKeys) {
 					byte[] rawKey = redisTemplate.getStringSerializer().serialize(key);
@@ -191,15 +191,12 @@ public class WaitingUserRedisRepository {
 		return val != null ? val.toString() : null;
 	}
 
-	public Duration setTTL(String partyKey, String statusKey, String userId, Integer partySize) {
-		// 6) 기존 partySize, status, TTL 설정
-		redisTemplate.opsForHash().put(partyKey, userId, partySize.toString());
-		redisTemplate.opsForHash().put(statusKey, userId, "WAITING");
-
+	public Duration calculateTTLUntilNext03AM() {
 		// 6-1) Asia/Seoul 기준으로 오늘 자정(내일 00:00) 구하기
 		ZoneId zone = ZoneId.of("Asia/Seoul");
-		LocalDateTime now      = LocalDateTime.now(zone);
+		LocalDateTime now = LocalDateTime.now(zone);
 		LocalDateTime midnight = now.toLocalDate().plusDays(1).atTime(3, 0);
+
 		// 6-2) TTL 남은 초 계산
 		long secondsUntilMidnight = now.until(midnight, ChronoUnit.SECONDS);
 
