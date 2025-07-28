@@ -1,8 +1,11 @@
 package com.nowait.applicationuser.exception;
 
 import static com.nowait.common.exception.ErrorMessage.*;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.HttpStatus.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,18 +19,21 @@ import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartException;
 
 import com.nowait.applicationuser.security.exception.ResourceNotFoundException;
 import com.nowait.applicationuser.security.exception.UnauthorizedException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
+import com.nowait.discord.service.DiscordAlarmService;
 import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -35,150 +41,184 @@ import com.nowait.domainuserrdb.bookmark.exception.BookmarkOwnerMismatchExceptio
 import com.nowait.domainuserrdb.bookmark.exception.DuplicateBookmarkException;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Hidden
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-	// OAUTH 인증 실패 에러처리 메서드
-	@ResponseStatus(value = BAD_REQUEST)
-	@ExceptionHandler(OAuth2AuthenticationException.class)
-	public ErrorResponse handlerOAuth2AuthenticationException(OAuth2AuthenticationException e) {
-		log.error("handleOAuth2AuthenticationException", e);
+	private final DiscordAlarmService discordAlarmService;
 
+	// Discord 알림 헬퍼
+	private void alarm(Exception e, WebRequest request) {
+		discordAlarmService.sendDiscordUserAlarm(e, request);
+	}
+
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(OAuth2AuthenticationException.class)
+	public ErrorResponse handlerOAuth2AuthenticationException(OAuth2AuthenticationException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleOAuth2AuthenticationException", e);
 		return new ErrorResponse("OAuth 인증 실패 : " + e.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(BusinessException.class)
-	public ErrorResponse handleBusinessException(BusinessException e) {
+	public ErrorResponse handleBusinessException(BusinessException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleBusinessException", e);
 		return new ErrorResponse(e.getMessage(), e.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+	public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleMethodArgumentNotValidException", e);
 		Map<String, String> errors = getErrors(e);
 		return new ErrorResponse(INVALID_INPUT_VALUE.getMessage(), INVALID_INPUT_VALUE.getCode(), errors);
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+	public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleHttpMessageNotReadableException", e);
 		return new ErrorResponse(INVALID_INPUT_VALUE.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e) {
+	public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleIllegalArgumentException", e);
 		return new ErrorResponse(e.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MissingRequestValueException.class)
-	public ErrorResponse handleMissingRequestValueException(MissingRequestValueException e) {
-		log.error("handleMissingRequestValueExceptionException", e);
+	public ErrorResponse handleMissingRequestValueException(MissingRequestValueException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleMissingRequestValueException", e);
 		return new ErrorResponse(INVALID_INPUT_VALUE.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = UNAUTHORIZED)
+	@ResponseStatus(UNAUTHORIZED)
 	@ExceptionHandler(UnauthorizedException.class)
-	public ErrorResponse handleUnauthorizedException(UnauthorizedException e) {
-		log.error("handleUnauthorizedExceptionException", e);
+	public ErrorResponse handleUnauthorizedException(UnauthorizedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), e.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e) {
-		log.error("handleResourceNotFoundExceptionException", e);
+	public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleResourceNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), e.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MultipartException.class)
-	public ErrorResponse handleMultipartException(MultipartException e) {
+	public ErrorResponse handleMultipartException(MultipartException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleMultipartException", e);
 		return new ErrorResponse(e.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(DuplicateBookmarkException.class)
-	public ErrorResponse handleDuplicateBookmarkException(DuplicateBookmarkException e) {
+	public ErrorResponse handleDuplicateBookmarkException(DuplicateBookmarkException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleDuplicateBookmarkException", e);
 		return new ErrorResponse(e.getMessage(), ErrorMessage.DUPLICATE_BOOKMARK.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(BookmarkOwnerMismatchException.class)
-	public ErrorResponse bookmarkOwnerMismatchException(BookmarkOwnerMismatchException e) {
+	public ErrorResponse bookmarkOwnerMismatchException(BookmarkOwnerMismatchException e, WebRequest request) {
+		alarm(e, request);
 		log.error("bookmarkOwnerMismatchException", e);
 		return new ErrorResponse(e.getMessage(), NOT_OWN_BOOKMARK.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(UserNotFoundException.class)
-	public ErrorResponse userNotFoundException(UserNotFoundException e) {
+	public ErrorResponse userNotFoundException(UserNotFoundException e, WebRequest request) {
+		alarm(e, request);
 		log.error("userNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_USER.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(OrderParameterEmptyException.class)
-	public ErrorResponse orderParameterEmptyException(OrderParameterEmptyException e) {
+	public ErrorResponse orderParameterEmptyException(OrderParameterEmptyException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderParameterEmptyException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_PARAMETER_EMPTY.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(OrderItemsEmptyException.class)
-	public ErrorResponse orderItemsEmptyException(OrderItemsEmptyException e) {
+	public ErrorResponse orderItemsEmptyException(OrderItemsEmptyException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderItemsEmptyException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_ITEMS_EMPTY.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(DepositorNameTooLongException.class)
-	public ErrorResponse depositorNameTooLongException(DepositorNameTooLongException e) {
+	public ErrorResponse depositorNameTooLongException(DepositorNameTooLongException e, WebRequest request) {
+		alarm(e, request);
 		log.error("depositorNameTooLongException", e);
 		return new ErrorResponse(e.getMessage(), DEPOSITOR_NAME_TOO_LONG.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(DuplicateOrderException.class)
-	public ErrorResponse duplicateOrderException(DuplicateOrderException e) {
+	public ErrorResponse duplicateOrderException(DuplicateOrderException e, WebRequest request) {
+		alarm(e, request);
 		log.error("duplicateOrderException", e);
 		return new ErrorResponse(e.getMessage(), ErrorMessage.DUPLICATE_ORDER.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(ReservationNotFoundException.class)
-	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e) {
+	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e, WebRequest request) {
+		alarm(e, request);
 		log.error("reservationNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_RESERVATION.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(DuplicateReservationException.class)
-	public ErrorResponse duplicateReservationException(DuplicateReservationException e) {
+	public ErrorResponse duplicateReservationException(DuplicateReservationException e, WebRequest request) {
+		alarm(e, request);
 		log.error("duplicateReservationException", e);
 		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(StoreWaitingDisabledException.class)
-	public ErrorResponse storeWaitingDisabledException(StoreWaitingDisabledException e) {
+	public ErrorResponse storeWaitingDisabledException(StoreWaitingDisabledException e, WebRequest request) {
+		alarm(e, request);
 		log.error("storeWaitingDisabledException", e);
 		return new ErrorResponse(e.getMessage(), STORE_WAITING_DISABLED.getCode());
 	}
 
+	@ResponseStatus(NOT_FOUND)
+	@ExceptionHandler(StoreNotFoundException.class)
+	public ErrorResponse handleStoreNotFoundException(StoreNotFoundException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleStoreNotFoundException", e);
+		return new ErrorResponse(e.getMessage(), STORE_NOT_FOUND.getCode());
+	}
 
+	// 공통 에러 Map 생성
 	private static Map<String, String> getErrors(MethodArgumentNotValidException e) {
 		return e.getBindingResult()
 			.getAllErrors()
@@ -190,5 +230,4 @@ public class GlobalExceptionHandler {
 				(msg1, msg2) -> msg1 + ";" + msg2
 			));
 	}
-
 }

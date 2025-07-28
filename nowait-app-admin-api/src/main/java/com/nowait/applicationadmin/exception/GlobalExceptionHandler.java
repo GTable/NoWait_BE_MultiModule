@@ -1,8 +1,10 @@
 package com.nowait.applicationadmin.exception;
 
 import static com.nowait.common.exception.ErrorMessage.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.HttpStatus.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -15,12 +17,14 @@ import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartException;
 
 import com.nowait.applicationadmin.security.exception.ResourceNotFoundException;
 import com.nowait.applicationadmin.security.exception.UnauthorizedException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
+import com.nowait.discord.service.DiscordAlarmService;
 import com.nowait.domaincorerdb.menu.exception.MenuCreationUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuDeleteUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuUpdateUnauthorizedException;
@@ -41,189 +45,224 @@ import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Hidden
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-	@ResponseStatus(value = BAD_REQUEST)
+	private final DiscordAlarmService discordAlarmService;
+
+	// Discord 알림 헬퍼
+	private void alarm(Exception e, WebRequest request) {
+		discordAlarmService.sendDiscordAdminAlarm(e, request);
+	}
+
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(BusinessException.class)
-	public ErrorResponse handleBusinessException(BusinessException e) {
+	public ErrorResponse handleBusinessException(BusinessException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleBusinessException", e);
 		return new ErrorResponse(e.getMessage(), e.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+	public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleMethodArgumentNotValidException", e);
 		Map<String, String> errors = getErrors(e);
 		return new ErrorResponse(INVALID_INPUT_VALUE.getMessage(), INVALID_INPUT_VALUE.getCode(), errors);
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+	public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleHttpMessageNotReadableException", e);
 		return new ErrorResponse(INVALID_INPUT_VALUE.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e) {
+	public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleIllegalArgumentException", e);
 		return new ErrorResponse(e.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MissingRequestValueException.class)
-	public ErrorResponse handleMissingRequestValueException(MissingRequestValueException e) {
+	public ErrorResponse handleMissingRequestValueException(MissingRequestValueException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleMissingRequestValueExceptionException", e);
 		return new ErrorResponse(INVALID_INPUT_VALUE.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = UNAUTHORIZED)
+	@ResponseStatus(UNAUTHORIZED)
 	@ExceptionHandler(UnauthorizedException.class)
-	public ErrorResponse handleUnauthorizedException(UnauthorizedException e) {
-		log.error("handleUnauthorizedExceptionException", e);
+	public ErrorResponse handleUnauthorizedException(UnauthorizedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), e.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e) {
+	public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleResourceNotFoundExceptionException", e);
 		return new ErrorResponse(e.getMessage(), e.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MultipartException.class)
-	public ErrorResponse handleMultipartException(MultipartException e) {
+	public ErrorResponse handleMultipartException(MultipartException e, WebRequest request) {
+		alarm(e, request);
 		log.error("handleMultipartException", e);
 		return new ErrorResponse(e.getMessage(), INVALID_INPUT_VALUE.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(UserNotFoundException.class)
-	public ErrorResponse userNotFoundException(UserNotFoundException e) {
+	public ErrorResponse userNotFoundException(UserNotFoundException e, WebRequest request) {
+		alarm(e, request);
 		log.error("userNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_USER.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(OrderParameterEmptyException.class)
-	public ErrorResponse orderParameterEmptyException(OrderParameterEmptyException e) {
+	public ErrorResponse orderParameterEmptyException(OrderParameterEmptyException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderParameterEmptyException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_PARAMETER_EMPTY.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(OrderItemsEmptyException.class)
-	public ErrorResponse orderItemsEmptyException(OrderItemsEmptyException e) {
+	public ErrorResponse orderItemsEmptyException(OrderItemsEmptyException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderItemsEmptyException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_ITEMS_EMPTY.getCode());
 	}
 
-	@ResponseStatus(value = BAD_REQUEST)
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(DuplicateOrderException.class)
-	public ErrorResponse duplicateOrderException(DuplicateOrderException e) {
+	public ErrorResponse duplicateOrderException(DuplicateOrderException e, WebRequest request) {
+		alarm(e, request);
 		log.error("duplicateOrderException", e);
 		return new ErrorResponse(e.getMessage(), ErrorMessage.DUPLICATE_ORDER.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(OrderViewUnauthorizedException.class)
-	public ErrorResponse orderViewUnauthorizedException(OrderViewUnauthorizedException e) {
+	public ErrorResponse orderViewUnauthorizedException(OrderViewUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderViewUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_VIEW_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(OrderNotFoundException.class)
-	public ErrorResponse orderNotFoundException(OrderNotFoundException e) {
+	public ErrorResponse orderNotFoundException(OrderNotFoundException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_NOT_FOUND.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(OrderUpdateUnauthorizedException.class)
-	public ErrorResponse orderUpdateUnauthorizedException(OrderUpdateUnauthorizedException e) {
+	public ErrorResponse orderUpdateUnauthorizedException(OrderUpdateUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("orderUpdateUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), ORDER_UPDATE_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = NOT_FOUND)
+	@ResponseStatus(NOT_FOUND)
 	@ExceptionHandler(ReservationNotFoundException.class)
-	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e) {
+	public ErrorResponse reservationNotFoundException(ReservationNotFoundException e, WebRequest request) {
+		alarm(e, request);
 		log.error("reservationNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), NOTFOUND_RESERVATION.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(ReservationViewUnauthorizedException.class)
-	public ErrorResponse reservationViewUnauthorizedException(ReservationViewUnauthorizedException e) {
-		log.error("reservationViewUnauthorizedException", e);
+	public ErrorResponse reservationViewUnauthorizedException(ReservationViewUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("reservation_viewUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), RESERVATION_VIEW_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(ReservationUpdateUnauthorizedException.class)
-	public ErrorResponse reservationUpdateUnauthorizedException(ReservationUpdateUnauthorizedException e) {
+	public ErrorResponse reservationUpdateUnauthorizedException(ReservationUpdateUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("reservationUpdateUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), RESERVATION_UPDATE_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(MenuCreationUnauthorizedException.class)
-	public ErrorResponse menuCreationUnauthorizedException(MenuCreationUnauthorizedException e) {
+	public ErrorResponse menuCreationUnauthorizedException(MenuCreationUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("menuCreationUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), MENU_CREATION_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(MenuViewUnauthorizedException.class)
-	public ErrorResponse menuViewUnauthorizedException(MenuViewUnauthorizedException e) {
+	public ErrorResponse menuViewUnauthorizedException(MenuViewUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("menuViewUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), MENU_VIEW_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(MenuUpdateUnauthorizedException.class)
-	public ErrorResponse menuUpdateUnauthorizedException(MenuUpdateUnauthorizedException e) {
+	public ErrorResponse menuUpdateUnauthorizedException(MenuUpdateUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("menuUpdateUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), MENU_UPDATE_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(MenuDeleteUnauthorizedException.class)
-	public ErrorResponse menuDeleteUnauthorizedException(MenuDeleteUnauthorizedException e) {
+	public ErrorResponse menuDeleteUnauthorizedException(MenuDeleteUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("menuDeleteUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), MENU_DELETE_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(StoreViewUnauthorizedException.class)
-	public ErrorResponse storeViewUnauthorizedException(StoreViewUnauthorizedException e) {
+	public ErrorResponse storeViewUnauthorizedException(StoreViewUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("storeViewUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), STORE_VIEW_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(StoreUpdateUnauthorizedException.class)
-	public ErrorResponse storeUpdateUnauthorizedException(StoreUpdateUnauthorizedException e) {
+	public ErrorResponse storeUpdateUnauthorizedException(StoreUpdateUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("storeUpdateUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), STORE_UPDATE_UNAUTHORIZED.getCode());
 	}
 
-	@ResponseStatus(value = FORBIDDEN)
+	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(StoreDeleteUnauthorizedException.class)
-	public ErrorResponse storeDeleteUnauthorizedException(StoreDeleteUnauthorizedException e) {
+	public ErrorResponse storeDeleteUnauthorizedException(StoreDeleteUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
 		log.error("storeDeleteUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), STORE_DELETE_UNAUTHORIZED.getCode());
 	}
 
+	// 공통 에러 Map 생성
 	private static Map<String, String> getErrors(MethodArgumentNotValidException e) {
 		return e.getBindingResult()
 			.getAllErrors()
@@ -235,5 +274,4 @@ public class GlobalExceptionHandler {
 				(msg1, msg2) -> msg1 + ";" + msg2
 			));
 	}
-
 }
