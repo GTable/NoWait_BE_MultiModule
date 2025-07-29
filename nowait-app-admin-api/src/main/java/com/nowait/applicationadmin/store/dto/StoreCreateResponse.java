@@ -18,7 +18,8 @@ public class StoreCreateResponse {
 	private String name;
 	private String location;
 	private String description;
-	private String notice;
+	private String noticeTitle;
+	private String noticeContent;
 	private String openTime;
 	private Boolean isActive;
 	private Boolean deleted;
@@ -32,7 +33,8 @@ public class StoreCreateResponse {
 			.name(store.getName())
 			.location(store.getLocation())
 			.description(store.getDescription())
-			.notice(store.getNotice())
+			.noticeTitle(store.getNoticeTitle())
+			.noticeContent(store.getNoticeContent())
 			.openTime(store.getOpenTime())
 			.isActive(store.getIsActive())
 			.deleted(store.getDeleted())
