@@ -31,20 +31,11 @@ public class EntryStatusResponseDto {
 	@Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
 	private LocalDateTime createdAt;
 
-	@Schema(description = "호출 시각", example = "2025-07-22T16:00:00")
-	private LocalDateTime calledAt; // 호출 시각
-
-	@Schema(description = "입장 완료 처리 시각", example = "2025-07-22T16:00:00")
-	private LocalDateTime confirmedAt; // 완료 시각
-
 	@Schema(description = "웨이팅 취소 시각", example = "2025-07-22T16:00:00")
-	private LocalDateTime cancelledAt; // 취소 시각
+	private LocalDateTime updatedAt; // 취소 시각
 
 	@Schema(description = "대기 상태", example = "CALLING")
 	private String status;
-
-	@Schema(description = "대기 순번/점수", example = "2.0")
-	private Double score;
 
 	@Schema(description = "호출 메시지", example = "호출 메시지")
 	private String message;
@@ -58,9 +49,7 @@ public class EntryStatusResponseDto {
 			.userName(r.getUser().getNickname())
 			.createdAt(r.getRequestedAt())
 			.status(r.getStatus().name())
-			.calledAt(r.getCalledAt())
-			.confirmedAt(r.getConfirmedAt())
-			.cancelledAt(r.getCancelledAt())
+			.updatedAt(r.getUpdatedAt())
 			.message(switch (r.getStatus()) {
 				case CALLING   -> r.getUser().getNickname() + "님을 호출하였습니다.";
 				case CONFIRMED -> r.getUser().getNickname() + "님의 입장이 완료되었습니다.";

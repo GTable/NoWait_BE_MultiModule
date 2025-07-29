@@ -96,10 +96,12 @@ public class WaitingUserRedisRepository {
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		String reservationNumberKey = RedisKeyUtils.buildReservationNumberKey(storeId);
+
 		redisTemplate.opsForZSet().remove(key, userId);
 		redisTemplate.opsForHash().delete(partyKey, userId);
 		redisTemplate.opsForHash().delete(statusKey, userId);
 		redisTemplate.opsForHash().delete(reservationNumberKey, userId);
+
 		return true;
 	}
 
