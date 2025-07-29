@@ -17,7 +17,9 @@ import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
 public interface BookmarkRepository extends JpaRepository<Bookmark,Long> {
 	boolean existsByUserAndStoreAndDeletedFalse(User user, Store store);
 
-	Optional<Bookmark> findRawByUserAndStoreAndDeletedFalse(User user, Store store);
+	Optional<Bookmark> findByUserAndStoreAndDeletedFalse(User user, Store store);
+
+	Optional<Bookmark> findByUserAndStore(User user, Store store);
 
 	Collection<Bookmark> findAllByUserAndDeletedFalse(User user);
 
