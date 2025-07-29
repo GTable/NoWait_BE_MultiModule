@@ -83,7 +83,8 @@ public class StoreServiceImpl implements StoreService {
 			request.getName(),
 			request.getLocation(),
 			request.getDescription(),
-			request.getNotice(),
+			request.getNoticeTitle(),
+			request.getNoticeContent(),
 			request.getOpenTime()
 		);
 

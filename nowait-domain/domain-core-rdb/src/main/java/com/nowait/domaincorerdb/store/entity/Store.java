@@ -41,7 +41,10 @@ public class Store extends BaseTimeEntity {
 	private String description;
 
 	@Column(nullable = true, length = 200)
-	private String notice;
+	private String noticeTitle;
+
+	@Column(nullable = true, length = 200)
+	private String noticeContent;
 
 	@Column(nullable = true, length = 200)
 	private String openTime;
@@ -53,25 +56,33 @@ public class Store extends BaseTimeEntity {
 	private Boolean deleted;
 
 	public Store(LocalDateTime createdAt, Long storeId, Long departmentId, String name, String location,
-		String description,String notice,String openTime, Boolean isActive, Boolean deleted) {
+		String description, String noticeTitle, String noticeContent, String openTime, Boolean isActive, Boolean deleted) {
 		super(createdAt);
 		this.storeId = storeId;
 		this.departmentId = departmentId;
 		this.name = name;
 		this.location = location;
 		this.description = description;
-		this.notice = notice;
+		this.noticeTitle = noticeTitle;
+		this.noticeContent = noticeContent;
 		this.openTime = openTime;
 		this.isActive = isActive;
 		this.deleted = deleted;
 	}
 
-	public void updateInfo(String name, String location, String description, String notice, String openTime) {
-		if (name != null) this.name = name;
-		if (location != null) this.location = location;
-		if (description != null) this.description = description;
-		if (notice != null) this.notice = notice;
-		if (openTime != null) this.openTime = openTime;
+	public void updateInfo(String name, String location, String description, String noticeTitle, String notice, String openTime) {
+		if (name != null)
+			this.name = name;
+		if (location != null)
+			this.location = location;
+		if (description != null)
+			this.description = description;
+		if (noticeTitle != null)
+			this.noticeTitle = noticeTitle;
+		if (notice != null)
+			this.noticeContent = notice;
+		if (openTime != null)
+			this.openTime = openTime;
 	}
 
 	public void markAsDeleted() {

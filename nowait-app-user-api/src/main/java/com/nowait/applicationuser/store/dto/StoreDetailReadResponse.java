@@ -23,7 +23,8 @@ public class StoreDetailReadResponse {
 	private String name;
 	private String location;
 	private String description;
-	private String notice;
+	private String noticeTitle;
+	private String noticeContent;
 	private String openTime;
 	private StoreImageUploadResponse profileImage;
 	private List<StoreImageUploadResponse> bannerImages;
@@ -54,7 +55,8 @@ public class StoreDetailReadResponse {
 			.name(store.getName())
 			.location(store.getLocation())
 			.description(store.getDescription())
-			.notice(store.getNotice())
+			.noticeTitle(store.getNoticeTitle())
+			.noticeContent(store.getNoticeContent())
 			.openTime(store.getOpenTime())
 			.profileImage(profile)
 			.bannerImages(banners)
