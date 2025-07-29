@@ -8,10 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationadmin.store.dto.StoreCreateRequest;
 import com.nowait.applicationadmin.store.dto.StoreCreateResponse;
+import com.nowait.applicationadmin.store.dto.StoreDetailReadResponse;
 import com.nowait.applicationadmin.store.dto.StoreImageUploadResponse;
 import com.nowait.applicationadmin.store.dto.StoreReadDto;
 import com.nowait.applicationadmin.store.dto.StoreUpdateRequest;
 import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.department.entity.Department;
+import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.entity.StoreImage;
@@ -36,6 +39,7 @@ public class StoreServiceImpl implements StoreService {
 	private final StoreRepository storeRepository;
 	private final StoreImageRepository storeImageRepository;
 	private final UserRepository userRepository;
+	private final DepartmentRepository departmentRepository;
 
 	@Override
 	@Transactional
@@ -51,7 +55,7 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreReadDto getStoreByStoreId(Long storeId, MemberDetails memberDetails) {
+	public StoreDetailReadResponse getStoreByStoreId(Long storeId, MemberDetails memberDetails) {
 		if (storeId == null) throw new StoreParamEmptyException();
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
@@ -60,12 +64,16 @@ public class StoreServiceImpl implements StoreService {
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
+		String departmentName = departmentRepository.findById(store.getDepartmentId())
+			.map(Department::getName)
+			.orElse("Unknown Department");
+
 		List<StoreImage> images = storeImageRepository.findByStore(store);
 		List<StoreImageUploadResponse> imageDto = images.stream()
 			.map(StoreImageUploadResponse::fromEntity)
 			.toList();
 
-		return StoreReadDto.fromEntity(store, imageDto);
+		return StoreDetailReadResponse.fromEntity(store, imageDto, departmentName);
 	}
 
 	@Override
