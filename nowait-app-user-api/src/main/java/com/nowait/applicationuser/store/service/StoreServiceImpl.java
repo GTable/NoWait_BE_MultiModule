@@ -3,6 +3,7 @@ package com.nowait.applicationuser.store.service;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,8 +25,8 @@ import com.nowait.applicationuser.reservation.repository.WaitingUserRedisReposit
 import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
 import com.nowait.applicationuser.store.dto.StoreDetailReadResponse;
 import com.nowait.applicationuser.store.dto.StoreImageUploadResponse;
-import com.nowait.applicationuser.store.dto.StorePageReadDto;
 import com.nowait.applicationuser.store.dto.StorePageReadResponse;
+import com.nowait.applicationuser.store.dto.StoreSearchResponse;
 import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
@@ -40,6 +41,7 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
 import com.nowait.domainuserrdb.bookmark.repository.BookmarkRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -59,7 +61,10 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable) {
+	public StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable, CustomOAuth2User customOAuth2User) {
+
+		User user = customOAuth2User.getUser();
+
 		// 1) 페이징된 Store 스냅샷 조회
 		Slice<Store> slice = storeRepository.findAllByDeletedFalseOrderByStoreIdAsc(pageable);
 		List<Store> stores = slice.getContent();
@@ -72,6 +77,14 @@ public class StoreServiceImpl implements StoreService {
 			.map(Store::getDepartmentId)
 			.distinct()
 			.toList();
+
+		// 2) 사용자 북마크된 storeId 집합 조회
+		List<Long> storeBookmarkIds = bookmarkRepository.findAllByUser(user)
+			.stream()
+			.map(Bookmark::getStore)
+			.map(Store::getStoreId)
+			.toList();
+		Set<Long> bookmarkedSet = new HashSet<>(storeIds);
 
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		Map<Long, Long> waitingSizeMap = storeIds.stream()
@@ -105,16 +118,21 @@ public class StoreServiceImpl implements StoreService {
 				Department::getName
 			));
 
+		List<Bookmark> allBookmarks = bookmarkRepository.findStoreIdByUser(user);
+		Map<Long, Boolean> bookmarkMap = allBookmarks.stream()
+			.collect(Collectors.toMap(
+				bookmark -> bookmark.getStore().getStoreId(),
+				b -> Boolean.TRUE
+			));
+
 		// 5) Dto 매핑
 		List<StorePageReadResponse> content = stores.stream()
 			.map(store -> {
-				List<StoreImageUploadResponse> imgs = imageMap
-					.getOrDefault(store.getStoreId(), List.of());
-				String departmentName = deptNameMap
-					.getOrDefault(store.getDepartmentId(), "Unknown Department");
-				Long waitingCount =
-					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount);
+				List<StoreImageUploadResponse> imgs = imageMap.getOrDefault(store.getStoreId(), List.of());
+				String departmentName = deptNameMap.getOrDefault(store.getDepartmentId(), "Unknown Department");
+				Long waitingCount = waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
+				Boolean isBookmark = bookmarkMap.getOrDefault(store.getStoreId(), false);
+				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount, isBookmark);
 			})
 			.toList();
 
@@ -153,7 +171,7 @@ public class StoreServiceImpl implements StoreService {
 	}
 
 	@Override
-	public List<StorePageReadResponse> searchByKeywordNative(String keyword) {
+	public List<StoreSearchResponse> searchByKeywordNative(String keyword) {
 		if (keyword == null || keyword.isBlank()) {
 			throw new StoreParamEmptyException();
 		}
@@ -210,7 +228,7 @@ public class StoreServiceImpl implements StoreService {
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
 				Long waitingCount =
 					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount);
+				return StoreSearchResponse.fromEntity(store, imgs, departmentName, waitingCount);
 			})
 			.toList();
 	}
@@ -285,7 +303,7 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<StorePageReadDto> getAllStoresByPageAndDeparments(List<Long> storeIds, Set<Long> bookmarkedSet) {
+	public List<StorePageReadResponse> getAllStoresByPageAndDeparments(List<Long> storeIds, Set<Long> bookmarkedSet) {
 		// 1) 페이징된 Store 스냅샷 조회
 		List<Store> stores = storeRepository.findAllByStoreIdInOrderByStoreIdAsc(storeIds);
 
@@ -328,7 +346,7 @@ public class StoreServiceImpl implements StoreService {
 			));
 
 		// 5) Dto 매핑
-		List<StorePageReadDto> content = stores.stream()
+		List<StorePageReadResponse> content = stores.stream()
 			.map(store -> {
 				List<StoreImageUploadResponse> imgs = imageMap
 					.getOrDefault(store.getStoreId(), List.of());
@@ -338,7 +356,7 @@ public class StoreServiceImpl implements StoreService {
 					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
 				boolean isBookmark = bookmarkedSet.contains(store.getStoreId());
 
-				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount, isBookmark);
+				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount, isBookmark);
 			})
 			.toList();
 

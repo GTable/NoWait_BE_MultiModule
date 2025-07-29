@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.bookmark.dto.BookmarkCreateResponse;
-import com.nowait.applicationuser.store.dto.StorePageReadDto;
+import com.nowait.applicationuser.store.dto.StorePageReadResponse;
 import com.nowait.applicationuser.store.service.StoreService;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
@@ -52,7 +52,7 @@ public class BookmarkService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<StorePageReadDto> getBookmarks(CustomOAuth2User customOAuth2User) {
+	public List<StorePageReadResponse> getBookmarks(CustomOAuth2User customOAuth2User) {
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
 

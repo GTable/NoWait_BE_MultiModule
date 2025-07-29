@@ -11,12 +11,12 @@ import lombok.Getter;
 @Builder
 public class StoreDepartmentReadResponse {
 
-	private List<StorePageReadResponse> storePageReadDtos;
+	private List<StorePageReadResponse> storePageReadResponses;
 	private boolean hasNext;
 
 	public static StoreDepartmentReadResponse of(List<StorePageReadResponse> storePageReadResponses, boolean hasNext) {
 		return StoreDepartmentReadResponse.builder()
-			.storePageReadDtos(storePageReadResponses)
+			.storePageReadResponses(storePageReadResponses)
 			.hasNext(hasNext)
 			.build();
 	}
