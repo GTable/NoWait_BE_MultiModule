@@ -13,6 +13,7 @@ import com.nowait.applicationuser.bookmark.dto.BookmarkCreateResponse;
 import com.nowait.applicationuser.store.dto.StorePageReadResponse;
 import com.nowait.applicationuser.store.service.StoreService;
 import com.nowait.domaincorerdb.store.entity.Store;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -37,17 +38,18 @@ public class BookmarkService {
 
 		parameterValidation(storeId, customOAuth2User);
 		Store store = storeRepository.findById(storeId)
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " store not found."));
+			.orElseThrow(StoreNotFoundException::new);
 		User user = userRepository.findById(customOAuth2User.getUserId())
-			.orElseThrow(() -> new EntityNotFoundException("User not found"));
+			.orElseThrow(UserNotFoundException::new);
 
-		Optional<Bookmark> isBookmark = bookmarkRepository.findRawByUserAndStoreAndDeletedFalse(user, store);
+		Optional<Bookmark> isBookmark = bookmarkRepository.findByUserAndStore(user, store);
 
 		if (isBookmark.isPresent()) {
 			Bookmark bookmark = isBookmark.get();
 			if (bookmark.isDeleted()) {
 				bookmark.restore();
-				return BookmarkCreateResponse.fromEntity(bookmarkRepository.save(bookmark));
+				Bookmark restored = bookmarkRepository.save(bookmark);
+				return BookmarkCreateResponse.fromEntity(bookmarkRepository.save(restored));
 			} else {
 				throw new IllegalArgumentException("already bookmarked");
 			}
@@ -81,8 +83,13 @@ public class BookmarkService {
 	@Transactional
 	public String deleteBookmark(Long storeId, CustomOAuth2User customOAuth2User) {
 		parameterValidation(storeId, customOAuth2User);
-		Bookmark bookmark = bookmarkRepository.findActiveByUserIdAndStoreId(storeId, customOAuth2User.getUserId())
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " bookmark not found."));
+		User user = customOAuth2User.getUser();
+		Store store = storeRepository.findById(storeId)
+			.orElseThrow(StoreNotFoundException::new);
+
+		Bookmark bookmark = bookmarkRepository.findByUserAndStoreAndDeletedFalse(user, store)
+			.orElseThrow(() -> new EntityNotFoundException(storeId + " 활성화된 bookmark가 없습니다."));
+
 		if (!Objects.equals(bookmark.getUser().getId(), customOAuth2User.getUserId())) {
 			throw new IllegalArgumentException("you can only delete your own bookmark");
 		}
