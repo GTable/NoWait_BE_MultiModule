@@ -19,6 +19,7 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
+import com.nowait.domainuserrdb.bookmark.exception.BookmarkNotFoundException;
 import com.nowait.domainuserrdb.bookmark.repository.BookmarkRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -88,7 +89,7 @@ public class BookmarkService {
 			.orElseThrow(StoreNotFoundException::new);
 
 		Bookmark bookmark = bookmarkRepository.findByUserAndStoreAndDeletedFalse(user, store)
-			.orElseThrow(() -> new EntityNotFoundException(storeId + " 활성화된 bookmark가 없습니다."));
+			.orElseThrow(BookmarkNotFoundException::new);
 
 		if (!Objects.equals(bookmark.getUser().getId(), customOAuth2User.getUserId())) {
 			throw new IllegalArgumentException("you can only delete your own bookmark");
