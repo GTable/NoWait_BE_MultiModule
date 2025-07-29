@@ -99,7 +99,7 @@ public class ReservationService {
 			.equals(reservation.getStore().getStoreId())) {
 			throw new ReservationUpdateUnauthorizedException();
 		}
-		reservation.updateStatus(requestDto.getStatus());
+		reservation.markUpdated(LocalDateTime.now(), requestDto.getStatus());
 		return CallGetResponseDto.fromEntity(reservation);
 	}
 
@@ -231,14 +231,10 @@ public class ReservationService {
 		String currStatus = waitingRedisRepository.getWaitingStatus(storeId, userId);
 		Double score = redisTemplate.opsForZSet().score(queueKey, userId);
 		Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
-		Long calledMillis = waitingRedisRepository.getWaitingCalledAt(storeId, userId);
 
 		LocalDateTime requestedAt = score != null
 			? Instant.ofEpochMilli(score.longValue()).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
 			: LocalDateTime.now();
-		LocalDateTime calledAt = calledMillis != null
-			? Instant.ofEpochMilli(calledMillis).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
-			: null;
 		LocalDateTime now = LocalDateTime.now();
 
 		switch (newStatus) {
@@ -257,8 +253,7 @@ public class ReservationService {
 					.userName(userRepository.getReferenceById(Long.valueOf(userId)).getNickname())
 					.createdAt(requestedAt)
 					.status("CALLING")
-					.score(score)
-					.calledAt(now)
+					.updatedAt(now)
 					.message("호출되었습니다.")
 					.build();
 
@@ -276,15 +271,11 @@ public class ReservationService {
 						.user(userRepository.getReferenceById(Long.valueOf(userId)))
 						.partySize(partySize)
 						.requestedAt(requestedAt)
+						.updatedAt(LocalDateTime.now())
 						.build();
-					// 호출 시각 반영
-					r.markCalling(calledAt != null ? calledAt : now);
-					if (newStatus == ReservationStatus.CONFIRMED) {
-						r.markConfirmed(now);
-					} else {
-						r.markCancelled(now);
-					}
 
+					// 호출 시각 반영
+					r.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
 					Reservation saved = reservationRepository.save(r);
 					return EntryStatusResponseDto.fromEntity(saved);
 				} else {
@@ -301,8 +292,7 @@ public class ReservationService {
 							end
 						).orElseThrow(() -> new IllegalStateException("취소된 예약이 없습니다."));
 
-					existing.markConfirmed(now);
-					existing.updateStatus(ReservationStatus.CONFIRMED);
+					existing.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
 					Reservation saved = reservationRepository.save(existing);
 					return EntryStatusResponseDto.fromEntity(saved);
 				}
@@ -320,9 +310,10 @@ public class ReservationService {
 					.user(userRepository.getReferenceById(Long.valueOf(userId)))
 					.partySize(partySize)
 					.requestedAt(requestedAt)
+					.updatedAt(LocalDateTime.now())
 					.build();
-				r.markCalling(calledAt != null ? calledAt : now);
-				r.markCancelled(now);
+
+				r.markUpdated(LocalDateTime.now(), ReservationStatus.CANCELLED);
 				Reservation saved = reservationRepository.save(r);
 				return EntryStatusResponseDto.fromEntity(saved);
 

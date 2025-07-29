@@ -49,14 +49,8 @@ public class Reservation {
 	@Column(name = "requested_at", nullable = false)
 	private LocalDateTime requestedAt;
 
-	@Column(name = "called_at", nullable = true)
-	private LocalDateTime calledAt;      // 호출 시각
-
-	@Column(name = "confirmed_at", nullable = true)
-	private LocalDateTime confirmedAt;   // 확정(입장 완료) 시각
-
-	@Column(name = "cancelled_at", nullable = true)
-	private LocalDateTime cancelledAt;   // 취소 시각
+	@Column(name = "updated_at", nullable = true)
+	private LocalDateTime updatedAt;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -65,23 +59,8 @@ public class Reservation {
 	@Column(name = "party_size", nullable = false)
 	private Integer partySize;
 
-	public void updateStatus(ReservationStatus status) {
+	public void markUpdated(LocalDateTime ts, ReservationStatus status) {
 		this.status = status;
-	}
-
-	// 상태 전환 메서드
-	public void markCalling(LocalDateTime ts) {
-		this.status   = ReservationStatus.CALLING;
-		this.calledAt = ts;
-	}
-
-	public void markConfirmed(LocalDateTime ts) {
-		this.status      = ReservationStatus.CONFIRMED;
-		this.confirmedAt = ts;
-	}
-
-	public void markCancelled(LocalDateTime ts) {
-		this.status      = ReservationStatus.CANCELLED;
-		this.cancelledAt = ts;
+		this.updatedAt = ts;
 	}
 }

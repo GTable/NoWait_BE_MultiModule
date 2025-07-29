@@ -113,11 +113,33 @@ public class ReservationService {
 		if (storeId == null || userId.trim().isEmpty()) {
 			throw new IllegalArgumentException("Invalid storeId or userId");
 		}
+
+		String reservationNumber = waitingUserRedisRepository.getReservationId(storeId, userId);
+		if (reservationNumber == null) {
+			throw new IllegalArgumentException("Waiting not found");
+		}
+		Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
+		Long ts = waitingUserRedisRepository.getWaitingTimestamp(storeId, userId);
+
 		// 대기열에서 제거 및 결과 반환
 		boolean removed = waitingUserRedisRepository.removeWaiting(storeId, userId);
 		if (!removed) {
 			throw new IllegalArgumentException("Waiting not found");
 		}
+
+		Reservation reservation = Reservation.builder()
+			.reservationNumber(reservationNumber)
+			.partySize(partySize)
+			.status(ReservationStatus.CANCELLED)
+			.store(storeRepository.getReferenceById(storeId))
+			.user(userRepository.getReferenceById(Long.parseLong(userId)))
+			.updatedAt(LocalDateTime.now())
+			.requestedAt(ts != null ? LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneId.of("Asia/Seoul"))
+				: LocalDateTime.now())
+			.build();
+
+		reservationRepository.save(reservation);
+
 		return removed;
 	}
 
