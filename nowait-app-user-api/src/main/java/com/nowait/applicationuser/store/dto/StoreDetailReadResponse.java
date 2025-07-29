@@ -15,6 +15,7 @@ import lombok.Getter;
 @Builder
 public class StoreDetailReadResponse {
 	private Long storeId;
+	private Boolean isBookmark;
 	private Long waitingCount;
 	private Boolean isWaiting;
 	private Long departmentId;
@@ -29,41 +30,9 @@ public class StoreDetailReadResponse {
 	private Boolean isActive;
 	private Boolean deleted;
 	private LocalDateTime createdAt;
-	private Boolean isBookmarked;
 
-	public static StoreDetailReadResponse fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isWaiting) {
-
-		StoreImageUploadResponse profile = allImages.stream()
-			.filter(image -> image.getImageType() == ImageType.PROFILE)
-			.findFirst()
-			.orElse(null);
-
-		List<StoreImageUploadResponse> banners = allImages.stream()
-			.filter(image -> image.getImageType() == ImageType.BANNER)
-			.toList();
-
-		return StoreDetailReadResponse.builder()
-			.createdAt(store.getCreatedAt())
-			.storeId(store.getStoreId())
-			.waitingCount(waitingCount)
-			.isWaiting(isWaiting)
-			.departmentId(store.getDepartmentId())
-			.departmentName(departmentName)
-			.name(store.getName())
-			.location(store.getLocation())
-			.description(store.getDescription())
-			.notice(store.getNotice())
-			.openTime(store.getOpenTime())
-			.isActive(store.getIsActive())
-			.deleted(store.getDeleted())
-			.profileImage(profile)
-			.bannerImages(banners)
-			.isBookmarked(false)
-			.build();
-	}
-
-	public static StoreDetailReadResponse fromEntityWithBookmark(
-		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmarked, Boolean isWaiting
+	public static StoreDetailReadResponse fromEntity(
+		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmark, Boolean isWaiting
 	) {
 
 		StoreImageUploadResponse profile = allImages.stream()
@@ -76,8 +45,8 @@ public class StoreDetailReadResponse {
 			.toList();
 
 		return StoreDetailReadResponse.builder()
-			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
+			.isBookmark(isBookmark)
 			.waitingCount(waitingCount)
 			.isWaiting(isWaiting)
 			.departmentId(store.getDepartmentId())
@@ -87,11 +56,11 @@ public class StoreDetailReadResponse {
 			.description(store.getDescription())
 			.notice(store.getNotice())
 			.openTime(store.getOpenTime())
-			.isActive(store.getIsActive())
-			.deleted(store.getDeleted())
 			.profileImage(profile)
 			.bannerImages(banners)
-			.isBookmarked(isBookmarked)
+			.isActive(store.getIsActive())
+			.deleted(store.getDeleted())
+			.createdAt(store.getCreatedAt())
 			.build();
 	}
 }

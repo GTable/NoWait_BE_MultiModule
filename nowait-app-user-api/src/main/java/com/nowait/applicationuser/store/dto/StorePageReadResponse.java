@@ -13,9 +13,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class StorePageReadDto {
+public class StorePageReadResponse {
 	private Long storeId;
-	private Boolean isBookmark;
 	private Long waitingCount;
 	private Long departmentId;
 	private String departmentName;
@@ -30,7 +29,7 @@ public class StorePageReadDto {
 	private Boolean deleted;
 	private LocalDateTime createdAt;
 
-	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmark) {
+	public static StorePageReadResponse fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount) {
 
 		StoreImageUploadResponse profile = allImages.stream()
 			.filter(image -> image.getImageType() == ImageType.PROFILE)
@@ -41,9 +40,8 @@ public class StorePageReadDto {
 			.filter(image -> image.getImageType() == ImageType.BANNER)
 			.toList();
 
-		return StorePageReadDto.builder()
+		return StorePageReadResponse.builder()
 			.storeId(store.getStoreId())
-			.isBookmark(isBookmark)
 			.waitingCount(waitingCount)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)

@@ -1,7 +1,9 @@
 package com.nowait.applicationuser.bookmark.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +62,9 @@ public class BookmarkService {
 			.map(Store::getStoreId)
 			.toList();
 
-		return storeService.getAllStoresByPageAndDeparments(storeIds);
+		Set<Long> bookmarkedSet = new HashSet<>(storeIds);
+
+		return storeService.getAllStoresByPageAndDeparments(storeIds, bookmarkedSet);
 	}
 
 	@Transactional
