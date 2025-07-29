@@ -1,9 +1,12 @@
 package com.nowait.domainuserrdb.bookmark.entity;
 
+import java.time.LocalDateTime;
+
 import com.nowait.domaincorerdb.base.entity.BaseTimeEntity;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.user.entity.User;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -43,4 +46,14 @@ public class Bookmark extends BaseTimeEntity {
 	@JoinColumn(name = "store_id")
 	private Store store;
 
+	@Column(nullable = false)
+	private boolean deleted = false;
+
+	public void softDelete() {
+		this.deleted = true;
+	}
+
+	public void restore() {
+		this.deleted = false;
+	}
 }

@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+
 @Tag(name = "Bookmark API", description = "북마크 API")
 @RestController
 @RequestMapping("/bookmarks")
@@ -29,8 +30,9 @@ public class BookmarkController {
 	@PostMapping("/{storeId}")
 	@Operation(summary = "북마크 생성", description = "특정 주점에 대한 북마크 생성")
 	@ApiResponse(responseCode = "201", description = "북마크 생성")
-	public ResponseEntity<?> createBookmark(@PathVariable Long storeId,@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
-		BookmarkCreateResponse response = bookmarkService.createBookmark(storeId,customOAuth2User);
+	public ResponseEntity<?> createBookmark(@PathVariable Long storeId,
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
+		BookmarkCreateResponse response = bookmarkService.createBookmark(storeId, customOAuth2User);
 
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
@@ -40,6 +42,7 @@ public class BookmarkController {
 				)
 			);
 	}
+
 	@GetMapping
 	@Operation(summary = "북마크 조회", description = "내가 북마크한 주점 조회")
 	@ApiResponse(responseCode = "200", description = "북마크 조회")
@@ -52,15 +55,17 @@ public class BookmarkController {
 				)
 			);
 	}
+
 	@DeleteMapping("/{bookmarkId}")
 	@Operation(summary = "북마크 삭제", description = "특정 주점에 대한 북마크 삭제")
 	@ApiResponse(responseCode = "200", description = "북마크 삭제")
-	public ResponseEntity<?> deleteBookmark(@PathVariable Long bookmarkId, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
+	public ResponseEntity<?> deleteBookmark(@PathVariable Long bookmarkId,
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
 		return ResponseEntity
 			.ok()
 			.body(
 				ApiUtils.success(
-					bookmarkService.deleteBookmark(bookmarkId,customOAuth2User)
+					bookmarkService.deleteBookmark(bookmarkId, customOAuth2User)
 				)
 			);
 	}

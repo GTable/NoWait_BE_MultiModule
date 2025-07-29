@@ -3,6 +3,7 @@ package com.nowait.applicationuser.bookmark.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -33,19 +34,29 @@ public class BookmarkService {
 
 	@Transactional
 	public BookmarkCreateResponse createBookmark(Long storeId, CustomOAuth2User customOAuth2User) {
+
 		parameterValidation(storeId, customOAuth2User);
 		Store store = storeRepository.findById(storeId)
 			.orElseThrow(() -> new EntityNotFoundException(storeId + " store not found."));
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-		if (bookmarkRepository.existsByUserAndStore(user, store)) {
-			throw new IllegalArgumentException("already bookmarked");
+		Optional<Bookmark> isBookmark = bookmarkRepository.findRawByUserAndStoreAndDeletedFalse(user, store);
+
+		if (isBookmark.isPresent()) {
+			Bookmark bookmark = isBookmark.get();
+			if (bookmark.isDeleted()) {
+				bookmark.restore();
+				return BookmarkCreateResponse.fromEntity(bookmarkRepository.save(bookmark));
+			} else {
+				throw new IllegalArgumentException("already bookmarked");
+			}
 		}
 
 		Bookmark bookmark = Bookmark.builder()
 			.store(store)
 			.user(user)
+			.deleted(false)
 			.build();
 
 		return BookmarkCreateResponse.fromEntity(bookmarkRepository.save(bookmark));
@@ -56,7 +67,7 @@ public class BookmarkService {
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
 
-		List<Long> storeIds = bookmarkRepository.findAllByUser(user)
+		List<Long> storeIds = bookmarkRepository.findAllByUserAndDeletedFalse(user)
 			.stream()
 			.map(Bookmark::getStore)
 			.map(Store::getStoreId)
@@ -68,15 +79,15 @@ public class BookmarkService {
 	}
 
 	@Transactional
-	public String deleteBookmark(Long bookmarkId, CustomOAuth2User customOAuth2User) {
-		parameterValidation(bookmarkId, customOAuth2User);
-		Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
-			.orElseThrow(() -> new EntityNotFoundException(bookmarkId + " bookmark not found."));
+	public String deleteBookmark(Long storeId, CustomOAuth2User customOAuth2User) {
+		parameterValidation(storeId, customOAuth2User);
+		Bookmark bookmark = bookmarkRepository.findActiveByUserIdAndStoreId(storeId, customOAuth2User.getUserId())
+			.orElseThrow(() -> new EntityNotFoundException(storeId + " bookmark not found."));
 		if (!Objects.equals(bookmark.getUser().getId(), customOAuth2User.getUserId())) {
 			throw new IllegalArgumentException("you can only delete your own bookmark");
 		}
-		bookmarkRepository.delete(bookmark);
-		return "Bookmark ID " + bookmarkId + " deleted.";
+		bookmark.softDelete();
+		return "Bookmark ID " + storeId + " deleted.";
 	}
 
 	private static void parameterValidation(Long storeId, CustomOAuth2User customOAuth2User) {
