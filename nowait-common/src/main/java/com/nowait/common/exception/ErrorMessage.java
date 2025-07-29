@@ -33,7 +33,7 @@ public enum ErrorMessage {
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
 	NOT_OWN_BOOKMARK("해당 주점은 다른 사용자가 북마크한 주점입니다.", "bookmark002"),
 	NOT_FOUND_BOOKMARK("북마크를 찾을 수 없습니다", "bookmark003"),
-	ALREADY_DELETED_BOOKMARK("이미 삭제된 북마크입니다.", "bookmark003"),
+	ALREADY_DELETED_BOOKMARK("이미 삭제된 북마크입니다.", "bookmark004"),
 
 
 	// menu
