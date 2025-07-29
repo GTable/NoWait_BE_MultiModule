@@ -79,7 +79,7 @@ public class StoreServiceImpl implements StoreService {
 			.toList();
 
 		// 2) 사용자 북마크된 storeId 집합 조회
-		List<Long> storeBookmarkIds = bookmarkRepository.findAllByUser(user)
+		List<Long> storeBookmarkIds = bookmarkRepository.findAllByUserAndDeletedFalse(user)
 			.stream()
 			.map(Bookmark::getStore)
 			.map(Store::getStoreId)
@@ -118,7 +118,7 @@ public class StoreServiceImpl implements StoreService {
 				Department::getName
 			));
 
-		List<Bookmark> allBookmarks = bookmarkRepository.findStoreIdByUser(user);
+		List<Bookmark> allBookmarks = bookmarkRepository.findStoreIdByUserAndDeletedFalse(user);
 		Map<Long, Boolean> bookmarkMap = allBookmarks.stream()
 			.collect(Collectors.toMap(
 				bookmark -> bookmark.getStore().getStoreId(),
@@ -155,7 +155,7 @@ public class StoreServiceImpl implements StoreService {
 			.map(Department::getName)
 			.orElse("Unknown Department");
 
-		boolean isBookmark = bookmarkRepository.existsByUserAndStore(user, store);
+		boolean isBookmark = bookmarkRepository.existsByUserAndStoreAndDeletedFalse(user, store);
 
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		String key = "waiting:" + storeId;
