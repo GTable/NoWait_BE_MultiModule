@@ -32,6 +32,7 @@ public enum ErrorMessage {
 	// bookmark
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
 	NOT_OWN_BOOKMARK("해당 주점은 다른 사용자가 북마크한 주점입니다.", "bookmark002"),
+	BOOKMARK_NOT_FOUND("이미 북마크 삭제된 주점입니다.", "bookmark002"),
 
 	// menu
 	MENU_PARAMETER_EMPTY("메뉴 생성 시 파라미터 정보가 없습니다.", "menu001"),

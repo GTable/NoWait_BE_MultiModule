@@ -37,6 +37,7 @@ import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domainuserrdb.bookmark.exception.BookmarkNotFoundException;
 import com.nowait.domainuserrdb.bookmark.exception.BookmarkOwnerMismatchException;
 import com.nowait.domainuserrdb.bookmark.exception.DuplicateBookmarkException;
 
@@ -144,6 +145,15 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("bookmarkOwnerMismatchException", e);
 		return new ErrorResponse(e.getMessage(), NOT_OWN_BOOKMARK.getCode());
+	}
+
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(BookmarkNotFoundException.class)
+	public ErrorResponse handleBookmarkNotFoundException(
+		BookmarkNotFoundException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleBookmarkNotFoundException", e);
+		return new ErrorResponse(e.getMessage(), BOOKMARK_NOT_FOUND.getCode());
 	}
 
 	@ResponseStatus(NOT_FOUND)

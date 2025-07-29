@@ -56,16 +56,17 @@ public class BookmarkController {
 			);
 	}
 
-	@DeleteMapping("/{bookmarkId}")
+	@DeleteMapping("/{storeId}")
 	@Operation(summary = "북마크 삭제", description = "특정 주점에 대한 북마크 삭제")
 	@ApiResponse(responseCode = "200", description = "북마크 삭제")
-	public ResponseEntity<?> deleteBookmark(@PathVariable Long bookmarkId,
+	public ResponseEntity<?> deleteBookmark(@PathVariable Long storeId,
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
+		String response = bookmarkService.deleteBookmark(storeId, customOAuth2User);
 		return ResponseEntity
 			.ok()
 			.body(
 				ApiUtils.success(
-					bookmarkService.deleteBookmark(bookmarkId, customOAuth2User)
+					response
 				)
 			);
 	}
