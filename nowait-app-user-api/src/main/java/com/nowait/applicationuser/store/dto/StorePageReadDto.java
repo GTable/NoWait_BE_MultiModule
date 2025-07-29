@@ -15,6 +15,7 @@ import lombok.Getter;
 @Builder
 public class StorePageReadDto {
 	private Long storeId;
+	private Boolean isBookmark;
 	private Long waitingCount;
 	private Long departmentId;
 	private String departmentName;
@@ -28,41 +29,8 @@ public class StorePageReadDto {
 	private Boolean isActive;
 	private Boolean deleted;
 	private LocalDateTime createdAt;
-	private Boolean isBookmarked;
 
-	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount) {
-
-		StoreImageUploadResponse profile = allImages.stream()
-			.filter(image -> image.getImageType() == ImageType.PROFILE)
-			.findFirst()
-			.orElse(null);
-
-		List<StoreImageUploadResponse> banners = allImages.stream()
-			.filter(image -> image.getImageType() == ImageType.BANNER)
-			.toList();
-
-		return StorePageReadDto.builder()
-			.createdAt(store.getCreatedAt())
-			.storeId(store.getStoreId())
-			.waitingCount(waitingCount)
-			.departmentId(store.getDepartmentId())
-			.departmentName(departmentName)
-			.name(store.getName())
-			.location(store.getLocation())
-			.description(store.getDescription())
-			.notice(store.getNotice())
-			.openTime(store.getOpenTime())
-			.isActive(store.getIsActive())
-			.deleted(store.getDeleted())
-			.profileImage(profile)
-			.bannerImages(banners)
-			.isBookmarked(false)
-			.build();
-	}
-
-	public static StorePageReadDto fromEntityWithBookmark(
-		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmarked
-	) {
+	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmark) {
 
 		StoreImageUploadResponse profile = allImages.stream()
 			.filter(image -> image.getImageType() == ImageType.PROFILE)
@@ -74,8 +42,8 @@ public class StorePageReadDto {
 			.toList();
 
 		return StorePageReadDto.builder()
-			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
+			.isBookmark(isBookmark)
 			.waitingCount(waitingCount)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)
@@ -84,11 +52,11 @@ public class StorePageReadDto {
 			.description(store.getDescription())
 			.notice(store.getNotice())
 			.openTime(store.getOpenTime())
-			.isActive(store.getIsActive())
-			.deleted(store.getDeleted())
 			.profileImage(profile)
 			.bannerImages(banners)
-			.isBookmarked(isBookmarked)
+			.isActive(store.getIsActive())
+			.deleted(store.getDeleted())
+			.createdAt(store.getCreatedAt())
 			.build();
 	}
 }
