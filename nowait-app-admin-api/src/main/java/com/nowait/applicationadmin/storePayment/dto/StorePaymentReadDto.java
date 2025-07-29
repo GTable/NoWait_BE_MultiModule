@@ -17,6 +17,7 @@ public class StorePaymentReadDto {
 	private String tossUrl;
 	private String kakaoPayUrl;
 	private String naverPayUrl;
+	private String accountNumber;
 	private LocalDateTime createdAt;
 
 	public static StorePaymentReadDto fromEntity(StorePayment storePayment) {
@@ -26,6 +27,7 @@ public class StorePaymentReadDto {
 			.tossUrl(storePayment.getTossUrl())
 			.kakaoPayUrl(storePayment.getKakaoPayUrl())
 			.naverPayUrl(storePayment.getNaverPayUrl())
+			.accountNumber(storePayment.getAccountNumber())
 			.createdAt(storePayment.getCreatedAt())
 			.build();
 	}

@@ -81,7 +81,8 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 		storePayment.updatePaymentMethodUrl(
 			request.getTossUrl(),
 			request.getKakaoPayUrl(),
-			request.getNaverPayUrl()
+			request.getNaverPayUrl(),
+			request.getAccountNumber()
 		);
 		storePaymentRepository.save(storePayment);
 

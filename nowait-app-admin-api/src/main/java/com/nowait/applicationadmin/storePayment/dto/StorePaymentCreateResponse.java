@@ -18,15 +18,17 @@ public class StorePaymentCreateResponse {
 	private String tossUrl;
 	private String kakaoPayUrl;
 	private String naverPayUrl;
+	private String accountNumber;
 	private LocalDateTime createdAt;
 
 	public static StorePaymentCreateResponse fromEntity(StorePayment storePayment) {
 		return StorePaymentCreateResponse.builder()
 			.paymentMethodId(storePayment.getPaymentMethodId())
 			.storeId(storePayment.getStoreId())
-			.tossUrl(storePayment.getTossUrl())
-			.kakaoPayUrl(storePayment.getKakaoPayUrl())
-			.naverPayUrl(storePayment.getNaverPayUrl())
+			.tossUrl(storePayment.getTossUrl() != null ? storePayment.getTossUrl() : "")
+			.kakaoPayUrl(storePayment.getKakaoPayUrl() != null ? storePayment.getKakaoPayUrl() : "")
+			.naverPayUrl(storePayment.getNaverPayUrl() != null ? storePayment.getNaverPayUrl() : "")
+			.accountNumber(storePayment.getAccountNumber() != null ? storePayment.getAccountNumber() : "")
 			.createdAt(storePayment.getCreatedAt())
 			.build();
 	}

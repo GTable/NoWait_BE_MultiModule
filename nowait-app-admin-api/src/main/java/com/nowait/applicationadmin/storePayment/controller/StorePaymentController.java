@@ -34,7 +34,7 @@ public class StorePaymentController {
 	private final StorePaymentService storePaymentService;
 
 	@PostMapping("/create")
-	@Operation(summary = "주점 결제 Url 등록 및 생성", description = "새로운 주점 결제 정보를 생성합니다.")
+	@Operation(summary = "주점 결제 정보 연동 및 생성", description = "새로운 주점 결제 정보를 생성합니다.")
 	@ApiResponse(responseCode = "201", description = "주점 결제 정보 생성 성공")
 	public ResponseEntity<?> createStorePayment(@Valid @RequestBody StorePaymentCreateRequest request, @AuthenticationPrincipal MemberDetails memberDetails) {
 		StorePaymentCreateResponse response = storePaymentService.createStorePayment(request, memberDetails);

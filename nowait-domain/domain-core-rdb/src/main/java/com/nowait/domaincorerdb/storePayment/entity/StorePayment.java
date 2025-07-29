@@ -34,24 +34,30 @@ public class StorePayment extends BaseTimeEntity {
 	@Column(name = "toss_url",length = 500)
 	private String tossUrl;
 
-	@Column(name = "kakao_pay_url", length = 500)
+	@Column(name = "kakao_pay_url", nullable = true, length = 500)
 	private String kakaoPayUrl;
 
-	@Column(name = "naver_pay_url", length = 500)
+	@Column(name = "naver_pay_url", nullable = true, length = 500)
 	private String naverPayUrl;
 
-	public StorePayment(LocalDateTime createdAt, Long paymentMethodId, Long storeId, String tossUrl, String kakaoPayUrl, String naverPayUrl) {
+	@Column(name = "account_number", nullable = true, length = 45)
+	private String accountNumber;
+
+	public StorePayment(LocalDateTime createdAt, Long paymentMethodId, Long storeId, String tossUrl, String kakaoPayUrl, String naverPayUrl, String accountNumber) {
 		super(createdAt);
 		this.paymentMethodId = paymentMethodId;
 		this.storeId = storeId;
 		this.tossUrl = tossUrl;
 		this.kakaoPayUrl = kakaoPayUrl;
 		this.naverPayUrl = naverPayUrl;
+		this.accountNumber = accountNumber;
 	}
 
-	public void updatePaymentMethodUrl(String tossUrl, String kakaoPayUrl, String naverPayUrl) {
+	public void updatePaymentMethodUrl(String tossUrl, String kakaoPayUrl, String naverPayUrl, String accountNumber) {
 		if (tossUrl != null) this.tossUrl = tossUrl;
 		if (kakaoPayUrl != null) this.kakaoPayUrl = kakaoPayUrl;
 		if (naverPayUrl != null) this.naverPayUrl = naverPayUrl;
+		if (accountNumber != null) this.accountNumber = accountNumber;
 	}
 }
+
