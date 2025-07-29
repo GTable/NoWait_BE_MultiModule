@@ -16,8 +16,6 @@ import com.nowait.domaincorerdb.store.entity.Store;
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long>, StoreCustomRepository {
 
-	List<Store> findAllByDeletedFalse();
-
 	Optional<Store> findByStoreIdAndDeletedFalse(Long storeId);
 
 	Slice<Store> findAllByDeletedFalseOrderByStoreIdAsc(Pageable pageable);

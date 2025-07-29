@@ -15,6 +15,7 @@ import lombok.Getter;
 @Builder
 public class StoreDetailReadResponse {
 	private Long storeId;
+	private Long bookmarkId;
 	private Boolean isBookmark;
 	private Long waitingCount;
 	private Boolean isWaiting;
@@ -33,7 +34,7 @@ public class StoreDetailReadResponse {
 	private LocalDateTime createdAt;
 
 	public static StoreDetailReadResponse fromEntity(
-		Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmark, Boolean isWaiting
+		Store store, Long bookmarkId, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmark, Boolean isWaiting
 	) {
 
 		StoreImageUploadResponse profile = allImages.stream()
@@ -47,6 +48,7 @@ public class StoreDetailReadResponse {
 
 		return StoreDetailReadResponse.builder()
 			.storeId(store.getStoreId())
+			.bookmarkId(bookmarkId)
 			.isBookmark(isBookmark)
 			.waitingCount(waitingCount)
 			.isWaiting(isWaiting)
