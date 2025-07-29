@@ -13,4 +13,5 @@ public class StorePaymentUpdateRequest {
 	private String tossUrl;
 	private String kakaoPayUrl;
 	private String naverPayUrl;
+	private String accountNumber;
 }

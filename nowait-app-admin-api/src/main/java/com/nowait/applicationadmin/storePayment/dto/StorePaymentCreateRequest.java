@@ -15,6 +15,7 @@ public class StorePaymentCreateRequest {
 	private String tossUrl;
 	private String kakaoPayUrl;
 	private String naverPayUrl;
+	private String accountNumber;
 
 	public StorePayment toEntity(Long storeId) {
 		return StorePayment.builder()
@@ -22,6 +23,7 @@ public class StorePaymentCreateRequest {
 			.tossUrl(tossUrl)
 			.kakaoPayUrl(kakaoPayUrl)
 			.naverPayUrl(naverPayUrl)
+			.accountNumber(accountNumber)
 			.build();
 	}
 }
