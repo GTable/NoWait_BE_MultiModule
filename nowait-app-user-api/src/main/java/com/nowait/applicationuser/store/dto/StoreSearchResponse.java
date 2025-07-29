@@ -13,47 +13,33 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class StorePageReadDto {
+public class StoreSearchResponse {
 	private Long storeId;
-	private Boolean isBookmark;
 	private Long waitingCount;
 	private Long departmentId;
 	private String departmentName;
 	private String name;
-	private String location;
-	private String description;
-	private String notice;
 	private String openTime;
 	private StoreImageUploadResponse profileImage;
-	private List<StoreImageUploadResponse> bannerImages;
 	private Boolean isActive;
 	private Boolean deleted;
 	private LocalDateTime createdAt;
 
-	public static StorePageReadDto fromEntity(Store store, List<StoreImageUploadResponse> allImages, String departmentName, Long waitingCount, Boolean isBookmark) {
+	public static StoreSearchResponse fromEntity(Store store, List<StoreImageUploadResponse> profileImage, String departmentName, Long waitingCount) {
 
-		StoreImageUploadResponse profile = allImages.stream()
+		StoreImageUploadResponse profile = profileImage.stream()
 			.filter(image -> image.getImageType() == ImageType.PROFILE)
 			.findFirst()
 			.orElse(null);
 
-		List<StoreImageUploadResponse> banners = allImages.stream()
-			.filter(image -> image.getImageType() == ImageType.BANNER)
-			.toList();
-
-		return StorePageReadDto.builder()
+		return StoreSearchResponse.builder()
 			.storeId(store.getStoreId())
-			.isBookmark(isBookmark)
 			.waitingCount(waitingCount)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)
 			.name(store.getName())
-			.location(store.getLocation())
-			.description(store.getDescription())
-			.notice(store.getNotice())
 			.openTime(store.getOpenTime())
 			.profileImage(profile)
-			.bannerImages(banners)
 			.isActive(store.getIsActive())
 			.deleted(store.getDeleted())
 			.createdAt(store.getCreatedAt())

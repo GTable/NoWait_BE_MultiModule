@@ -1,6 +1,8 @@
 package com.nowait.domainuserrdb.bookmark.repository;
 
+import java.awt.print.Book;
 import java.util.Collection;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +16,6 @@ public interface BookmarkRepository extends JpaRepository<Bookmark,Long> {
 	boolean existsByUserAndStore(User user, Store store);
 
 	Collection<Bookmark> findAllByUser(User user);
+
+	List<Bookmark> findStoreIdByUser(User user);
 }

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.applicationuser.store.service.StoreService;
 import com.nowait.common.api.ApiUtils;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
@@ -37,12 +36,12 @@ public class StoreController {
 		description = "모든 주점을 페이지네이션으로 조회합니다."
 	)
 	@ApiResponse(responseCode = "200", description = "모든 주점 페이지네이션 조회 성공")
-	public ResponseEntity<?> getAllStoresByPageAndDeparments(Pageable pageable) {
+	public ResponseEntity<?> getAllStoresByPageAndDeparments(Pageable pageable, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
 		return ResponseEntity
 			.ok()
 			.body(
 				ApiUtils.success(
-					storeService.getAllStoresByPageAndDeparments(pageable)
+					storeService.getAllStoresByPageAndDeparments(pageable, customOAuth2User)
 				)
 			);
 	}
