@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -16,7 +17,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +25,7 @@ import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
 import com.nowait.applicationuser.store.dto.StoreDetailReadResponse;
 import com.nowait.applicationuser.store.dto.StoreImageUploadResponse;
 import com.nowait.applicationuser.store.dto.StorePageReadDto;
+import com.nowait.applicationuser.store.dto.StorePageReadResponse;
 import com.nowait.applicationuser.store.dto.StoreWaitingInfo;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
@@ -105,7 +106,7 @@ public class StoreServiceImpl implements StoreService {
 			));
 
 		// 5) Dto 매핑
-		List<StorePageReadDto> content = stores.stream()
+		List<StorePageReadResponse> content = stores.stream()
 			.map(store -> {
 				List<StoreImageUploadResponse> imgs = imageMap
 					.getOrDefault(store.getStoreId(), List.of());
@@ -113,7 +114,7 @@ public class StoreServiceImpl implements StoreService {
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
 				Long waitingCount =
 					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount);
+				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount);
 			})
 			.toList();
 
@@ -136,6 +137,8 @@ public class StoreServiceImpl implements StoreService {
 			.map(Department::getName)
 			.orElse("Unknown Department");
 
+		boolean isBookmark = bookmarkRepository.existsByUserAndStore(user, store);
+
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		String key = "waiting:" + storeId;
 		long waitingSize = redisTemplate.opsForZSet().zCard(key);
@@ -146,22 +149,16 @@ public class StoreServiceImpl implements StoreService {
 			.map(StoreImageUploadResponse::fromEntity)
 			.toList();
 
-		if (bookmarkRepository.existsByUserAndStore(user, store)) {
-			return StoreDetailReadResponse.fromEntityWithBookmark(store, imageDto, departmentName, waitingSize, true, userWaiting);
-		} else {
-			return StoreDetailReadResponse.fromEntity(store, imageDto, departmentName, waitingSize, userWaiting);
-		}
+		return StoreDetailReadResponse.fromEntity(store, imageDto, departmentName, waitingSize, isBookmark, userWaiting);
 	}
 
 	@Override
-	public List<StorePageReadDto> searchByKeywordNative(String keyword) {
+	public List<StorePageReadResponse> searchByKeywordNative(String keyword) {
 		if (keyword == null || keyword.isBlank()) {
 			throw new StoreParamEmptyException();
 		}
 
 		// 1) 페이징된 Store 스냅샷 조회
-		// Like 사용
-		// List<Store> stores = storeRepository.findByNameContainingIgnoreCaseAndDeletedFalse(keyword);
 		// 풀텍스트인덱스 사용
 		List<Store> stores = storeRepository.searchByKeywordNative(keyword);
 
@@ -213,7 +210,7 @@ public class StoreServiceImpl implements StoreService {
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
 				Long waitingCount =
 					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount);
+				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount);
 			})
 			.toList();
 	}
@@ -288,7 +285,7 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<StorePageReadDto> getAllStoresByPageAndDeparments(List<Long> storeIds) {
+	public List<StorePageReadDto> getAllStoresByPageAndDeparments(List<Long> storeIds, Set<Long> bookmarkedSet) {
 		// 1) 페이징된 Store 스냅샷 조회
 		List<Store> stores = storeRepository.findAllByStoreIdInOrderByStoreIdAsc(storeIds);
 
@@ -339,7 +336,9 @@ public class StoreServiceImpl implements StoreService {
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
 				Long waitingCount =
 					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount);
+				boolean isBookmark = bookmarkedSet.contains(store.getStoreId());
+
+				return StorePageReadDto.fromEntity(store, imgs, departmentName, waitingCount, isBookmark);
 			})
 			.toList();
 
