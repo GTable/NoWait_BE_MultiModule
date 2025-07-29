@@ -1,6 +1,7 @@
 package com.nowait.applicationuser.store.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Pageable;
@@ -23,5 +24,5 @@ public interface StoreService {
 
 	List<StoreWaitingInfo> getStoresByWaitingCount(boolean desc);
 
-	List<StorePageReadResponse> getAllStoresByPageAndDeparments(List<Long> storeIds, Set<Long> bookmarkedSet);
+	List<StorePageReadResponse> getAllStoresByPageAndDeparments(List<Long> storeIds, Map<Long, Long> bookmarkMap);
 }

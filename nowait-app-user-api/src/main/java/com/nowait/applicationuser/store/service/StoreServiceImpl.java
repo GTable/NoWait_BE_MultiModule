@@ -1,11 +1,14 @@
 package com.nowait.applicationuser.store.service;
 
+import java.awt.print.Book;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,6 +45,7 @@ import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
+import com.nowait.domainuserrdb.bookmark.exception.BookmarkNotFoundException;
 import com.nowait.domainuserrdb.bookmark.repository.BookmarkRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -56,12 +60,12 @@ public class StoreServiceImpl implements StoreService {
 	private final DepartmentRepository departmentRepository;
 	private final StringRedisTemplate redisTemplate;
 	private final BookmarkRepository bookmarkRepository;
-	private final UserRepository userRepository;
 	private final WaitingUserRedisRepository waitingRepo;
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable, CustomOAuth2User customOAuth2User) {
+	public StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable,
+		CustomOAuth2User customOAuth2User) {
 
 		User user = customOAuth2User.getUser();
 
@@ -78,28 +82,20 @@ public class StoreServiceImpl implements StoreService {
 			.distinct()
 			.toList();
 
-		// 2) 사용자 북마크된 storeId 집합 조회
-		List<Long> storeBookmarkIds = bookmarkRepository.findAllByUserAndDeletedFalse(user)
-			.stream()
-			.map(Bookmark::getStore)
-			.map(Store::getStoreId)
-			.toList();
-		Set<Long> bookmarkedSet = new HashSet<>(storeIds);
-
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		Map<Long, Long> waitingSizeMap = storeIds.stream()
-			 .collect(Collectors.toMap(
+			.collect(Collectors.toMap(
 				Function.identity(),
-				 storeId -> {
-					 String key = "waiting:" + storeId;
-					 try {
-						 return redisTemplate.opsForZSet().zCard(key);
-					 } catch (Exception e) {
-						 return 0L; // Redis 접근 실패 시 0으로 처리
-					 }
+				storeId -> {
+					String key = "waiting:" + storeId;
+					try {
+						return redisTemplate.opsForZSet().zCard(key);
+					} catch (Exception e) {
+						return 0L; // Redis 접근 실패 시 0으로 처리
+					}
 
-				 }
-			 ));
+				}
+			));
 
 		// 3) 각 StoreId에 해당하는 이미지 조회
 		List<StoreImage> allImages = storeImageRepository.findByStore_StoreIdIn(storeIds);
@@ -109,7 +105,6 @@ public class StoreServiceImpl implements StoreService {
 				StoreImageUploadResponse::getStoreId
 			));
 
-
 		// 4) 각 DepartmentId에 해당하는 이름 조회
 		List<Department> allDepts = departmentRepository.findAllById(deptIds);
 		Map<Long, String> deptNameMap = allDepts.stream()
@@ -118,21 +113,24 @@ public class StoreServiceImpl implements StoreService {
 				Department::getName
 			));
 
-		List<Bookmark> allBookmarks = bookmarkRepository.findStoreIdByUserAndDeletedFalse(user);
-		Map<Long, Boolean> bookmarkMap = allBookmarks.stream()
+		// 5) 북마크 조회
+		Collection<Bookmark> allBookmarks = bookmarkRepository.findAllByUserAndDeletedFalse(user);
+		Map<Long, Long> bookmarkIdMap = allBookmarks.stream()
 			.collect(Collectors.toMap(
-				bookmark -> bookmark.getStore().getStoreId(),
-				b -> Boolean.TRUE
+				b -> b.getStore().getStoreId(),
+				Bookmark::getId
 			));
 
 		// 5) Dto 매핑
 		List<StorePageReadResponse> content = stores.stream()
 			.map(store -> {
+				Long bookmarkId = bookmarkIdMap.get(store.getStoreId());
+				boolean isBookmark = bookmarkId != null;
 				List<StoreImageUploadResponse> imgs = imageMap.getOrDefault(store.getStoreId(), List.of());
 				String departmentName = deptNameMap.getOrDefault(store.getDepartmentId(), "Unknown Department");
 				Long waitingCount = waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				Boolean isBookmark = bookmarkMap.getOrDefault(store.getStoreId(), false);
-				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount, isBookmark);
+
+				return StorePageReadResponse.fromEntity(store, bookmarkId, imgs, departmentName, waitingCount, isBookmark);
 			})
 			.toList();
 
@@ -144,9 +142,10 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional(readOnly = true)
 	public StoreDetailReadResponse getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User) {
-		if (storeId == null) throw new StoreParamEmptyException();
-		User user = userRepository.findById(customOAuth2User.getUserId())
-			.orElseThrow(UserNotFoundException::new);
+
+		if (storeId == null)
+			throw new StoreParamEmptyException();
+		User user = customOAuth2User.getUser();
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
@@ -155,7 +154,9 @@ public class StoreServiceImpl implements StoreService {
 			.map(Department::getName)
 			.orElse("Unknown Department");
 
-		boolean isBookmark = bookmarkRepository.existsByUserAndStoreAndDeletedFalse(user, store);
+		Optional<Bookmark> bookmark = bookmarkRepository.findByUserAndStoreAndDeletedFalse(user, store);
+		boolean isBookmark = bookmark.isPresent();
+		Long bookmarkId = isBookmark ? bookmark.get().getId() : null;
 
 		// 2-1) Redis에서 각 Store의 웨이팅 사이즈 조회
 		String key = "waiting:" + storeId;
@@ -167,7 +168,8 @@ public class StoreServiceImpl implements StoreService {
 			.map(StoreImageUploadResponse::fromEntity)
 			.toList();
 
-		return StoreDetailReadResponse.fromEntity(store, imageDto, departmentName, waitingSize, isBookmark, userWaiting);
+		return StoreDetailReadResponse.fromEntity(store, bookmarkId, imageDto, departmentName, waitingSize, isBookmark,
+			userWaiting);
 	}
 
 	@Override
@@ -255,7 +257,8 @@ public class StoreServiceImpl implements StoreService {
 
 				// zset 타입인지 확인
 				DataType type = redisTemplate.type(key);
-				if (type == null || !"zset".equals(type.code())) continue;
+				if (type == null || !"zset".equals(type.code()))
+					continue;
 
 				Long count = redisTemplate.opsForZSet().zCard(key);
 				String storeId = key.replace(PREFIX, "");
@@ -284,7 +287,8 @@ public class StoreServiceImpl implements StoreService {
 
 		// 정렬 로직: 대기 인원 기준 desc/asc
 		Comparator<StoreWaitingInfo> comparator = Comparator.comparing(StoreWaitingInfo::getWaitingCount);
-		if (desc) comparator = comparator.reversed();
+		if (desc)
+			comparator = comparator.reversed();
 		result.sort(comparator);
 
 		return result.stream()
@@ -300,10 +304,10 @@ public class StoreServiceImpl implements StoreService {
 		return factory.getConnection();
 	}
 
-
 	@Override
 	@Transactional(readOnly = true)
-	public List<StorePageReadResponse> getAllStoresByPageAndDeparments(List<Long> storeIds, Set<Long> bookmarkedSet) {
+	public List<StorePageReadResponse> getAllStoresByPageAndDeparments(List<Long> storeIds,
+		Map<Long, Long> bookmarkMap) {
 		// 1) 페이징된 Store 스냅샷 조회
 		List<Store> stores = storeRepository.findAllByStoreIdInOrderByStoreIdAsc(storeIds);
 
@@ -336,7 +340,6 @@ public class StoreServiceImpl implements StoreService {
 				StoreImageUploadResponse::getStoreId
 			));
 
-
 		// 4) 각 DepartmentId에 해당하는 이름 조회
 		List<Department> allDepts = departmentRepository.findAllById(deptIds);
 		Map<Long, String> deptNameMap = allDepts.stream()
@@ -348,15 +351,18 @@ public class StoreServiceImpl implements StoreService {
 		// 5) Dto 매핑
 		List<StorePageReadResponse> content = stores.stream()
 			.map(store -> {
+				Long bookmarkId = bookmarkMap.get(store.getStoreId());
+				boolean isBookmark = bookmarkId != null;
+
 				List<StoreImageUploadResponse> imgs = imageMap
 					.getOrDefault(store.getStoreId(), List.of());
 				String departmentName = deptNameMap
 					.getOrDefault(store.getDepartmentId(), "Unknown Department");
 				Long waitingCount =
 					waitingSizeMap.getOrDefault(store.getStoreId(), 0L);
-				boolean isBookmark = bookmarkedSet.contains(store.getStoreId());
 
-				return StorePageReadResponse.fromEntity(store, imgs, departmentName, waitingCount, isBookmark);
+				return StorePageReadResponse.fromEntity(store, bookmarkId, imgs, departmentName, waitingCount,
+					isBookmark);
 			})
 			.toList();
 

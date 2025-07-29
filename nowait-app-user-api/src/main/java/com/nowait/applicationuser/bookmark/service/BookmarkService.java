@@ -1,10 +1,11 @@
 package com.nowait.applicationuser.bookmark.service;
 
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,11 +20,10 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
-import com.nowait.domainuserrdb.bookmark.exception.BookmarkNotFoundException;
+import com.nowait.domainuserrdb.bookmark.exception.AlreadyDeletedBookmarkException;
 import com.nowait.domainuserrdb.bookmark.repository.BookmarkRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -70,15 +70,21 @@ public class BookmarkService {
 		User user = userRepository.findById(customOAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
 
+		Collection<Bookmark> allBookmarks = bookmarkRepository.findAllByUserAndDeletedFalse(user);
+
 		List<Long> storeIds = bookmarkRepository.findAllByUserAndDeletedFalse(user)
 			.stream()
 			.map(Bookmark::getStore)
 			.map(Store::getStoreId)
 			.toList();
 
-		Set<Long> bookmarkedSet = new HashSet<>(storeIds);
+		Map<Long, Long> bookmarkMap = allBookmarks.stream()
+			.collect(Collectors.toMap(
+				b -> b.getStore().getStoreId(),
+				Bookmark::getId
+			));
 
-		return storeService.getAllStoresByPageAndDeparments(storeIds, bookmarkedSet);
+		return storeService.getAllStoresByPageAndDeparments(storeIds, bookmarkMap);
 	}
 
 	@Transactional
@@ -89,7 +95,7 @@ public class BookmarkService {
 			.orElseThrow(StoreNotFoundException::new);
 
 		Bookmark bookmark = bookmarkRepository.findByUserAndStoreAndDeletedFalse(user, store)
-			.orElseThrow(BookmarkNotFoundException::new);
+			.orElseThrow(AlreadyDeletedBookmarkException::new);
 
 		if (!Objects.equals(bookmark.getUser().getId(), customOAuth2User.getUserId())) {
 			throw new IllegalArgumentException("you can only delete your own bookmark");

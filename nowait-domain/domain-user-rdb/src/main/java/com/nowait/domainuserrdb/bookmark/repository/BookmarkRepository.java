@@ -15,7 +15,6 @@ import com.nowait.domainuserrdb.bookmark.entity.Bookmark;
 
 @Repository
 public interface BookmarkRepository extends JpaRepository<Bookmark,Long> {
-	boolean existsByUserAndStoreAndDeletedFalse(User user, Store store);
 
 	Optional<Bookmark> findByUserAndStoreAndDeletedFalse(User user, Store store);
 
@@ -24,16 +23,4 @@ public interface BookmarkRepository extends JpaRepository<Bookmark,Long> {
 	Collection<Bookmark> findAllByUserAndDeletedFalse(User user);
 
 	List<Bookmark> findStoreIdByUserAndDeletedFalse(User user);
-
-	@Query("""
-      select b
-        from Bookmark b
-       where b.user.id = :userId
-         and b.store.storeId = :storeId
-         and b.deleted = false
-    """)
-	Optional<Bookmark> findActiveByUserIdAndStoreId(
-		@Param("storeId") Long storeId,
-		@Param("userId")  Long userId
-	);
 }
