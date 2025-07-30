@@ -3,6 +3,8 @@
 
 ## 💡프로젝트 소개
 주점 대기 예약부터 메뉴 주문까지 원격으로 처리할 수 있는 웨이팅 서비스입니다.
+![NoWait-Architecture](https://github.com/user-attachments/assets/408f468c-4ac2-4eb6-93d5-e39c4d5cd557)
+
 
 ## 📜 프로젝트 목표
 
