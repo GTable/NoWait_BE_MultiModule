@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -176,41 +175,17 @@ public class ReservationService {
 
 	// 완료 or 취소 처리된 대기 리스트 조회
 	@Transactional(readOnly = true)
-	public List<WaitingUserResponse> getCompletedWaitingUserDetails(Long storeId) {
-		List<Reservation> reservations = reservationRepository.findAllByStore_StoreIdAndStatusInAndRequestedAtBetween(
-			storeId,
-			List.of(ReservationStatus.CONFIRMED, ReservationStatus.CANCELLED),
-			LocalDate.now().atStartOfDay(),
-			LocalDate.now().atTime(LocalTime.MAX));
+	public List<WaitingUserResponse> getCompletedWaitingUserDetails(Long storeId, MemberDetails memberDetails) {
+		authorize(storeId, memberDetails);
+		List<Reservation> reservations = findTodayWaiting(storeId);
+
+		if (reservations.isEmpty()) {
+			throw new ReservationNotFoundException();
+		}
 
 		return reservations.stream()
-			.map(r -> WaitingUserResponse.fromEntity(r))
+			.map(WaitingUserResponse::fromEntity)
 			.toList();
-	}
-
-	private User authorize(Long storeId, MemberDetails member) {
-		User u = userRepository.findById(member.getId())
-			.orElseThrow(UserNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(u.getRole()) && !storeId.equals(u.getStoreId())) {
-			throw new ReservationViewUnauthorizedException();
-		}
-		return u;
-	}
-
-	// 공통: 오늘 날짜 예약 조회
-	private Reservation findTodayReservation(Long storeId, String userId) {
-		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-		LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
-
-		return reservationRepository
-			.findByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetween(
-				storeId,
-				Long.valueOf(userId),
-				List.of(ReservationStatus.WAITING, ReservationStatus.CALLING),
-				startOfDay,
-				endOfDay
-			)
-			.orElseThrow(() -> new IllegalArgumentException("오늘 날짜의 예약이 존재하지 않습니다."));
 	}
 
 	/**
@@ -261,9 +236,6 @@ public class ReservationService {
 				// 1) 기존 대기 중이거나 호출 중일 때: Redis → DB 최초 저장
 				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name().equals(currStatus)) {
 
-					// Redis 전부 삭제
-					waitingRedisRepository.deleteWaiting(storeId, userId);
-
 					// 새 Reservation 생성 & 저장
 					Reservation r = Reservation.builder()
 						.reservationNumber(reservationNumber)
@@ -277,6 +249,8 @@ public class ReservationService {
 					// 호출 시각 반영
 					r.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
 					Reservation saved = reservationRepository.save(r);
+					// Redis 전부 삭제
+					waitingRedisRepository.deleteWaiting(storeId, userId);
 					return EntryStatusResponseDto.fromEntity(saved);
 				} else {
 					// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
@@ -302,7 +276,6 @@ public class ReservationService {
 					  || ReservationStatus.CALLING.name().equals(currStatus))) {
 					throw new IllegalStateException("WAITING/CALLING 상태에서만 취소 가능합니다.");
 				}
-				waitingRedisRepository.deleteWaiting(storeId, userId);
 
 				Reservation r = Reservation.builder()
 					.reservationNumber(reservationNumber)
@@ -315,11 +288,40 @@ public class ReservationService {
 
 				r.markUpdated(LocalDateTime.now(), ReservationStatus.CANCELLED);
 				Reservation saved = reservationRepository.save(r);
+				waitingRedisRepository.deleteWaiting(storeId, userId);
+
 				return EntryStatusResponseDto.fromEntity(saved);
 
 			default:
 				throw new IllegalArgumentException("지원하지 않는 상태: " + newStatus);
 		}
+	}
+
+
+	/**
+	 * 공통 메서드
+	 */
+	// 오늘 날짜 예약 조회
+	private List<Reservation> findTodayWaiting(Long storeId) {
+		ZoneId zone = ZoneId.of("Asia/Seoul");
+		LocalDate today = LocalDate.now(zone);
+
+		return reservationRepository.findAllByStore_StoreIdAndStatusInAndRequestedAtBetween(
+			storeId,
+			List.of(ReservationStatus.CONFIRMED, ReservationStatus.CANCELLED),
+			today.atStartOfDay(zone).toLocalDateTime(),
+			today.atTime(LocalTime.MAX)
+		);
+	}
+
+	// 사용자 인증
+	private User authorize(Long storeId, MemberDetails member) {
+		User u = userRepository.findById(member.getId())
+			.orElseThrow(UserNotFoundException::new);
+		if (!Role.SUPER_ADMIN.equals(u.getRole()) && !storeId.equals(u.getStoreId())) {
+			throw new ReservationViewUnauthorizedException();
+		}
+		return u;
 	}
 }
 

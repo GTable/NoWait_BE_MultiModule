@@ -53,7 +53,7 @@ public class ReservationController {
 		@PathVariable Long storeId,
 		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
-		List<WaitingUserResponse> response = reservationService.getCompletedWaitingUserDetails(storeId);
+		List<WaitingUserResponse> response = reservationService.getCompletedWaitingUserDetails(storeId, memberDetails);
 		return ResponseEntity
 			.ok()
 			.body(
