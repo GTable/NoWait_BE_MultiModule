@@ -3,6 +3,7 @@ package com.nowait.discord.service;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class DiscordAlarmService {
 			.embeds(List.of(DiscordMessage.Embed.builder()
 				.title("ℹ️ 에러 정보")
 				.description(
-					"### 🕖 발생 시간\n" + LocalDateTime.now() + "\n" + "### 🔗 요청 URL\n" + createRequestFullPath(request)
+					"### 🕖 발생 시간\n" + LocalDateTime.now(ZoneId.of("Asia/Seoul")) + "\n" + "### 🔗 요청 URL\n" + createRequestFullPath(request)
 					+ "\n" + "### 📄 Stack Trace\n" + "```\n" + getStackTrace(e).substring(0, 1000) + "\n```")
 				.build()))
 			.build();
