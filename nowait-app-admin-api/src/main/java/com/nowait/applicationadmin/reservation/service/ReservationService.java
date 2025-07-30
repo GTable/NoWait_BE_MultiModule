@@ -236,9 +236,6 @@ public class ReservationService {
 				// 1) 기존 대기 중이거나 호출 중일 때: Redis → DB 최초 저장
 				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name().equals(currStatus)) {
 
-					// Redis 전부 삭제
-					waitingRedisRepository.deleteWaiting(storeId, userId);
-
 					// 새 Reservation 생성 & 저장
 					Reservation r = Reservation.builder()
 						.reservationNumber(reservationNumber)
@@ -252,6 +249,8 @@ public class ReservationService {
 					// 호출 시각 반영
 					r.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
 					Reservation saved = reservationRepository.save(r);
+					// Redis 전부 삭제
+					waitingRedisRepository.deleteWaiting(storeId, userId);
 					return EntryStatusResponseDto.fromEntity(saved);
 				} else {
 					// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
@@ -277,7 +276,6 @@ public class ReservationService {
 					  || ReservationStatus.CALLING.name().equals(currStatus))) {
 					throw new IllegalStateException("WAITING/CALLING 상태에서만 취소 가능합니다.");
 				}
-				waitingRedisRepository.deleteWaiting(storeId, userId);
 
 				Reservation r = Reservation.builder()
 					.reservationNumber(reservationNumber)
@@ -290,6 +288,8 @@ public class ReservationService {
 
 				r.markUpdated(LocalDateTime.now(), ReservationStatus.CANCELLED);
 				Reservation saved = reservationRepository.save(r);
+				waitingRedisRepository.deleteWaiting(storeId, userId);
+
 				return EntryStatusResponseDto.fromEntity(saved);
 
 			default:
