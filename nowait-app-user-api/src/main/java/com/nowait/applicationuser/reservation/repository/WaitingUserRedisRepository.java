@@ -35,7 +35,6 @@ public class WaitingUserRedisRepository {
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
-
 		String seqKey = RedisKeyUtils.buildReservationSeqKey(storeId);
 		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
 
@@ -44,18 +43,7 @@ public class WaitingUserRedisRepository {
 
 		if (Boolean.TRUE.equals(added)) {
 
-			// 2) 일일 시퀀스: 날짜별로 초기화하려면
-			String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE); // YYYYMMDD
-			String dailySeqKey = seqKey + ":" + today;  // ex. reservation:seq:5:20250728
-
-			// atomic increment
-			Long seq = redisTemplate.opsForValue().increment(dailySeqKey, 1);
-
-			// 3) 4자리 0패딩
-			String seqStr = String.format("%04d", seq);
-
-			// 4) 최종 ID 조합
-			reservationId = storeId + "-" + today + "-" + seqStr;
+			reservationId = GenerateReservationNumber(seqKey, storeId);
 
 			// 5) Hash에 저장
 			redisTemplate.opsForHash().put(numberMapKey, userId, reservationId);
@@ -69,6 +57,8 @@ public class WaitingUserRedisRepository {
 			redisTemplate.expire(queueKey, ttl);
 			redisTemplate.expire(partyKey, ttl);
 			redisTemplate.expire(statusKey, ttl);
+			redisTemplate.expire(seqKey, ttl);
+			redisTemplate.expire(numberMapKey, ttl);
 		} else {
 			Object stored = redisTemplate.opsForHash().get(numberMapKey, userId);
 			reservationId = stored != null ? stored.toString() : null;
@@ -193,6 +183,7 @@ public class WaitingUserRedisRepository {
 		return val != null ? val.toString() : null;
 	}
 
+	// 6) TTL 계산: 다음날 03:00 까지 남은 시간
 	public Duration calculateTTLUntilNext03AM() {
 		// 6-1) Asia/Seoul 기준으로 오늘 자정(내일 00:00) 구하기
 		ZoneId zone = ZoneId.of("Asia/Seoul");
@@ -203,6 +194,24 @@ public class WaitingUserRedisRepository {
 		long secondsUntilMidnight = now.until(midnight, ChronoUnit.SECONDS);
 
 		return Duration.ofSeconds(secondsUntilMidnight);
+	}
+
+	// 예약 번호 생성
+	public String GenerateReservationNumber(String seqKey, Long storeId) {
+		// 2) 일일 시퀀스: 날짜별로 초기화하려면
+		String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE); // YYYYMMDD
+		String dailySeqKey = seqKey + ":" + today;  // ex. reservation:seq:5:20250728
+
+		// atomic increment
+		Long seq = redisTemplate.opsForValue().increment(dailySeqKey, 1);
+
+		// 3) 4자리 0패딩
+		String seqStr = String.format("%04d", seq);
+
+		// 4) 최종 ID 조합
+		String reservationId = storeId + "-" + today + "-" + seqStr;
+
+		return reservationId;
 	}
 }
 
