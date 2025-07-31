@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-
 @Getter
 @AllArgsConstructor
 @Builder
@@ -31,8 +30,8 @@ public class WaitingUserResponse {
 	@Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
 	private LocalDateTime createdAt;
 
-	// @Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
-	// private LocalDateTime updatedAt;
+	@Schema(description = "호출 시각", example = "2025-07-22T16:10:00")
+	private LocalDateTime calledAt;
 
 	@Schema(description = "대기 상태", example = "CALLING")
 	private String status;
@@ -47,19 +46,19 @@ public class WaitingUserResponse {
 			.partySize(reservation.getPartySize())
 			.userName(reservation.getUser().getNickname())
 			.createdAt(reservation.getRequestedAt())
-			// .updatedAt(reservation.getUpdatedAt())
 			.status(reservation.getStatus().name())
 			.build();
 	}
 
-	public static WaitingUserResponse fromRedis(String reservationId, String userId, Integer partySize, String userName, LocalDateTime createdAt, String status, Double score) {
+	public static WaitingUserResponse fromRedis(String reservationId, String userId, Integer partySize, String userName,
+		LocalDateTime createdAt, LocalDateTime calledAt, String status, Double score) {
 		return WaitingUserResponse.builder()
 			.reservationNumber(reservationId)
 			.userId(userId)
 			.partySize(partySize)
 			.userName(userName)
 			.createdAt(createdAt)
-			// .updatedAt(updatedAt)
+			.calledAt(calledAt)
 			.status(status)
 			.score(score)
 			.build();
