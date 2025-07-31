@@ -133,6 +133,7 @@ public class ReservationService {
 		String pk = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		String sk = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		String nk = RedisKeyUtils.buildReservationNumberKey(storeId);
+		String cak = RedisKeyUtils.buildWaitingCalledAtKeyPrefix() + storeId;
 		String qk = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 
 		List<Object> pipeline = redisTemplate.executePipelined((RedisCallback<Object>)conn -> {
@@ -142,6 +143,7 @@ public class ReservationService {
 				conn.hGet(pk.getBytes(), uid);   // partySize
 				conn.hGet(sk.getBytes(), uid);   // status
 				conn.hGet(nk.getBytes(), uid);   // reservationId
+				conn.hGet(cak.getBytes(), uid);  // calledAt
 				conn.zScore(qk.getBytes(), uid); // score (등록 시각)
 			}
 			return null;
@@ -157,6 +159,7 @@ public class ReservationService {
 			Integer partySize = Optional.ofNullable((String)it.next()).map(Integer::valueOf).orElse(0);
 			String status = (String)it.next();
 			String reservationId = (String)it.next();
+			String calledAtStr = (String)it.next();
 			Double score = (Double)it.next();
 
 			// score → createdAt
@@ -164,10 +167,15 @@ public class ReservationService {
 				? Instant.ofEpochMilli(score.longValue()).atZone(zone).toLocalDateTime()
 				: null;
 
+			LocalDateTime calledAt = calledAtStr != null
+				? Instant.ofEpochMilli(Long.parseLong(calledAtStr)).atZone(zone).toLocalDateTime()
+				: null;
+
 			String userName = nicknameMap.getOrDefault(userId, "Unknown");
 
 			result.add(
-				WaitingUserResponse.fromRedis(reservationId, userId, partySize, userName, createdAt, status, score));
+				WaitingUserResponse.fromRedis(reservationId, userId, partySize, userName, createdAt, calledAt, status,
+					score));
 		}
 
 		return result;
@@ -191,7 +199,8 @@ public class ReservationService {
 	 * - CANCELLED : Redis에서 삭제             → DB 저장 → 취소 메시지 반환
 	 */
 	@Transactional
-	public EntryStatusResponseDto processEntryStatus(Long storeId, String userId, MemberDetails member, ReservationStatus newStatus) {
+	public EntryStatusResponseDto processEntryStatus(Long storeId, String userId, MemberDetails member,
+		ReservationStatus newStatus) {
 
 		authorize(storeId, member);
 
@@ -206,7 +215,7 @@ public class ReservationService {
 		LocalDateTime requestedAt = score != null
 			? Instant.ofEpochMilli(score.longValue()).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
 			: LocalDateTime.now();
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
 		switch (newStatus) {
 			case CALLING:
@@ -214,8 +223,8 @@ public class ReservationService {
 					throw new IllegalStateException("WAITING 상태에서만 CALLING 가능합니다.");
 				}
 				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
-				waitingRedisRepository.setWaitingCalledAt(storeId, userId, now.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli());
-
+				waitingRedisRepository.setWaitingCalledAt(storeId, userId,
+					now.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli());
 
 				return EntryStatusResponseDto.builder()
 					.reservationNumber(reservationNumber)
@@ -230,7 +239,8 @@ public class ReservationService {
 
 			case CONFIRMED:
 				// 1) 기존 대기 중이거나 호출 중일 때: Redis → DB 최초 저장
-				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name().equals(currStatus)) {
+				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name()
+					.equals(currStatus)) {
 
 					// 새 Reservation 생성 & 저장
 					Reservation r = Reservation.builder()
