@@ -1,10 +1,7 @@
 package com.nowait.applicationuser.exception;
 
 import static com.nowait.common.exception.ErrorMessage.*;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.util.Map;
@@ -35,6 +32,7 @@ import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationExcept
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
+import com.nowait.domaincorerdb.storepayment.exception.StorePaymentNotFoundException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domainuserrdb.bookmark.exception.AlreadyDeletedBookmarkException;
@@ -236,6 +234,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("handleStoreNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), STORE_NOT_FOUND.getCode());
+	}
+
+	@ResponseStatus(NO_CONTENT)
+	@ExceptionHandler(StorePaymentNotFoundException.class)
+	public ErrorResponse handleStorePaymentNotFoundException(StorePaymentNotFoundException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleStorePaymentNotFoundException", e);
+		return new ErrorResponse(e.getMessage(), STORE_PAYMENT_NOT_FOUND.getCode());
 	}
 
 	// 공통 에러 Map 생성

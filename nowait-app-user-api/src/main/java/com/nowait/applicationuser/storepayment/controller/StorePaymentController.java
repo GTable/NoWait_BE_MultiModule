@@ -44,13 +44,12 @@ public class StorePaymentController {
 				);
 		} else {
 			return ResponseEntity
-				.status(HttpStatus.NO_CONTENT)
+				.status(HttpStatus.OK)
 				.body(
 					ApiUtils.success(
-						response
+						"해당 주점의 등록된 결제 정보가 존재하지 않습니다."
 					)
 				);
 		}
-
 	}
 }
