@@ -235,7 +235,7 @@ public class ReservationService {
 		LocalDateTime requestedAt = score != null
 			? Instant.ofEpochMilli(score.longValue()).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
 			: LocalDateTime.now();
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
 		switch (newStatus) {
 			case CALLING:

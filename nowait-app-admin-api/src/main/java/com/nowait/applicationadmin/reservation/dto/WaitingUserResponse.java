@@ -31,6 +31,9 @@ public class WaitingUserResponse {
 	@Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
 	private LocalDateTime createdAt;
 
+	// @Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
+	// private LocalDateTime updatedAt;
+
 	@Schema(description = "대기 상태", example = "CALLING")
 	private String status;
 
@@ -44,6 +47,7 @@ public class WaitingUserResponse {
 			.partySize(reservation.getPartySize())
 			.userName(reservation.getUser().getNickname())
 			.createdAt(reservation.getRequestedAt())
+			// .updatedAt(reservation.getUpdatedAt())
 			.status(reservation.getStatus().name())
 			.build();
 	}
@@ -55,6 +59,7 @@ public class WaitingUserResponse {
 			.partySize(partySize)
 			.userName(userName)
 			.createdAt(createdAt)
+			// .updatedAt(updatedAt)
 			.status(status)
 			.score(score)
 			.build();
