@@ -249,7 +249,7 @@ public class ReservationService {
 						.user(userRepository.getReferenceById(Long.valueOf(userId)))
 						.partySize(partySize)
 						.requestedAt(requestedAt)
-						.updatedAt(LocalDateTime.now())
+						.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
 						.build();
 
 					// 호출 시각 반영
@@ -272,7 +272,7 @@ public class ReservationService {
 							end
 						).orElseThrow(() -> new IllegalStateException("취소된 예약이 없습니다."));
 
-					existing.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
+					existing.markUpdated(LocalDateTime.now(ZoneId.of("Asia/Seoul")), ReservationStatus.CONFIRMED);
 					Reservation saved = reservationRepository.save(existing);
 					return EntryStatusResponseDto.fromEntity(saved);
 				}
@@ -289,7 +289,7 @@ public class ReservationService {
 					.user(userRepository.getReferenceById(Long.valueOf(userId)))
 					.partySize(partySize)
 					.requestedAt(requestedAt)
-					.updatedAt(LocalDateTime.now())
+					.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
 					.build();
 
 				r.markUpdated(LocalDateTime.now(), ReservationStatus.CANCELLED);
