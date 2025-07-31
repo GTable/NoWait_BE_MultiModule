@@ -60,6 +60,7 @@ public class SecurityConfig {
 					"/login/oauth2/code/**", // 카카오 인증 콜백
 					"/api/refresh-token", // refresh token (토큰 갱신)
 					"/v1/menus/**", // 모든 메뉴 조회
+					"/v1/store-payments/**", // 결제 관련 API
 					"/orders/**",
 					"/swagger-ui/**",
 					"/v3/api-docs/**",
