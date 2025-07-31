@@ -179,10 +179,6 @@ public class ReservationService {
 		authorize(storeId, memberDetails);
 		List<Reservation> reservations = findTodayWaiting(storeId);
 
-		if (reservations.isEmpty()) {
-			throw new ReservationNotFoundException();
-		}
-
 		return reservations.stream()
 			.map(WaitingUserResponse::fromEntity)
 			.toList();
