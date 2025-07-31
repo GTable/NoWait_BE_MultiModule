@@ -4,6 +4,6 @@ import com.nowait.common.exception.ErrorMessage;
 
 public class StorePaymentNotFoundException extends RuntimeException {
 	public StorePaymentNotFoundException() {
-		super(ErrorMessage.STORE_PAYMENT_PARAMETER_EMPTY.getMessage());
+		super(ErrorMessage.STORE_PAYMENT_NOT_FOUND.getMessage());
 	}
 }
