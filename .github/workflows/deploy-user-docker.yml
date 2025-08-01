@@ -67,17 +67,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Debug workspace
-        run: |
-          echo "현재 작업 디렉터리: $(pwd)"
-          echo "파일 목록 전체:"
-            ls -R .
-
       - name: Set Prometheus YML
         run: |
           echo "${{ secrets.PROMETHEUS_DEV_YML }}" \
             | base64 --decode \
             > prometheus.yml
+
+      - name: Debug workspace
+        run: |
+          echo "현재 작업 디렉터리: $(pwd)"
+          echo "파일 목록 전체:"
+            ls -l .
 
       - name: Copy compose, prometheus.yml & deploy script to EC2
         uses: appleboy/scp-action@master
