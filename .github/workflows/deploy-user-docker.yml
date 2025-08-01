@@ -67,6 +67,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Debug workspace
+        run: |
+          echo "현재 작업 디렉터리: $(pwd)"
+          echo "파일 목록 전체:"
+            ls -R .
+
       - name: Set Prometheus YML
         run: |
           echo "${{ secrets.PROMETHEUS_DEV_YML }}" \
