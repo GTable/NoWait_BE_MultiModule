@@ -69,7 +69,8 @@ public class SecurityConfig {
 					"/swagger-resources/**",
 					"/webjars/**",
 					"/demo-ui.html",
-					"/v1/menus//all-menus/stores/**"
+					"/v1/menus/all-menus/stores/**",
+					"/nowait/management/**"
 				)
 				.permitAll()
 				.anyRequest().authenticated() // 그외 요청은 허가된 사람만 인가
