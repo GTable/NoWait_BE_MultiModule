@@ -7,11 +7,19 @@ START_LOG="$REPOSITORY/start.log"
 
 echo "1. find container id"
 CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-user-api")
+CONTAINER_PROMETHEUS_ID=$(docker ps -q --filter "name=prometheus")
+CONTAINER_GRAFANA_ID=$(docker ps -q --filter "name=grafana")
 
 echo "2. stop container"
 if [ -n "$CONTAINER_ID" ]; then
   echo "Stopping container $CONTAINER_ID"
   docker rm -f "$CONTAINER_ID"
+
+  echo "Stopping container $CONTAINER_PROMETHEUS_ID"
+  docker rm -f "$CONTAINER_PROMETHEUS_ID"
+
+    echo "Stopping container $CONTAINER_GRAFANA_ID"
+      docker rm -f "$CONTAINER_GRAFANA_ID"
 else
   echo "No user container found."
 fi
