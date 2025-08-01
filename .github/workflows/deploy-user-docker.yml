@@ -81,10 +81,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
           source: |
-            - docker-compose.user.yml
-            - docker-compose.user-monitoring.yml
-            - prometheus.yml
-            - scripts/deploy-user-docker.sh
+            docker-compose.user.yml
+            docker-compose.user-monitoring.yml
+            prometheus.yml
+            scripts/deploy-user-docker.sh
           target: ${{ env.EC2_DEPLOY_PATH }}
 
       - name: Login to DockerHub
