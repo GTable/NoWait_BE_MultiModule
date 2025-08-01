@@ -79,19 +79,46 @@ jobs:
           echo "파일 목록 전체:"
             ls -l scripts
 
-      - name: Copy compose, prometheus.yml & deploy script to EC2
+
+      - name: Copy docker-compose.user.yml to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
-          source: >
-            docker-compose.user.yml 
-            docker-compose.user-monitoring.yml 
-            prometheus.yml 
-            scripts/deploy-user-docker.sh"
+          source: "docker-compose.user.yml"
           target: ${{ env.EC2_DEPLOY_PATH }}
+
+      - name: Copy docker-compose.user-monitoring.yml to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "docker-compose.user-monitoring.yml"
+          target: ${{ env.EC2_DEPLOY_PATH }}
+
+      - name: Copy prometheus.yml to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "prometheus.yml"
+          target: ${{ env.EC2_DEPLOY_PATH }}
+
+      - name: Copy deploy-user-docker to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "scripts/deploy-user-docker.sh"
+          target: "${{ env.EC2_DEPLOY_PATH }}"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
