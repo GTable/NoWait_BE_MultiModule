@@ -70,7 +70,8 @@ public class SecurityConfig {
 					"/webjars/**",
 					"/demo-ui.html",
 					"/v1/menus/all-menus/stores/**",
-					"/nowait/management/**"
+					"/nowait/management/**",
+					"/health-check"
 				)
 				.permitAll()
 				.anyRequest().authenticated() // 그외 요청은 허가된 사람만 인가
