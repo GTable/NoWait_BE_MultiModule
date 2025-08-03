@@ -20,8 +20,8 @@ services:
     volumes:
       - grafana-admin-data:/var/lib/grafana
     depends_on:
-      - prometheus-admin
+      - prometheus
     restart: always
 
 volumes:
-  grafana_data:
+  grafana-admin-data:

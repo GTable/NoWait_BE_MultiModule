@@ -7,8 +7,8 @@ START_LOG="$REPOSITORY/start.log"
 
 echo "1. find container id"
 CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-user-api")
-CONTAINER_PROMETHEUS_ID=$(docker ps -q --filter "name=prometheus-user")
-CONTAINER_GRAFANA_ID=$(docker ps -q --filter "name=grafana-user")
+CONTAINER_PROMETHEUS_ID=$(docker ps -aq --filter "name=prometheus-user")
+CONTAINER_GRAFANA_ID=$(docker ps -aq --filter "name=grafana-user")
 
 echo "2. stop container"
 if [ -n "$CONTAINER_ID" ]; then
