@@ -14,14 +14,22 @@ echo "2. stop container"
 if [ -n "$CONTAINER_ID" ]; then
   echo "Stopping container $CONTAINER_ID"
   docker rm -f "$CONTAINER_ID"
+else
+  echo "No admin container found."
+fi
 
+if [ -n "$CONTAINER_PROMETHEUS_ID" ]; then
   echo "Stopping container $CONTAINER_PROMETHEUS_ID"
-  docker rm -f "$CONTAINER_PROMETHEUS_ID"
+    docker rm -f "$CONTAINER_PROMETHEUS_ID"
+else
+  echo "No admin container found."
+fi
 
+if [ -n "$CONTAINER_GRAFANA_ID" ]; then
   echo "Stopping container $CONTAINER_GRAFANA_ID"
     docker rm -f "$CONTAINER_GRAFANA_ID"
 else
-  echo "No user container found."
+  echo "No admin container found."
 fi
 
 echo "3. start container"
