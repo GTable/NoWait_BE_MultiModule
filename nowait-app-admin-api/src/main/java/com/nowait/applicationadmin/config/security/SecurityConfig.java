@@ -55,6 +55,7 @@ public class SecurityConfig {
 					"/swagger-resources/**",
 					"/webjars/**",
 					"/demo-ui.html",
+					"/nowait/management/**",
 					"/health-check"
 				)
 				.permitAll()
