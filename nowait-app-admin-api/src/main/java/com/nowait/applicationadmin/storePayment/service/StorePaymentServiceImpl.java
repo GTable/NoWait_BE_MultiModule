@@ -1,5 +1,7 @@
 package com.nowait.applicationadmin.storepayment.service;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +53,7 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StorePaymentReadDto getStorePaymentByStoreId(MemberDetails memberDetails) {
+	public Optional<StorePaymentReadDto> getStorePaymentByStoreId(MemberDetails memberDetails) {
 		if (memberDetails == null) throw new StorePaymentParamEmptyException();
 
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
@@ -59,10 +61,9 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new StorePaymentViewUnauthorizedException();
 		}
-		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
-			.orElseThrow(StorePaymentNotFoundException::new);
 
-		return StorePaymentReadDto.fromEntity(storePayment);
+		return storePaymentRepository.findByStoreId(storeId)
+			.map(StorePaymentReadDto::fromEntity);
 	}
 
 	@Override

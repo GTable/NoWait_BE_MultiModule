@@ -1,5 +1,7 @@
 package com.nowait.applicationadmin.storepayment.controller;
 
+import java.util.Optional;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateRequest;
 import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateResponse;
+import com.nowait.applicationadmin.storepayment.dto.StorePaymentReadDto;
 import com.nowait.applicationadmin.storepayment.dto.StorePaymentUpdateRequest;
 import com.nowait.applicationadmin.storepayment.service.StorePaymentService;
 import com.nowait.common.api.ApiUtils;
@@ -52,13 +55,25 @@ public class StorePaymentController {
 	@Operation(summary = "주점 결제 정보 조회", description = "인증된 사용자의 주점 결제 정보를 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 결제 정보 조회 성공")
 	public ResponseEntity<?> getStorePaymentByStoreId(@AuthenticationPrincipal MemberDetails memberDetails) {
-		return ResponseEntity
-			.status(HttpStatus.OK)
-			.body(
-				ApiUtils.success(
-					storePaymentService.getStorePaymentByStoreId(memberDetails)
-				)
-			);
+		Optional<StorePaymentReadDto> response = storePaymentService.getStorePaymentByStoreId(memberDetails);
+
+		if (response.isPresent()) {
+			return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(
+					ApiUtils.success(
+						response
+					)
+				);
+		} else {
+			return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(
+					ApiUtils.success(
+						"해당 주점의 등록된 결제 정보가 존재하지 않습니다."
+					)
+				);
+		}
 	}
 
 	@PatchMapping("/update")
