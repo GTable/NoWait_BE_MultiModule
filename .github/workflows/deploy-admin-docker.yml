@@ -48,7 +48,7 @@ jobs:
         run: ./gradlew clean :nowait-app-admin-api:bootJar -x test
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
@@ -70,6 +70,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set Prometheus YML
+        run: |
+          echo "${{ secrets.PROMETHEUS_DEV_ADMIN_YML }}" \
+            | base64 --decode \
+            > prometheus-admin.yml
+
       - name: Copy docker-compose.admin.yml to EC2
         uses: appleboy/scp-action@master
         with:
@@ -78,6 +84,26 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
           source: "docker-compose.admin.yml"
+          target: ${{ env.EC2_DEPLOY_PATH }}
+
+      - name: Copy docker-compose.admin-monitoring.yml to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "docker-compose.admin-monitoring.yml"
+          target: ${{ env.EC2_DEPLOY_PATH }}
+
+      - name: Copy prometheus-admin.yml to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "prometheus-admin.yml"
           target: ${{ env.EC2_DEPLOY_PATH }}
 
       - name: Copy deploy-admin-docker.sh to EC2
@@ -91,7 +117,7 @@ jobs:
           target: "${{ env.EC2_DEPLOY_PATH }}"
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}

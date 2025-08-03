@@ -7,18 +7,26 @@ START_LOG="$REPOSITORY/start.log"
 
 echo "1. find container id"
 CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")
+CONTAINER_PROMETHEUS_ID=$(docker ps -aq --filter "name=prometheus-admin")
+CONTAINER_GRAFANA_ID=$(docker ps -aq --filter "name=grafana-admin")
 
 echo "2. stop container"
 if [ -n "$CONTAINER_ID" ]; then
   echo "Stopping container $CONTAINER_ID"
   docker rm -f "$CONTAINER_ID"
+
+  echo "Stopping container $CONTAINER_PROMETHEUS_ID"
+    docker rm -f "$CONTAINER_PROMETHEUS_ID"
+
+  echo "Stopping container $CONTAINER_GRAFANA_ID"
+    docker rm -f "$CONTAINER_GRAFANA_ID"
 else
   echo "No admin container found."
 fi
 
 echo "3. start container"
-sudo docker-compose -f docker-compose.admin.yml -p nowait_dev pull nowait-app-admin-api
-sudo docker-compose -f docker-compose.admin.yml -p nowait_dev up -d nowait-app-admin-api
+sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev pull nowait-app-admin-api prometheus-admin grafana-admin
+sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev up -d nowait-app-admin-api prometheus-admin grafana-admin
 
 echo "4. check container status"
 NEW_CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")

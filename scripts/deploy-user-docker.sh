@@ -7,8 +7,8 @@ START_LOG="$REPOSITORY/start.log"
 
 echo "1. find container id"
 CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-user-api")
-CONTAINER_PROMETHEUS_ID=$(docker ps -q --filter "name=prometheus")
-CONTAINER_GRAFANA_ID=$(docker ps -q --filter "name=grafana")
+CONTAINER_PROMETHEUS_ID=$(docker ps -aq --filter "name=prometheus-user")
+CONTAINER_GRAFANA_ID=$(docker ps -aq --filter "name=grafana-user")
 
 echo "2. stop container"
 if [ -n "$CONTAINER_ID" ]; then
@@ -18,15 +18,15 @@ if [ -n "$CONTAINER_ID" ]; then
   echo "Stopping container $CONTAINER_PROMETHEUS_ID"
   docker rm -f "$CONTAINER_PROMETHEUS_ID"
 
-    echo "Stopping container $CONTAINER_GRAFANA_ID"
-      docker rm -f "$CONTAINER_GRAFANA_ID"
+  echo "Stopping container $CONTAINER_GRAFANA_ID"
+    docker rm -f "$CONTAINER_GRAFANA_ID"
 else
   echo "No user container found."
 fi
 
 echo "3. start container"
-sudo docker-compose -f docker-compose.user.yml -f docker-compose.user-monitoring.yml -p nowait_dev pull nowait-app-user-api prometheus grafana
-sudo docker-compose -f docker-compose.user.yml -f docker-compose.user-monitoring.yml -p nowait_dev up -d nowait-app-user-api prometheus grafana
+sudo docker-compose -f docker-compose.user.yml -f docker-compose.user-monitoring.yml -p nowait_dev pull nowait-app-user-api prometheus-user grafana-user
+sudo docker-compose -f docker-compose.user.yml -f docker-compose.user-monitoring.yml -p nowait_dev up -d nowait-app-user-api prometheus-user grafana-user
 
 echo "4. check container status"
 NEW_CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-user-api")
