@@ -1,0 +1,258 @@
+package com.nowait.applicationuser.reservation.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
+import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
+import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
+import com.nowait.common.enums.ReservationStatus;
+import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.reservation.entity.Reservation;
+import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
+import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
+import com.nowait.domaincorerdb.store.entity.Store;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
+import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
+import com.nowait.domaincorerdb.store.repository.StoreRepository;
+import com.nowait.domaincorerdb.user.entity.User;
+import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
+
+@ExtendWith(MockitoExtension.class)
+public class ReservationServiceTest {
+
+	@Mock private StoreRepository storeRepository;
+	@Mock private UserRepository userRepository;
+	@Mock private WaitingUserRedisRepository waitingRepo;
+	@Mock private ReservationRepository reservationRepository;
+	@InjectMocks private ReservationService service;
+
+
+	@Test
+	@DisplayName("registerWaiting: 성공 시 WaitingResponseDto 반환")
+	void registerWaiting_Success() {
+		// Given
+		Long storeId = 10L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(100L);
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(2).build();
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+		User domainUser = mock(User.class);
+		when(userRepository.findById(100L)).thenReturn(Optional.of(domainUser));
+		when(domainUser.getRole()).thenReturn(Role.USER);
+		when(waitingRepo.addToWaitingQueue(eq(storeId), eq("100"), eq(2), anyLong()))
+			.thenReturn("10-20250804-0001");
+		when(waitingRepo.getRank(storeId, "100")).thenReturn(4L);
+
+		// When
+		WaitingResponseDto result = service.registerWaiting(storeId, user, dto);
+
+		// Then
+		assertNotNull(result);
+		assertEquals("10-20250804-0001", result.getReservationNumber());
+		assertEquals(5, result.getRank());
+		assertEquals(2, result.getPartySize());
+		// Redis 등록 호출 검증
+		verify(waitingRepo).addToWaitingQueue(eq(storeId), eq("100"), eq(2), anyLong());
+	}
+
+	@Test
+	@DisplayName("registerWaiting: 스토어 없음 예외")
+	void registerWaiting_StoreNotFound() {
+		// Given
+		Long storeId = 10L;
+		when(storeRepository.findById(storeId)).thenReturn(Optional.empty());
+
+		// When/Then
+		assertThrows(StoreNotFoundException.class,
+			() -> service.registerWaiting(storeId, mock(CustomOAuth2User.class), null)
+		);
+	}
+
+	@Test
+	@DisplayName("myWaitingInfo: 정상 조회")
+	void myWaitingInfo_Success() {
+		// Given
+		Long storeId = 5L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(20L);
+		when(waitingRepo.getRank(storeId, "20")).thenReturn(0L);
+		when(waitingRepo.getPartySize(storeId, "20")).thenReturn(3);
+		when(waitingRepo.getReservationId(storeId, "20")).thenReturn("5-20250804-0001");
+
+		// When
+		WaitingResponseDto info = service.myWaitingInfo(storeId, user);
+
+		// Then
+		assertNotNull(info);
+		assertEquals("5-20250804-0001", info.getReservationNumber());
+		assertEquals(1, info.getRank());
+		assertEquals(3, info.getPartySize());
+	}
+
+	@Test
+	@DisplayName("cancelWaiting: 성공 시 true 반환 및 DB 저장 호출")
+	void cancelWaiting_Success() {
+		// Given
+		Long storeId = 7L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(30L);
+		when(waitingRepo.getReservationId(storeId, "30")).thenReturn("RID-1");
+		when(waitingRepo.getPartySize(storeId, "30")).thenReturn(4);
+		when(waitingRepo.getWaitingTimestamp(storeId, "30")).thenReturn(Instant.now().toEpochMilli());
+		when(waitingRepo.removeWaiting(storeId, "30")).thenReturn(true);
+
+		// When
+		boolean removed = service.cancelWaiting(storeId, user);
+
+		// Then
+		assertTrue(removed);
+		verify(reservationRepository).save(any(Reservation.class));
+	}
+
+	@Test
+	@DisplayName("getAllMyWaitings: 대기 없음 시 빈 리스트 반환")
+	void getAllMyWaitings_Empty() {
+		// Given
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(40L);
+		when(waitingRepo.getUserWaitingStoreIds("40")).thenReturn(Collections.emptyList());
+
+		// When
+		List<?> list = service.getAllMyWaitings(user);
+
+		// Then
+		assertTrue(list.isEmpty());
+	}
+
+
+	@Test
+	@DisplayName("create(DB): 성공 시 DTO 반환")
+	void create_Success() {
+		// Given
+		Long storeId = 2L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(50L);
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(5).build();
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+		User domainUser = mock(User.class);
+		when(userRepository.findById(50L)).thenReturn(Optional.of(domainUser));
+		when(reservationRepository.existsByUserAndStoreAndStatusIn(eq(domainUser), eq(store), anyList()))
+			.thenReturn(false);
+		Reservation saved = Reservation.builder()
+			.id(99L)
+			.store(store)
+			.user(domainUser)
+			.requestedAt(LocalDateTime.now())
+			.status(ReservationStatus.WAITING)
+			.partySize(5)
+			.build();
+		when(reservationRepository.save(any(Reservation.class))).thenReturn(saved);
+
+		// When
+		ReservationCreateResponseDto res = service.create(storeId, user, dto);
+
+		// Then
+		assertNotNull(res);
+		assertEquals(99L, res.getId());
+		assertEquals(5, res.getPartySize());
+	}
+
+	@Test
+	@DisplayName("create(DB): 중복 예약 예외")
+	void create_DuplicateException() {
+		// Given
+		Long storeId = 2L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(50L);
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(1).build();
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+		User domainUser = mock(User.class);
+		when(userRepository.findById(50L)).thenReturn(Optional.of(domainUser));
+		when(reservationRepository.existsByUserAndStoreAndStatusIn(eq(domainUser), eq(store), anyList()))
+			.thenReturn(true);
+
+		// When/Then
+		assertThrows(DuplicateReservationException.class,
+			() -> service.create(storeId, user, dto)
+		);
+	}
+
+	@Test
+	@DisplayName("create(DB): 사용자 없음 예외")
+	void create_UserNotFound() {
+		// Given
+		Long storeId = 2L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(50L);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(mock(Store.class)));
+		when(userRepository.findById(50L)).thenReturn(Optional.empty());
+
+		// When/Then
+		assertThrows(UserNotFoundException.class,
+			() -> service.create(storeId, user, ReservationCreateRequestDto.builder().partySize(1).build())
+		);
+	}
+
+	@Test
+	@DisplayName("create(DB): 스토어 없음 예외")
+	void create_StoreNotFound() {
+		// Given
+		Long storeId = 3L;
+		when(storeRepository.findById(storeId)).thenReturn(Optional.empty());
+
+		// When/Then
+		assertThrows(StoreNotFoundException.class,
+			() -> service.create(storeId, mock(CustomOAuth2User.class), ReservationCreateRequestDto.builder().partySize(1).build())
+		);
+	}
+
+	@Test
+	@DisplayName("create(DB): 스토어 비활성화 예외")
+	void create_StoreDisabledException() {
+		// Given
+		Long storeId = 4L;
+		CustomOAuth2User user = mock(CustomOAuth2User.class);
+		when(user.getUserId()).thenReturn(60L);
+
+		// 1) 사용자 조회 스텁 추가
+		User domainUser = mock(User.class);
+		when(userRepository.findById(60L)).thenReturn(Optional.of(domainUser));
+
+		// 2) 스토어 조회 및 비활성화 스텁
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(false);
+
+		// When / Then
+		assertThrows(StoreWaitingDisabledException.class,
+			() -> service.create(
+				storeId,
+				user,
+				ReservationCreateRequestDto.builder().partySize(2).build()
+			)
+		);
+	}
+}
