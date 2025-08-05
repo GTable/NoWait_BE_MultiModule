@@ -1,4 +1,4 @@
-FROM openjdk:17
+FROM openjdk:17-slim
 
 WORKDIR /app
 COPY build/libs/*.jar nowait-common.jar
