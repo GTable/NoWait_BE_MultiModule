@@ -10,7 +10,7 @@ import com.nowait.discord.dto.DiscordMessage;
 @FeignClient(
 	name = "discordClientUser",
 	contextId = "discordClientUser",
-	url = "https://discord.com/api/webhooks/1399081071127171203/dvop__zPnQKCX-1VMJyBYnU_KTFNJFUwgGwta9D1Zy0xON0hKDcTW2ke9TQfnywzD2ll",
+	url = "${discord.webhook.user-url}",
 	configuration = DiscordFeignConfiguration.class)
 public interface DiscordClientUser {
 	@PostMapping()
