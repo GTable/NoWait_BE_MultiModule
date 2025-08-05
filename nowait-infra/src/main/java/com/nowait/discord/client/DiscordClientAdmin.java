@@ -8,8 +8,8 @@ import com.nowait.discord.config.DiscordFeignConfiguration;
 import com.nowait.discord.dto.DiscordMessage;
 
 @FeignClient(
-	name        = "discordClientAdmin",
-	contextId   = "discordClientAdmin",
+	name = "discordClientAdmin",
+	contextId = "discordClientAdmin",
 	url = "${discord.webhook.admin-url}",
 	configuration = DiscordFeignConfiguration.class)
 public interface DiscordClientAdmin {
