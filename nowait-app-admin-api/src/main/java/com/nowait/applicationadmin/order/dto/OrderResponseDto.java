@@ -1,9 +1,8 @@
 package com.nowait.applicationadmin.order.dto;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.nowait.domaincorerdb.order.entity.OrderItem;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
@@ -20,16 +19,27 @@ public class OrderResponseDto {
 	private String depositorName;
 	private Integer totalPrice;
 	private OrderStatus status;
-	private Map<String, Integer> menuNamesAndQuantities;
+	private Map<String, MenuDetail> menuDetails;
 	private LocalDateTime createdAt;
 
 	public static OrderResponseDto fromEntity(UserOrder userOrder) {
-		Map<String, Integer> menuNamesAndQuantities = userOrder.getOrderItems().stream()
-			.collect(Collectors.toMap(
-				orderItem -> orderItem.getMenu().getName(),
-				OrderItem::getQuantity,
-				Integer::sum // 메뉴명이 중복일 때 수량 합침
-			));
+		Map<String, MenuDetail> menuDetails = new LinkedHashMap<>();
+
+		for (OrderItem item : userOrder.getOrderItems()) {
+			String name = item.getMenu().getName();
+			int quantity = item.getQuantity();
+			int price = item.getMenu().getPrice(); // 메뉴 단가
+
+			// 메뉴명이 중복되면 수량만 누적
+			// merge 람다함수 활용(해당 key가 있으면 수량 누적, 없으면 새로 생성)
+			menuDetails.merge(name,
+				new MenuDetail(quantity, price),
+				(oldVal, newVal) -> new MenuDetail(
+					oldVal.getQuantity() + newVal.getQuantity(),
+					oldVal.getPrice() // 단가는 동일하다는 가정
+				)
+			);
+		}
 
 		return OrderResponseDto.builder()
 			.id(userOrder.getId())
@@ -37,8 +47,9 @@ public class OrderResponseDto {
 			.depositorName(userOrder.getDepositorName())
 			.totalPrice(userOrder.getTotalPrice())
 			.status(userOrder.getStatus())
-			.menuNamesAndQuantities(menuNamesAndQuantities)
+			.menuDetails(menuDetails)
 			.createdAt(userOrder.getCreatedAt())
 			.build();
 	}
 }
+
