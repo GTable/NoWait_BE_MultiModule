@@ -1,4 +1,4 @@
-FROM openjdk:17.0.8-jdk
+FROM openjdk:17
 
 WORKDIR /app
 COPY build/libs/*.jar nowait-common.jar
