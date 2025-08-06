@@ -9,8 +9,6 @@ import com.nowait.domainadminrdb.statistic.dto.StoreInfo;
 import com.nowait.domainadminrdb.statistic.dto.StoreSales;
 import com.nowait.domainadminrdb.statistic.dto.TopSalesStoresDetail;
 
-
-
 public interface StatisticCustomRepository {
 
 	OrderSalesSumDetail findSalesSumByStoreId(Long storeId, LocalDate date);
@@ -18,7 +16,6 @@ public interface StatisticCustomRepository {
 	List<TopSalesStoresDetail> getTop4PlusMine(Long storeId);
 
 	Map<Long, Integer> findOrderCountByStoreIds(List<Long> storeIds);
-
 
 	// redis 사용하는 부분
 	List<StoreSales> findTotalSales();
