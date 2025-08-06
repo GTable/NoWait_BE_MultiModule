@@ -31,7 +31,7 @@ public class Menu extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long storeId;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String adminDisplayName;
 
 	@Column(nullable = false)
