@@ -1,6 +1,8 @@
 package com.nowait.applicationadmin.order.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,7 +48,11 @@ public class OrderService {
 		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
 			throw new OrderViewUnauthorizedException();
 		}
-		return orderRepository.findAllByStore_StoreId(storeId)
+
+		LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+		LocalDateTime startDateTime = today.atStartOfDay();
+		LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
+		return orderRepository.findAllByStore_StoreIdAndCreatedAtBetween(storeId, startDateTime, endDateTime)
 			.stream()
 			.map(OrderResponseDto::fromEntity)
 			.collect(Collectors.toList());

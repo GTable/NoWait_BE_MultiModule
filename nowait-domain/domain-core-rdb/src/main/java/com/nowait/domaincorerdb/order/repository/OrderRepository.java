@@ -16,5 +16,5 @@ public interface OrderRepository extends JpaRepository<UserOrder, Long> {
 	List<UserOrder> findByStore_StoreIdAndTableIdAndSessionId(Long storeId, Long tableId, String sessionId);
 
 	@EntityGraph(attributePaths = {"orderItems", "orderItems.menu"})
-	List<UserOrder> findAllByStore_StoreId(Long storeId);
+	List<UserOrder> findAllByStore_StoreIdAndCreatedAtBetween(Long storeId, LocalDateTime startDateTime, LocalDateTime endDateTime);
 }
