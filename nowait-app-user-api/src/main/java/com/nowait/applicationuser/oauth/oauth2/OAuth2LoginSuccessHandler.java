@@ -73,5 +73,4 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		String targetUrl = "http://43.202.201.254:8081/login/success?accessToken=" + accessToken;
 		response.sendRedirect(targetUrl);
 	}
-
 }
