@@ -13,7 +13,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   nowait-app-user-api:
-    image: jihuneddie/nowait_dev:latest
+    image: jihuneddie/nowait_dev_user:latest
     container_name: nowait-app-user-api
     ports:
       - "8081:8081"
