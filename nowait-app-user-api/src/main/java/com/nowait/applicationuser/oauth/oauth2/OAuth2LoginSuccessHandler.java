@@ -70,7 +70,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		response.setHeader("Set-Cookie", refreshTokenCookie.toString());
 
 		// 3. 프론트엔드로 리다이렉트 (accessToken만 쿼리로 전달)
-		String targetUrl = "http://localhost:5173/login/success?accessToken=" + accessToken;
+		String targetUrl = "http://43.202.201.254:8081/login/success?accessToken=" + accessToken;
 		response.sendRedirect(targetUrl);
 	}
 
