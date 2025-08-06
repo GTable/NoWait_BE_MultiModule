@@ -15,7 +15,6 @@ public class MenuCreateRequest {
 
 	@NotNull
 	private Long storeId;
-	@NotNull
 	private String adminDisplayName;
 	@NotNull
 	private String name;
