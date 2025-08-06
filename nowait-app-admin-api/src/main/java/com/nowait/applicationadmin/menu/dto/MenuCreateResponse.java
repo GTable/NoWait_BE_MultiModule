@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.nowait.domaincorerdb.menu.entity.Menu;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import lombok.Getter;
 public class MenuCreateResponse {
 	private Long menuId;
 	private Long storeId;
+	private String adminDisplayName;
 	private String name;
 	private String description;
 	private Integer price;
@@ -26,6 +28,7 @@ public class MenuCreateResponse {
 			.createdAt(menu.getCreatedAt())
 			.menuId(menu.getId())
 			.storeId(menu.getStoreId())
+			.adminDisplayName(menu.getAdminDisplayName())
 			.name(menu.getName())
 			.description(menu.getDescription())
 			.price(menu.getPrice())

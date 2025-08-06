@@ -31,6 +31,9 @@ public class Menu extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long storeId;
 
+	@Column(nullable = true)
+	private String adminDisplayName;
+
 	@Column(nullable = false)
 	private String name;
 
@@ -47,10 +50,11 @@ public class Menu extends BaseTimeEntity {
 	private Boolean deleted;
 
 
-	public Menu(LocalDateTime createdAt, Long id, Long storeId, String name, String description, Integer price, Boolean isSoldOut, Boolean deleted) {
+	public Menu(LocalDateTime createdAt, Long id, Long storeId, String adminDisplayName, String name, String description, Integer price, Boolean isSoldOut, Boolean deleted) {
 		super(createdAt);
 		this.Id = id;
 		this.storeId = storeId;
+		this.adminDisplayName = adminDisplayName;
 		this.name = name;
 		this.description = description;
 		this.price = price;
@@ -58,7 +62,8 @@ public class Menu extends BaseTimeEntity {
 		this.deleted = deleted != null ? deleted : false;
 	}
 
-	public void updateInfo(String name, String description, Integer price) {
+	public void updateInfo(String adminDisplayName, String name, String description, Integer price) {
+		if (adminDisplayName != null) this.adminDisplayName = adminDisplayName;
 		if (name != null) this.name = name;
 		if (description != null) this.description = description;
 		if (price != null) this.price = price;

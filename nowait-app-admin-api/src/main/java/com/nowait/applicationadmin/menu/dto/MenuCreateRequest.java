@@ -16,6 +16,8 @@ public class MenuCreateRequest {
 	@NotNull
 	private Long storeId;
 	@NotNull
+	private String adminDisplayName;
+	@NotNull
 	private String name;
 	@NotNull
 	private String description;
@@ -25,6 +27,7 @@ public class MenuCreateRequest {
 	public Menu toEntity() {
 		return Menu.builder()
 			.storeId(storeId)
+			.adminDisplayName(adminDisplayName != null ? adminDisplayName : name)
 			.name(name)
 			.description(description)
 			.price(price)
