@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.nowait.domaincorerdb.menu.entity.Menu;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import lombok.Getter;
 public class MenuReadDto {
 	private Long menuId;
 	private Long storeId;
+	private String adminDisplayName;
 	private String name;
 	private String description;
 	private Integer price;
@@ -25,6 +27,7 @@ public class MenuReadDto {
 		return MenuReadDto.builder()
 			.menuId(menu.getId())
 			.storeId(menu.getStoreId())
+			.adminDisplayName(menu.getAdminDisplayName())
 			.name(menu.getName())
 			.description(menu.getDescription())
 			.price(menu.getPrice())

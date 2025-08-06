@@ -107,6 +107,7 @@ public class MenuService {
 		}
 
 		menu.updateInfo(
+			request.getAdminDisplayName(),
 			request.getName(),
 			request.getDescription(),
 			request.getPrice()
