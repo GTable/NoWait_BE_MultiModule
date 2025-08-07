@@ -26,6 +26,7 @@ public class MenuCreateResponse {
 	public static MenuCreateResponse fromEntity(Menu menu) {
 		return MenuCreateResponse.builder()
 			.createdAt(menu.getCreatedAt())
+			.adminDisplayName(menu.getAdminDisplayName())
 			.menuId(menu.getId())
 			.storeId(menu.getStoreId())
 			.adminDisplayName(menu.getAdminDisplayName())
