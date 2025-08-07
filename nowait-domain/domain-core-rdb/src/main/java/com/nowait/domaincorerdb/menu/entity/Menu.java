@@ -26,7 +26,7 @@ public class Menu extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long Id;
+	private Long id;
 
 	@Column(nullable = false)
 	private Long storeId;
@@ -52,7 +52,7 @@ public class Menu extends BaseTimeEntity {
 
 	public Menu(LocalDateTime createdAt, Long id, Long storeId, String adminDisplayName, String name, String description, Integer price, Boolean isSoldOut, Boolean deleted) {
 		super(createdAt);
-		this.Id = id;
+		this.id = id;
 		this.storeId = storeId;
 		this.adminDisplayName = adminDisplayName;
 		this.name = name;
