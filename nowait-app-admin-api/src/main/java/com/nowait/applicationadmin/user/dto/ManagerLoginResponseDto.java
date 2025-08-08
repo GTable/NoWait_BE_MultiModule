@@ -17,6 +17,8 @@ public class ManagerLoginResponseDto {
 	private String email;
 	@Schema(description = "닉네임", example = "무한이")
 	private String nickname;
+	@Schema(description = "주점 Id", example = "1")
+	private Long storeId;
 	@Schema(description = "JWT TOKEN", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNCIsImVtYWlsIjoiYXBpZG9jQGVtYWlsLmNvbSIsInJvbGVzIjpbIk1FTUJFUiJdLCJleHAiOjE3MTIyMjQ5NzV9.SQKtyHmqn2NKzHy4BX7_IgBePO_svEtmz1xbO9ToMz8")
 	private String accessToken;
 
@@ -25,6 +27,7 @@ public class ManagerLoginResponseDto {
 			.userId(user.getId())
 			.email(user.getEmail())
 			.nickname(user.getNickname())
+			.storeId(user.getStoreId())
 			.accessToken(token)
 			.build();
 	}
