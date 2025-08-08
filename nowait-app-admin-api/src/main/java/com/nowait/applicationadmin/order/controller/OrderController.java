@@ -34,7 +34,7 @@ public class OrderController {
 	private final OrderService orderService;
 
 	@GetMapping("/{storeId}")
-	@Operation(summary = "주점별 주문리스트 조회", description = "특정 주점에 대한 예약리스트 조회")
+	@Operation(summary = "주점별 주문 리스트 조회", description = "특정 주점에 대한 주문 리스트 조회")
 	@ApiResponse(responseCode = "200", description = "주문 리스트 조회")
 	public ResponseEntity<?> getOrderListByStoreId(@PathVariable Long storeId,
 		@AuthenticationPrincipal MemberDetails memberDetails) {
