@@ -1,6 +1,7 @@
 package com.nowait.applicationadmin.order.dto;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -19,14 +20,17 @@ public class OrderResponseDto {
 	private String depositorName;
 	private Integer totalPrice;
 	private OrderStatus status;
-	private Map<String, MenuDetail> menuDetails;
+	private HashMap<String, MenuDetail> menuDetails;
 	private LocalDateTime createdAt;
 
 	public static OrderResponseDto fromEntity(UserOrder userOrder) {
-		Map<String, MenuDetail> menuDetails = new LinkedHashMap<>();
+		HashMap<String, MenuDetail> menuDetails = new LinkedHashMap<>();
 
 		for (OrderItem item : userOrder.getOrderItems()) {
-			String displayName = item.getMenu().getAdminDisplayName();
+			String displayName = item.getMenu().getAdminDisplayName() == null
+				? item.getMenu().getName() // 관리자 표시명이 없으면 일반 메뉴명 사용
+				: item.getMenu().getAdminDisplayName();
+
 			int quantity = item.getQuantity();
 			int price = item.getMenu().getPrice(); // 메뉴 단가
 
