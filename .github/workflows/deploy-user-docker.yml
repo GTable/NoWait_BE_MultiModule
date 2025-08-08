@@ -15,7 +15,7 @@ on:
       - 'gradle/**'
 
 env:
-  DOCKERHUB_REPO: jihuneddie/nowait_dev
+  DOCKERHUB_REPO: jihuneddie/nowait_dev_user
   DIVISION: user
   EC2_DEPLOY_PATH: /home/ubuntu/spring-github-action-user-docker
 

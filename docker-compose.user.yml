@@ -19,8 +19,8 @@ services:
       - "8081:8081"
     depends_on:
       - mysql
-    volumes:
-      - ./nowait-app-user-api:/app
+#    volumes:
+#      - ./nowait-app-user-api:/app
     restart: always
 
 volumes:
