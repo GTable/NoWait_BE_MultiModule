@@ -20,16 +20,17 @@ public class OrderResponseDto {
 	private String depositorName;
 	private Integer totalPrice;
 	private OrderStatus status;
-	private HashMap<String, MenuDetail> menuDetails;
+	private Map<String, MenuDetail> menuDetails;
 	private LocalDateTime createdAt;
 
 	public static OrderResponseDto fromEntity(UserOrder userOrder) {
 		HashMap<String, MenuDetail> menuDetails = new LinkedHashMap<>();
 
 		for (OrderItem item : userOrder.getOrderItems()) {
-			String displayName = item.getMenu().getAdminDisplayName() == null
-				? item.getMenu().getName() // 관리자 표시명이 없으면 일반 메뉴명 사용
-				: item.getMenu().getAdminDisplayName();
+			String adminDisplayName = item.getMenu().getAdminDisplayName();
+			String displayName = (adminDisplayName == null || adminDisplayName.isBlank())
+				? item.getMenu().getName() // 관리자 표시명이 없거나 공백이면 일반 메뉴명 사용
+				: adminDisplayName;
 
 			int quantity = item.getQuantity();
 			int price = item.getMenu().getPrice(); // 메뉴 단가
