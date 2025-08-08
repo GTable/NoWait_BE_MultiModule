@@ -13,3 +13,4 @@ public class ApiUserApplication {
 		SpringApplication.run(ApiUserApplication.class, args);
 	}
 }
+
