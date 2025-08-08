@@ -19,8 +19,8 @@ else
 fi
 
 echo "3. start container"
-sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev pull nowait-app-admin-api prometheus-admin grafana-admin
-sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev up -d nowait-app-admin-api prometheus-admin grafana-admin
+sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin pull nowait-app-admin-api prometheus-admin grafana-admin
+sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin up -d nowait-app-admin-api prometheus-admin grafana-admin
 
 echo "4. check container status"
 NEW_CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")
