@@ -26,13 +26,13 @@ public class OrderResponseDto {
 		Map<String, MenuDetail> menuDetails = new LinkedHashMap<>();
 
 		for (OrderItem item : userOrder.getOrderItems()) {
-			String name = item.getMenu().getName();
+			String displayName = item.getMenu().getAdminDisplayName();
 			int quantity = item.getQuantity();
 			int price = item.getMenu().getPrice(); // 메뉴 단가
 
 			// 메뉴명이 중복되면 수량만 누적
 			// merge 람다함수 활용(해당 key가 있으면 수량 누적, 없으면 새로 생성)
-			menuDetails.merge(name,
+			menuDetails.merge(displayName,
 				new MenuDetail(quantity, price),
 				(oldVal, newVal) -> new MenuDetail(
 					oldVal.getQuantity() + newVal.getQuantity(),
