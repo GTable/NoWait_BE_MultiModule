@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql_nowait_container
+    container_name: mysql_nowait_admin_container
     environment:
       MYSQL_ROOT_PASSWORD: gtable1118!
       MYSQL_DATABASE: gtable_dev
@@ -22,6 +22,7 @@ services:
 #    volumes:
 #      - ./nowait-app-admin-api:/app
     restart: always
+    pull_policy: always
 
 volumes:
   mysql_data:
