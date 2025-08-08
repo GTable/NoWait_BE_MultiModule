@@ -11,6 +11,7 @@ import com.nowait.domaincorerdb.menu.entity.Menu;
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long> {
 	List<Menu> findAllByStoreIdAndDeletedFalse(Long storeId);
+	List<Menu> findAllByStoreIdAndDeletedFalseOrderBySortOrder(Long storeId);
 	Optional<Menu> findByStoreIdAndIdAndDeletedFalse(Long storeId, Long menuId);
 	Optional<Menu> findByIdAndDeletedFalse(Long menuId);
 }

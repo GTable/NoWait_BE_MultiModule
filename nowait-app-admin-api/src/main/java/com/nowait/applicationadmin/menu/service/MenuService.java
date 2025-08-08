@@ -10,6 +10,7 @@ import com.nowait.applicationadmin.menu.dto.MenuCreateResponse;
 import com.nowait.applicationadmin.menu.dto.MenuImageUploadResponse;
 import com.nowait.applicationadmin.menu.dto.MenuReadDto;
 import com.nowait.applicationadmin.menu.dto.MenuReadResponse;
+import com.nowait.applicationadmin.menu.dto.MenuSortUpdateRequest;
 import com.nowait.applicationadmin.menu.dto.MenuUpdateRequest;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.menu.entity.Menu;
@@ -60,7 +61,7 @@ public class MenuService {
 
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
 		validateMenuViewAuthorization(user, storeId);
-		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
+		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
 			.map(menu -> {
@@ -121,6 +122,26 @@ public class MenuService {
 			.toList();
 
 		return MenuReadDto.fromEntity(saved, imageDto);
+	}
+
+	@Transactional
+	public String updateMenuSortOrder(List<MenuSortUpdateRequest> requests, MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+
+		if (!Role.SUPER_ADMIN.equals(user.getRole())) {
+			throw new MenuUpdateUnauthorizedException();
+		}
+
+		requests.stream()
+			.map(request -> {
+				Menu menu = menuRepository.findById(request.getMenuId())
+					.orElseThrow(MenuNotFoundException::new);
+				menu.updateSortOrder(request.getSortOrder());
+				return menu;
+			})
+			.forEach(menuRepository::save);
+
+		return "메뉴 순서가 성공적으로 업데이트되었습니다.";
 	}
 
 	@Transactional
