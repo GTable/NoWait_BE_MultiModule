@@ -17,6 +17,7 @@ public class MenuReadDto {
 	private String name;
 	private String description;
 	private Integer price;
+	private Long sortOrder;
 	private	Boolean isSoldOut;
 	private Boolean deleted;
 	private List<MenuImageUploadResponse> images;
@@ -28,6 +29,7 @@ public class MenuReadDto {
 			.name(menu.getName())
 			.description(menu.getDescription())
 			.price(menu.getPrice())
+			.sortOrder(menu.getSortOrder())
 			.isSoldOut(menu.getIsSoldOut())
 			.deleted(menu.getDeleted())
 			.images(images)

@@ -30,7 +30,7 @@ public class MenuService {
 		if (storeId == null) {
 			throw new MenuParamEmptyException();
 		}
-		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
+		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
 			.map(menu -> {

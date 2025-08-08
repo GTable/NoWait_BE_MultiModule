@@ -1,5 +1,7 @@
 package com.nowait.applicationadmin.menu.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationadmin.menu.dto.MenuCreateRequest;
 import com.nowait.applicationadmin.menu.dto.MenuCreateResponse;
+import com.nowait.applicationadmin.menu.dto.MenuSortUpdateRequest;
 import com.nowait.applicationadmin.menu.dto.MenuUpdateRequest;
 import com.nowait.applicationadmin.menu.service.MenuService;
 import com.nowait.common.api.ApiUtils;
@@ -122,6 +125,22 @@ public class MenuController {
 			.body(
 				ApiUtils.success(
 					menuService.toggleSoldOut(menuId)
+				)
+			);
+	}
+
+	@PatchMapping("/update-sort")
+	@Operation(summary = "메뉴 순서 수정", description = "메뉴의 순서를 수정합니다.")
+	@ApiResponse(responseCode = "200", description = "메뉴 순서 수정")
+	public ResponseEntity<?> updateMenuSortOrder(
+		@Valid @RequestBody List<MenuSortUpdateRequest> request,
+		@AuthenticationPrincipal MemberDetails memberDetails
+	) {
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					menuService.updateMenuSortOrder(request, memberDetails)
 				)
 			);
 	}

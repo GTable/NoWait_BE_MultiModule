@@ -47,6 +47,9 @@ public class Menu extends BaseTimeEntity {
 	private	Boolean isSoldOut;
 
 	@Column(nullable = false)
+	private Long sortOrder;
+
+	@Column(nullable = false)
 	private Boolean deleted;
 
 
@@ -72,4 +75,8 @@ public class Menu extends BaseTimeEntity {
 	public void markAsDeleted() { this.deleted = true; }
 
 	public void toggleSoldOut() { this.isSoldOut = !this.isSoldOut; }
+
+	public void updateSortOrder(Long sortOrder) {
+		this.sortOrder = sortOrder;
+	}
 }

@@ -31,6 +31,7 @@ public class MenuCreateRequest {
 			.description(description)
 			.price(price)
 			.isSoldOut(false)
+			.sortOrder(0L)
 			.deleted(false)
 			.build();
 	}

@@ -1,6 +1,7 @@
 package com.nowait.applicationadmin.menu.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import com.nowait.applicationadmin.menu.dto.MenuCreateResponse;
 import com.nowait.applicationadmin.menu.dto.MenuImageUploadResponse;
 import com.nowait.applicationadmin.menu.dto.MenuReadDto;
 import com.nowait.applicationadmin.menu.dto.MenuReadResponse;
+import com.nowait.applicationadmin.menu.dto.MenuSortUpdateRequest;
 import com.nowait.applicationadmin.menu.dto.MenuUpdateRequest;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.menu.entity.Menu;
@@ -60,7 +62,7 @@ public class MenuService {
 
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
 		validateMenuViewAuthorization(user, storeId);
-		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalse(storeId);
+		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
 			.map(menu -> {
@@ -121,6 +123,48 @@ public class MenuService {
 			.toList();
 
 		return MenuReadDto.fromEntity(saved, imageDto);
+	}
+
+	@Transactional
+	public String updateMenuSortOrder(List<MenuSortUpdateRequest> requests, MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+
+		if (!Role.SUPER_ADMIN.equals(user.getRole())) {
+			throw new MenuUpdateUnauthorizedException();
+		}
+
+		if (requests == null || requests.isEmpty()) {
+			throw new MenuParamEmptyException();
+		}
+
+		if (requests.stream().map(MenuSortUpdateRequest::getMenuId).distinct().count() != requests.size()) {
+			throw new IllegalArgumentException("중복된 메뉴 ID가 포함되어 있습니다.");
+		}
+
+		if (requests.stream().anyMatch(r -> r.getSortOrder() == null || r.getSortOrder() < 0)) {
+			throw new IllegalArgumentException("잘못된 정렬 순서가 포함되어 있습니다. 정렬 순서는 0 이상의 정수여야 합니다.");
+		}
+
+		List<Long> ids = requests.stream().map(MenuSortUpdateRequest::getMenuId).toList();
+		List<Menu> menus = menuRepository.findAllById(ids);
+		if (menus.size() != ids.size()) {
+			throw new MenuNotFoundException();
+		}
+
+		Long storeId = menus.get(0).getStoreId();
+		if (!menus.stream().allMatch(m -> storeId.equals(m.getStoreId()))) {
+			throw new IllegalArgumentException("다른 매장의 메뉴가 있습니다.");
+		}
+
+		Map<Long, Long> idToSort = requests.stream()
+			.collect(java.util.stream.Collectors.toMap(MenuSortUpdateRequest::getMenuId,
+				MenuSortUpdateRequest::getSortOrder));
+
+		menus.forEach(m -> m.updateSortOrder(idToSort.get(m.getId())));
+
+		menuRepository.saveAll(menus);
+
+		return "메뉴 순서가 성공적으로 업데이트되었습니다.";
 	}
 
 	@Transactional
