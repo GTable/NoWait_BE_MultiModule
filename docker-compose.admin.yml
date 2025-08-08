@@ -13,14 +13,14 @@ services:
       - mysql_data:/var/lib/mysql
 
   nowait-app-admin-api:
-    image: jihuneddie/nowait_dev:latest
+    image: jihuneddie/nowait_dev_admin:latest
     container_name: nowait-app-admin-api
     ports:
       - "8085:8085"
     depends_on:
       - mysql
-    volumes:
-      - ./nowait-app-admin-api:/app
+#    volumes:
+#      - ./nowait-app-admin-api:/app
     restart: always
 
 volumes:
