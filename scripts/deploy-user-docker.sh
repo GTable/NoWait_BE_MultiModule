@@ -15,8 +15,11 @@ if [ -n "$CONTAINER_ID" ]; then
   echo "Stopping container $CONTAINER_ID"
   docker rm -f "$CONTAINER_ID"
 else
-  echo "No admin container found."
+  echo "No User container found."
 fi
+
+echo "Cleaning up old containers…"
+docker-compose -f docker-compose.user.yml -f docker-compose.user-monitoring.yml -p nowait_dev_user down
 
 echo "3. start container"
 sudo docker-compose -f docker-compose.user.yml -f docker-compose.user-monitoring.yml -p nowait_dev_user pull nowait-app-user-api prometheus-user grafana-user
