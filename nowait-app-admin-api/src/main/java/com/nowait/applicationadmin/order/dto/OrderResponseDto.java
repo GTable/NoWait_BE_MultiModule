@@ -20,7 +20,7 @@ public class OrderResponseDto {
 	private String depositorName;
 	private Integer totalPrice;
 	private OrderStatus status;
-	private Map<String, MenuDetail> menuDetails;
+	private HashMap<String, MenuDetail> menuDetails;
 	private LocalDateTime createdAt;
 
 	public static OrderResponseDto fromEntity(UserOrder userOrder) {
