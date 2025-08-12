@@ -15,6 +15,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 
 @Testcontainers
 public class WaitingPermitLuaRepositoryTest {

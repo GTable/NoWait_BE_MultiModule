@@ -38,6 +38,7 @@ import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 @ExtendWith(MockitoExtension.class)
