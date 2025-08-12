@@ -29,7 +29,10 @@ import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationAddUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFailException;
+import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentNotFoundException;
@@ -242,6 +245,33 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("handleStorePaymentNotFoundException", e);
 		return new ErrorResponse(e.getMessage(), STORE_PAYMENT_NOT_FOUND.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(UserWaitingLimitExceededException.class)
+	public ErrorResponse handleUserWaitingLimitExceededException(
+		UserWaitingLimitExceededException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleUserWaitingLimitExceededException", e);
+		return new ErrorResponse(e.getMessage(), USER_WAITING_LIMIT_EXCEEDED.getCode());
+	}
+
+	@ResponseStatus(INTERNAL_SERVER_ERROR)
+	@ExceptionHandler(ReservationNumberIssueFailException.class)
+	public ErrorResponse handleReservationNumberIssueFailException(
+		ReservationNumberIssueFailException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleReservationNumberIssueFailException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_NUMBER_ISSUE_FAIL.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(ReservationAddUnauthorizedException.class)
+	public ErrorResponse handleReservationAddUnauthorizedException(
+		ReservationAddUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleReservationAddUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_ADD_UNAUTHORIZED.getCode());
 	}
 
 	// 공통 에러 Map 생성

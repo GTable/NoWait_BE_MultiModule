@@ -28,6 +28,9 @@ public enum ErrorMessage {
 	RESERVATION_VIEW_UNAUTHORIZED("예약 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "reservation002"),
 	RESERVATION_UPDATE_UNAUTHORIZED("예약 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "reservation003"),
 	DUPLICATE_RESERVATION("이미 대기 중인 예약이 존재합니다.", "reservation004"),
+	USER_WAITING_LIMIT_EXCEEDED("유저당 웨이팅 가능 개수(3개)를 초과했습니다.", "reservation005"),
+	RESERVATION_NUMBER_ISSUE_FAIL("예약 번호 발급에 실패했습니다.", "reservation006"),
+	RESERVATION_ADD_UNAUTHORIZED("MANAGER는 예약 대기를 할 수 없습니다.", "reservation007"),
 
 	// bookmark
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
