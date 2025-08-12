@@ -1,5 +1,6 @@
 package com.nowait.applicationuser.reservation.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -18,10 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
-import com.nowait.applicationuser.reservation.dto.MyWaitingStoreInfo;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
@@ -29,6 +30,9 @@ import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationAddUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFailException;
+import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.Store;
@@ -55,41 +59,116 @@ public class ReservationService {
 	private final WaitingUserRedisRepository waitingUserRedisRepository;
 	private final DepartmentRepository departmentRepository;
 	private final StoreImageRepository storeImageRepository;
+	private final WaitingPermitLuaRepository waitingPermitLuaRepository;
 	private final RedisTemplate redisTemplate;
+	private static final int USER_LIMIT = 3;
+	private static final long LEASE_MS = 30_000; // 20~60초 권장
 
-	public WaitingResponseDto registerWaiting(
-		Long storeId, CustomOAuth2User customOAuth2User, ReservationCreateRequestDto requestDto
-	) {
-		// Store 유효성 검증 추가
-		Store store = storeRepository.findById(storeId)
-			.orElseThrow(StoreNotFoundException::new);
+	/**
+	 * 웨이팅 등록 기존 로직
+	 */
+	// public WaitingResponseDto registerWaiting(
+	// 	Long storeId, CustomOAuth2User customOAuth2User, ReservationCreateRequestDto requestDto
+	// ) {
+	// 	// Store 유효성 검증 추가
+	// 	Store store = storeRepository.findById(storeId)
+	// 		.orElseThrow(StoreNotFoundException::new);
+	// 	if (Boolean.FALSE.equals(store.getIsActive()))
+	// 		throw new StoreWaitingDisabledException();
+	//
+	// 	// User Role 검증 추가
+	// 	User user = userRepository.findById(customOAuth2User.getUserId())
+	// 		.orElseThrow(UserNotFoundException::new);
+	// 	if (user.getRole() == Role.MANAGER) {
+	// 		throw new IllegalArgumentException("Manager cannot register waiting");
+	// 	}
+	//
+	// 	String userId = customOAuth2User.getUserId().toString();
+	// 	long timestamp = System.currentTimeMillis();
+	//
+	// 	// 예약 신청 유저 큐(queue)에 추가
+	// 	String reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(),
+	// 		timestamp);
+	// 	if (reservationId == null) {
+	// 		throw new IllegalStateException("예약 번호 발급 실패");
+	// 	}
+	//
+	// 	// 신규 등록/기존 등록 관계없이 내 순번, 전체 인원 반환
+	// 	Long rank = waitingUserRedisRepository.getRank(storeId, userId);
+	// 	return WaitingResponseDto.builder()
+	// 		.reservationNumber(reservationId)
+	// 		.rank(rank == null ? -1 : rank.intValue() + 1)
+	// 		.partySize(requestDto.getPartySize() == null ? 0 : requestDto.getPartySize())
+	// 		.build();
+	// }
+	public WaitingResponseDto registerWaiting(Long storeId, CustomOAuth2User principal,
+		ReservationCreateRequestDto dto) {
+
+		// 0) 스토어/유저 검증 복구
+		Store store = storeRepository.findById(storeId).orElseThrow(StoreNotFoundException::new);
 		if (Boolean.FALSE.equals(store.getIsActive()))
 			throw new StoreWaitingDisabledException();
 
-		// User Role 검증 추가
-		User user = userRepository.findById(customOAuth2User.getUserId())
-			.orElseThrow(UserNotFoundException::new);
-		if (user.getRole() == Role.MANAGER) {
-			throw new IllegalArgumentException("Manager cannot register waiting");
+		User user = userRepository.findById(principal.getUserId()).orElseThrow(UserNotFoundException::new);
+		if (user.getRole() == Role.MANAGER)
+			throw new ReservationAddUnauthorizedException();
+
+		// (기존 유효성 검사 동일)
+		String userId = user.getId().toString();
+		Duration ttlTo3am = waitingUserRedisRepository.calculateTTLUntilNext03AM();
+
+		// 1) 이미 해당 store에 대기 중이면 임대 없이 현재 상태 반환 (중복 요청 허용)
+		if (Boolean.TRUE.equals(waitingUserRedisRepository.isUserWaiting(storeId, userId))) {
+			Long rank = waitingUserRedisRepository.getRank(storeId, userId);
+			Integer ps = waitingUserRedisRepository.getPartySize(storeId, userId);
+			String reservationId = waitingUserRedisRepository.getReservationId(storeId, userId);
+			return WaitingResponseDto.builder()
+				.reservationNumber(reservationId)
+				.rank(rank == null ? -1 : rank.intValue() + 1)
+				.partySize(ps == null ? 0 : ps)
+				.build();
 		}
 
-		String userId = customOAuth2User.getUserId().toString();
-		long timestamp = System.currentTimeMillis();
-
-		// 예약 신청 유저 큐(queue)에 추가
-		String reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, requestDto.getPartySize(),
-			timestamp);
-		if (reservationId == null) {
-			throw new IllegalStateException("예약 번호 발급 실패");
+		// 1) 임대 획득
+		String token = java.util.UUID.randomUUID().toString();
+		int attempts = 0;
+		while (true) {
+			boolean ok = waitingPermitLuaRepository.acquireLease(userId, token, System.currentTimeMillis(), LEASE_MS,
+				USER_LIMIT, ttlTo3am);
+			if (ok)
+				break;
+			if (++attempts >= 3)
+				throw new UserWaitingLimitExceededException();
+			try {
+				Thread.sleep((long)(5 * Math.pow(3, attempts - 1)));
+			} catch (InterruptedException ignored) {
+			}
 		}
 
-		// 신규 등록/기존 등록 관계없이 내 순번, 전체 인원 반환
-		Long rank = waitingUserRedisRepository.getRank(storeId, userId);
-		return WaitingResponseDto.builder()
-			.reservationNumber(reservationId)
-			.rank(rank == null ? -1 : rank.intValue() + 1)
-			.partySize(requestDto.getPartySize() == null ? 0 : requestDto.getPartySize())
-			.build();
+		String reservationId = null;
+		try {
+			// 2) 스토어 큐 등록(기존 메서드 그대로)
+			long ts = System.currentTimeMillis();
+			reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, dto.getPartySize(), ts);
+			if (reservationId == null)
+				throw new ReservationNumberIssueFailException();
+
+			// 3) 확정(holding→active)
+			waitingPermitLuaRepository.finalizeActive(userId, token, String.valueOf(storeId), reservationId, ttlTo3am);
+
+			// 4) 응답
+			Long rank = waitingUserRedisRepository.getRank(storeId, userId);
+			return WaitingResponseDto.builder()
+				.reservationNumber(reservationId)
+				.rank(rank == null ? -1 : rank.intValue() + 1)
+				.partySize(dto.getPartySize() == null ? 0 : dto.getPartySize())
+				.build();
+
+		} catch (RuntimeException e) {
+			// 실패 시 임대 반납
+			waitingPermitLuaRepository.releaseLease(userId, token);
+			throw e;
+		}
 	}
 
 	public WaitingResponseDto myWaitingInfo(Long storeId, CustomOAuth2User customOAuth2User) {
@@ -140,17 +219,27 @@ public class ReservationService {
 
 		reservationRepository.save(reservation);
 
-		return removed;
+		waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
+		return true;
+		// return removed;
 	}
 
 	//TODO 성능 개선 필요
 	public List<MyWaitingQueueDto> getAllMyWaitings(CustomOAuth2User customOAuth2User) {
 		String userId = customOAuth2User.getUserId().toString();
 
-		// 1) 현재 SCAN 기반으로 얻어온 storeId 리스트
-		List<Long> storeIds = waitingUserRedisRepository.getUserWaitingStoreIds(userId);
-		if (storeIds.isEmpty())
+		Set<String> members = waitingPermitLuaRepository.getActiveMembers(userId);
+		if (members.isEmpty())
 			return Collections.emptyList();
+
+		// 1) 현재 SCAN 기반으로 얻어온 storeId 리스트
+		// List<Long> storeIds = waitingUserRedisRepository.getUserWaitingStoreIds(userId);
+		// if (storeIds.isEmpty())
+		// 	return Collections.emptyList();
+		List<Long> storeIds = members.stream()
+			.map(m -> Long.parseLong(m.substring(0, m.indexOf(':'))))
+			.distinct()
+			.toList();
 
 		// 2) Store, Department 배치 조회
 		List<Store> stores = storeRepository.findAllWithDepartmentByStoreIdIn(storeIds);
