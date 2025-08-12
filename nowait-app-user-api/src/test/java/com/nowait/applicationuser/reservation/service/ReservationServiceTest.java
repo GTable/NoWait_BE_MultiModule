@@ -1,8 +1,10 @@
 package com.nowait.applicationuser.reservation.service;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -15,19 +17,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 
+import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
+import com.nowait.domaincorerdb.store.repository.StoreImageRepository;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -41,38 +48,13 @@ public class ReservationServiceTest {
 	@Mock private UserRepository userRepository;
 	@Mock private WaitingUserRedisRepository waitingRepo;
 	@Mock private ReservationRepository reservationRepository;
+	@Mock private WaitingPermitLuaRepository waitingPermitLuaRepository;
+	@Mock private DepartmentRepository departmentRepository;
+	@Mock private StoreImageRepository storeImageRepository;
+	@Mock private RedisTemplate<?, ?> redisTemplate;
+
 	@InjectMocks private ReservationService service;
 
-
-	@Test
-	@DisplayName("registerWaiting: 성공 시 WaitingResponseDto 반환")
-	void registerWaiting_Success() {
-		// Given
-		Long storeId = 10L;
-		CustomOAuth2User user = mock(CustomOAuth2User.class);
-		when(user.getUserId()).thenReturn(100L);
-		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(2).build();
-		Store store = mock(Store.class);
-		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
-		when(store.getIsActive()).thenReturn(true);
-		User domainUser = mock(User.class);
-		when(userRepository.findById(100L)).thenReturn(Optional.of(domainUser));
-		when(domainUser.getRole()).thenReturn(Role.USER);
-		when(waitingRepo.addToWaitingQueue(eq(storeId), eq("100"), eq(2), anyLong()))
-			.thenReturn("10-20250804-0001");
-		when(waitingRepo.getRank(storeId, "100")).thenReturn(4L);
-
-		// When
-		WaitingResponseDto result = service.registerWaiting(storeId, user, dto);
-
-		// Then
-		assertNotNull(result);
-		assertEquals("10-20250804-0001", result.getReservationNumber());
-		assertEquals(5, result.getRank());
-		assertEquals(2, result.getPartySize());
-		// Redis 등록 호출 검증
-		verify(waitingRepo).addToWaitingQueue(eq(storeId), eq("100"), eq(2), anyLong());
-	}
 
 	@Test
 	@DisplayName("registerWaiting: 스토어 없음 예외")
@@ -129,18 +111,26 @@ public class ReservationServiceTest {
 	}
 
 	@Test
-	@DisplayName("getAllMyWaitings: 대기 없음 시 빈 리스트 반환")
-	void getAllMyWaitings_Empty() {
+	@DisplayName("getAllMyWaitings: active가 비어 있으면 빈 리스트 반환")
+	void getAllMyWaitings_Empty_GWT() {
 		// Given
-		CustomOAuth2User user = mock(CustomOAuth2User.class);
-		when(user.getUserId()).thenReturn(40L);
-		when(waitingRepo.getUserWaitingStoreIds("40")).thenReturn(Collections.emptyList());
+		CustomOAuth2User principal = mock(CustomOAuth2User.class);
+		when(principal.getUserId()).thenReturn(100L);
+
+		when(waitingPermitLuaRepository.getActiveMembers("100"))
+			.thenReturn(Collections.emptySet());
 
 		// When
-		List<?> list = service.getAllMyWaitings(user);
+		List<MyWaitingQueueDto> result = service.getAllMyWaitings(principal);
 
 		// Then
-		assertTrue(list.isEmpty());
+		assertThat(result).isEmpty();
+
+		// 불필요한 스텁/호출이 없도록 보장
+		verify(waitingPermitLuaRepository).getActiveMembers("100");
+		verifyNoMoreInteractions(waitingPermitLuaRepository);
+		// storeRepository 등은 호출되지 않아야 함
+		verifyNoInteractions(storeRepository, departmentRepository, storeImageRepository, waitingRepo);
 	}
 
 
@@ -254,5 +244,122 @@ public class ReservationServiceTest {
 				ReservationCreateRequestDto.builder().partySize(2).build()
 			)
 		);
+	}
+
+	@Test
+	@DisplayName("registerWaiting: 성공 시 WaitingResponseDto 반환")
+	void registerWaiting_Success_GWT() {
+		// Given
+		Long storeId = 10L;
+		CustomOAuth2User principal = mock(CustomOAuth2User.class);
+		when(principal.getUserId()).thenReturn(100L);
+
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(2).build();
+
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+
+		User domainUser = mock(User.class);
+		when(userRepository.findById(100L)).thenReturn(Optional.of(domainUser));
+		when(domainUser.getRole()).thenReturn(Role.USER);
+		// 서비스가 user.getId()를 쓰는 경우 필수
+		when(domainUser.getId()).thenReturn(100L);
+
+		when(waitingRepo.calculateTTLUntilNext03AM()).thenReturn(Duration.ofHours(1));
+		when(waitingRepo.isUserWaiting(storeId, "100")).thenReturn(false);
+		when(waitingPermitLuaRepository.acquireLease(eq("100"), anyString(), anyLong(), anyLong(), eq(3), any()))
+			.thenReturn(true);
+
+		when(waitingRepo.addToWaitingQueue(eq(storeId), eq("100"), eq(2), anyLong()))
+			.thenReturn("10-20250804-0001");
+		when(waitingRepo.getRank(storeId, "100")).thenReturn(4L);
+
+		// When
+		WaitingResponseDto result = service.registerWaiting(storeId, principal, dto);
+
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getReservationNumber()).isEqualTo("10-20250804-0001");
+		assertThat(result.getRank()).isEqualTo(5);
+		assertThat(result.getPartySize()).isEqualTo(2);
+
+		verify(waitingPermitLuaRepository).acquireLease(eq("100"), anyString(), anyLong(), anyLong(), eq(3), any());
+		verify(waitingRepo).addToWaitingQueue(eq(storeId), eq("100"), eq(2), anyLong());
+		verify(waitingPermitLuaRepository).finalizeActive(eq("100"), anyString(), eq(String.valueOf(storeId)), eq("10-20250804-0001"), any());
+		verifyNoMoreInteractions(waitingPermitLuaRepository, waitingRepo);
+	}
+
+
+	@Test
+	@DisplayName("registerWaiting: 동일 매장 재요청 시 기존 정보 반환(임대 미소비)")
+	void registerWaiting_Duplicate_SameStore_GWT() {
+		// Given
+		Long storeId = 10L;
+		CustomOAuth2User principal = mock(CustomOAuth2User.class);
+		when(principal.getUserId()).thenReturn(100L);
+
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(2).build();
+
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+
+		User domainUser = mock(User.class);
+		when(userRepository.findById(100L)).thenReturn(Optional.of(domainUser));
+		when(domainUser.getRole()).thenReturn(Role.USER);
+		when(domainUser.getId()).thenReturn(100L);
+
+		// 이미 해당 매장에 있는 상태
+		when(waitingRepo.isUserWaiting(storeId, "100")).thenReturn(true);
+		when(waitingRepo.getRank(storeId, "100")).thenReturn(4L);
+		when(waitingRepo.getPartySize(storeId, "100")).thenReturn(2);
+		when(waitingRepo.getReservationId(storeId, "100")).thenReturn("10-20250804-0001");
+
+		// When
+		WaitingResponseDto result = service.registerWaiting(storeId, principal, dto);
+
+		// Then
+		assertThat(result.getReservationNumber()).isEqualTo("10-20250804-0001");
+		assertThat(result.getRank()).isEqualTo(5);
+		assertThat(result.getPartySize()).isEqualTo(2);
+
+		verify(waitingPermitLuaRepository, never()).acquireLease(any(), any(), anyLong(), anyLong(), anyInt(), any());
+		verify(waitingRepo, never()).addToWaitingQueue(anyLong(), anyString(), anyInt(), anyLong());
+	}
+
+
+	@Test
+	@DisplayName("registerWaiting: 유저 한도(3개) 초과 시 예외")
+	void registerWaiting_LimitExceeded_GWT() {
+		// Given
+		Long storeId = 40L;
+		CustomOAuth2User principal = mock(CustomOAuth2User.class);
+		when(principal.getUserId()).thenReturn(100L);
+
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(2).build();
+
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+
+		User domainUser = mock(User.class);
+		when(userRepository.findById(100L)).thenReturn(Optional.of(domainUser));
+		when(domainUser.getRole()).thenReturn(Role.USER);
+		when(domainUser.getId()).thenReturn(100L);
+
+		when(waitingRepo.calculateTTLUntilNext03AM()).thenReturn(Duration.ofHours(1));
+		when(waitingRepo.isUserWaiting(storeId, "100")).thenReturn(false);
+		// 임대 3회 모두 실패하도록
+		when(waitingPermitLuaRepository.acquireLease(eq("100"), anyString(), anyLong(), anyLong(), eq(3), any()))
+			.thenReturn(false);
+
+		// When & Then
+		assertThatThrownBy(() -> service.registerWaiting(storeId, principal, dto))
+			.isInstanceOf(com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException.class)
+			.hasMessageContaining("유저당 웨이팅 가능 개수");
+
+		verify(waitingRepo, never()).addToWaitingQueue(anyLong(), anyString(), anyInt(), anyLong());
+		verify(waitingPermitLuaRepository, atLeastOnce()).acquireLease(eq("100"), anyString(), anyLong(), anyLong(), eq(3), any());
 	}
 }

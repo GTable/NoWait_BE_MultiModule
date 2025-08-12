@@ -22,6 +22,15 @@ public class RedisKeyUtils {
 	private static final String WAITING_PARTYSIZE_KEY_PREFIX = "waiting:party:";
 	private static final String WAITING_STATUS_KEY_PREFIX = "waiting:status:";
 
+	// Waiting User keys
+	public static String buildUserHoldingKey(String userId) {
+		return "waiting:user:{" + userId + "}:holding"; // ZSET(member=token, score=expireEpochMs)
+	}
+	public static String buildUserActiveKey(String userId) {
+		return "waiting:user:{" + userId + "}:active";  // SET(member="storeId:reservationId")
+	}
+
+
 	private RedisKeyUtils() {
 		throw new UnsupportedOperationException("유틸리티 서비스는 인스턴스화 할 수 없습니다.");
 	}
