@@ -37,6 +37,7 @@ import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domaincoreredis.reservation.repository.WaitingRedisRepository;
 
 public class ReservationServiceTest {
 
