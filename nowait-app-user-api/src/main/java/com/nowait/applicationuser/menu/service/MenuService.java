@@ -14,6 +14,8 @@ import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.exception.MenuParamEmptyException;
 import com.nowait.domaincorerdb.menu.repository.MenuImageRepository;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
+import com.nowait.domaincorerdb.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +25,7 @@ public class MenuService {
 
 	private final MenuRepository menuRepository;
 	private final MenuImageRepository menuImageRepository;
+	private final StoreRepository storeRepository;
 
 
 	@Transactional(readOnly = true)
@@ -30,6 +33,10 @@ public class MenuService {
 		if (storeId == null) {
 			throw new MenuParamEmptyException();
 		}
+
+		storeRepository.findById(storeId)
+			.orElseThrow(StoreNotFoundException::new);
+
 		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
@@ -50,6 +57,9 @@ public class MenuService {
 		if (storeId == null || menuId == null) {
 			throw new MenuParamEmptyException();
 		}
+
+		storeRepository.findById(storeId)
+			.orElseThrow(StoreNotFoundException::new);
 
 		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
 			.orElseThrow(MenuNotFoundException::new);
