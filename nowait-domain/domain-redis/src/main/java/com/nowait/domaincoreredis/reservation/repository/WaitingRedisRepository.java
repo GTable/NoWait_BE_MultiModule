@@ -1,7 +1,6 @@
-package com.nowait.applicationadmin.reservation.repository;
+package com.nowait.domaincoreredis.reservation.repository;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 

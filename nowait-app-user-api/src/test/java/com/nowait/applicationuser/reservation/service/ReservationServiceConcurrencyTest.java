@@ -26,7 +26,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
-import com.nowait.applicationuser.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
@@ -37,6 +36,7 @@ import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.user.entity.User;
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 import com.redis.testcontainers.RedisContainer;
 
