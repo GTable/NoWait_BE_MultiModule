@@ -1,6 +1,5 @@
 package com.nowait.applicationadmin.reservation;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,8 +11,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
-
-import com.nowait.applicationadmin.reservation.repository.WaitingRedisRepository;
 
 public class WaitingRedisRepositoryTest {
 	@Mock

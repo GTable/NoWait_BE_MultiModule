@@ -23,7 +23,6 @@ import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
-import com.nowait.applicationuser.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;

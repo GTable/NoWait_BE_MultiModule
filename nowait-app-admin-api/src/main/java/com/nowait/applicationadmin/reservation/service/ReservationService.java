@@ -24,7 +24,6 @@ import com.nowait.applicationadmin.reservation.dto.ReservationGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusSummaryDto;
 import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateRequestDto;
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
-import com.nowait.applicationadmin.reservation.repository.WaitingRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
@@ -38,6 +37,8 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
+import com.nowait.domaincoreredis.reservation.repository.WaitingRedisRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,6 +50,7 @@ public class ReservationService {
 	private final UserRepository userRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
 	private final StoreRepository storeRepository;
+	private final WaitingPermitLuaRepository waitingPermitLuaRepository;
 	private final RedisTemplate redisTemplate;
 
 	//TODO 성능 비교를 위해 남겨둔 로직
@@ -242,6 +244,12 @@ public class ReservationService {
 				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name()
 					.equals(currStatus)) {
 
+					if (reservationNumber != null) {
+						waitingPermitLuaRepository.removeActiveMember(
+							userId, String.valueOf(storeId), reservationNumber
+						);
+					}
+
 					// 새 Reservation 생성 & 저장
 					Reservation r = Reservation.builder()
 						.reservationNumber(reservationNumber)
@@ -259,6 +267,12 @@ public class ReservationService {
 					waitingRedisRepository.deleteWaiting(storeId, userId);
 					return EntryStatusResponseDto.fromEntity(saved);
 				} else {
+					if (reservationNumber != null) {
+						try {
+							waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
+						} catch (Exception ignore) {}
+					}
+
 					// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
 					// TODO 메서드로 분리
 					LocalDateTime start = LocalDate.now().atStartOfDay();
@@ -281,6 +295,12 @@ public class ReservationService {
 				if (!(ReservationStatus.WAITING.name().equals(currStatus)
 					  || ReservationStatus.CALLING.name().equals(currStatus))) {
 					throw new IllegalStateException("WAITING/CALLING 상태에서만 취소 가능합니다.");
+				}
+
+				if (reservationNumber != null) {
+					waitingPermitLuaRepository.removeActiveMember(
+						userId, String.valueOf(storeId), reservationNumber
+					);
 				}
 
 				Reservation r = Reservation.builder()

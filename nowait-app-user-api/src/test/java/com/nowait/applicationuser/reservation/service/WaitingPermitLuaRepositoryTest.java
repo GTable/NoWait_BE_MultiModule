@@ -14,7 +14,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.nowait.applicationuser.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 
 @Testcontainers

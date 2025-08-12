@@ -26,7 +26,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
-import com.nowait.applicationadmin.reservation.repository.WaitingRedisRepository;
 import com.nowait.applicationadmin.reservation.service.ReservationService;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;

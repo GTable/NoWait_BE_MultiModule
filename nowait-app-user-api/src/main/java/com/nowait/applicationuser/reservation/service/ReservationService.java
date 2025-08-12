@@ -22,7 +22,6 @@ import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
-import com.nowait.applicationuser.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
@@ -45,6 +44,7 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 import lombok.RequiredArgsConstructor;
@@ -218,7 +218,6 @@ public class ReservationService {
 			.build();
 
 		reservationRepository.save(reservation);
-
 		waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
 		return true;
 		// return removed;
@@ -231,6 +230,11 @@ public class ReservationService {
 		Set<String> members = waitingPermitLuaRepository.getActiveMembers(userId);
 		if (members.isEmpty())
 			return Collections.emptyList();
+
+		Map<Long, String> activeResIdByStore = members.stream()
+			.map(m -> m.split(":", 2))
+			.filter(a -> a.length == 2)
+			.collect(Collectors.toMap(a -> Long.parseLong(a[0]), a -> a[1], (a, b) -> a));
 
 		// 1) 현재 SCAN 기반으로 얻어온 storeId 리스트
 		// List<Long> storeIds = waitingUserRedisRepository.getUserWaitingStoreIds(userId);
@@ -297,6 +301,23 @@ public class ReservationService {
 			Double tsScore = (Double)it.next();
 			String status = (String)it.next();
 			String reservationId = (String)it.next();
+
+
+			String activeReservationId = activeResIdByStore.get(storeId);
+			// 유령 감지: 큐에 없음/번호 불일치/번호 null
+			boolean zombie = (rankObj == null) || (reservationId == null) ||
+							 (activeReservationId != null && !activeReservationId.equals(reservationId));
+			if (zombie) {
+				try {
+					String toRemove = (activeReservationId != null) ? activeReservationId
+						: (reservationId != null ? reservationId : null);
+					if (toRemove != null) {
+						waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), toRemove);
+					}
+				} catch (Exception ignore) {}
+				continue; // 목록에서 제외
+			}
+
 
 			int rank = (rankObj != null ? rankObj.intValue() + 1 : 0);
 			int teamsAhead = (rankObj != null ? rankObj.intValue() : 0);

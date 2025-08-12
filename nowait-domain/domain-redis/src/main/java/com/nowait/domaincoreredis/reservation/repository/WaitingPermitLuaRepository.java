@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.reservation.repository;
+package com.nowait.domaincoreredis.reservation.repository;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
