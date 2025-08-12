@@ -22,8 +22,8 @@ echo "Cleaning up old containers…"
 docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin down
 
 echo "3. start container"
-sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin pull nowait-app-admin-api prometheus-admin grafana-admin
-sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin up -d nowait-app-admin-api prometheus-admin grafana-admin
+sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin pull nowait-app-admin-api
+sudo docker-compose -f docker-compose.admin.yml -f docker-compose.admin-monitoring.yml -p nowait_dev_admin up -d nowait-app-admin-api
 
 echo "4. check container status"
 NEW_CONTAINER_ID=$(docker ps -q --filter "name=nowait-app-admin-api")
