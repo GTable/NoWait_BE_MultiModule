@@ -14,6 +14,7 @@ import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.exception.MenuParamEmptyException;
 import com.nowait.domaincorerdb.menu.repository.MenuImageRepository;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
+import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 
@@ -34,9 +35,10 @@ public class MenuService {
 			throw new MenuParamEmptyException();
 		}
 
-		storeRepository.findById(storeId)
+		Store store = storeRepository.findById(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
+		String storeName = store.getName();
 		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
@@ -49,7 +51,7 @@ public class MenuService {
 			})
 			.toList();
 
-		return MenuReadResponse.of(menuReadResponse);
+		return MenuReadResponse.of(storeName, menuReadResponse);
 	}
 
 	@Transactional(readOnly = true)
