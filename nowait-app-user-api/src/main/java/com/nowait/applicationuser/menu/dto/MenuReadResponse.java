@@ -11,10 +11,12 @@ import lombok.Getter;
 @Builder
 public class MenuReadResponse {
 
+	private String storeName;
 	private List<MenuReadDto> menuReadDto;
 
-	public static MenuReadResponse of(List<MenuReadDto> menuReadDto) {
+	public static MenuReadResponse of(String storeName, List<MenuReadDto> menuReadDto) {
 		return MenuReadResponse.builder()
+			.storeName(storeName)
 			.menuReadDto(menuReadDto)
 			.build();
 	}
