@@ -1,5 +1,6 @@
 package com.nowait.applicationadmin.store.dto;
 
+import com.nowait.common.token.TokenGenerator;
 import com.nowait.domaincorerdb.store.entity.Store;
 
 import jakarta.validation.constraints.NotBlank;
@@ -25,6 +26,7 @@ public class StoreCreateRequest {
 
 	public Store toEntity() {
 		return Store.builder()
+			.publicCode(TokenGenerator.base62(12))
 			.departmentId(departmentId)
 			.name(name)
 			.location(location)

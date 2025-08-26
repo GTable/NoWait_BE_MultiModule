@@ -39,16 +39,16 @@ public class OrderService {
 	private final MenuRepository menuRepository;
 	private final OrderItemRepository orderItemRepository;
 	@Transactional
-	public OrderCreateResponseDto createOrder(Long storeId, Long tableId,
+	public OrderCreateResponseDto createOrder(String publicCode, Long tableId,
 		OrderCreateRequestDto orderCreateRequestDto, String sessionId) {
-		parameterValidation(storeId, tableId, orderCreateRequestDto);
+		parameterValidation(publicCode, tableId, orderCreateRequestDto);
 
 		// 💡 [중복 주문 방지] signature 생성 및 체크
-		String signature = generateOrderSignature(storeId, tableId, orderCreateRequestDto.getItems());
+		String signature = generateOrderSignature(publicCode, tableId, orderCreateRequestDto.getItems());
 		checkDuplicateOrderSignature(signature);
 
 		// 1. Store 조회
-		Store store = storeRepository.findById(storeId)
+		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(() -> new IllegalArgumentException("store not found"));
 
 		// 2. UserOrder 생성 및 signature 저장
@@ -95,9 +95,9 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> getOrderItemsGroupByOrderId(
-		Long storeId, Long tableId, String sessionId) {
+		String publicCode, Long tableId, String sessionId) {
 
-		List<UserOrder> userOrders = orderRepository.findByStore_StoreIdAndTableIdAndSessionId(storeId, tableId, sessionId);
+		List<UserOrder> userOrders = orderRepository.findByStore_PublicCodeAndTableIdAndSessionId(publicCode, tableId, sessionId);
 
 		// orderId 기준으로 바로 변환
 		return userOrders.stream()
@@ -116,8 +116,8 @@ public class OrderService {
 	}
 
 
-	private static void parameterValidation(Long storeId, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {
-		if (storeId == null || tableId == null || orderCreateRequestDto == null) {
+	private static void parameterValidation(String publicCode, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {
+		if (publicCode == null || tableId == null || orderCreateRequestDto == null) {
 				throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getItems() == null || orderCreateRequestDto.getItems().isEmpty()) {
@@ -130,7 +130,7 @@ public class OrderService {
 				throw new IllegalArgumentException("Depositor name is too long");
 		}
 	}
-	private String generateOrderSignature(Long storeId, Long tableId, List<CartItemDto> items) {
+	private String generateOrderSignature(String storeId, Long tableId, List<CartItemDto> items) {
 		String cartString = items.stream()
 			.sorted((a, b) -> a.getMenuId().compareTo(b.getMenuId())) // 메뉴 ID 기준 정렬
 			.map(item -> item.getMenuId() + ":" + item.getQuantity())

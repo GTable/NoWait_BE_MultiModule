@@ -18,6 +18,8 @@ public interface StoreRepository extends JpaRepository<Store, Long>, StoreCustom
 
 	Optional<Store> findByStoreIdAndDeletedFalse(Long storeId);
 
+	Optional<Store> findByPublicCodeAndDeletedFalse(String publicCode);
+
 	Slice<Store> findAllByDeletedFalseOrderByStoreIdAsc(Pageable pageable);
 
 	@Query(value = """
