@@ -116,11 +116,6 @@ public class OrderService {
 	}
 
 
-
-
-
-
-
 	private static void parameterValidation(Long storeId, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {
 		if (storeId == null || tableId == null || orderCreateRequestDto == null) {
 				throw new OrderParameterEmptyException();

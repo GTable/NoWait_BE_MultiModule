@@ -65,8 +65,8 @@ public class MenuImageController {
 		description = "특정 메뉴 이미지 ID에 해당하는 이미지를 삭제합니다."
 	)
 	@ApiResponse(responseCode = "200", description = "메뉴 이미지 삭제 성공")
-	public ResponseEntity<?> deleteMenuImage(@PathVariable Long id) {
-		menuImageService.delete(id);
+	public ResponseEntity<?> deleteMenuImage(@PathVariable Long menuImageId) {
+		menuImageService.delete(menuImageId);
 		return ResponseEntity
 			.status(
 				HttpStatus.OK
