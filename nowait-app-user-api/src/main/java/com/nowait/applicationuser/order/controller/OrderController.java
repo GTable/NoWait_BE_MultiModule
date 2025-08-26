@@ -20,6 +20,7 @@ import com.nowait.common.api.ApiUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +56,13 @@ public class OrderController {
 	public ResponseEntity<?> getOrderItems(
 		@PathVariable Long storeId,
 		@PathVariable Long tableId,
-		HttpSession session
+		HttpServletRequest request
 	) {
+		HttpSession session = request.getSession(false);
+		if (session == null) {
+			// 프론트가 먼저 부트스트랩 안 했거나, 쿠키가 안 붙은 케이스
+			return ResponseEntity.status(HttpStatus.OK).body(ApiUtils.success(List.of()));
+		}
 		String sessionId = session.getId();
 		List<OrderResponseDto> orderItems = orderService.getOrderItemsGroupByOrderId(storeId, tableId, sessionId);
 		return ResponseEntity.
