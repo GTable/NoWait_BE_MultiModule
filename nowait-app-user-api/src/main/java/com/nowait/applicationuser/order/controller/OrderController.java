@@ -32,17 +32,36 @@ import lombok.RequiredArgsConstructor;
 public class OrderController {
 	private final OrderService orderService;
 
-	@PostMapping("/create/{storeId}/{tableId}")
+	// @PostMapping("/create/{storeId}/{tableId}")
+	// @Operation(summary = "주문 생성", description = "특정 주점 - 특정 테이블에 대한 주문 생성")
+	// @ApiResponse(responseCode = "201", description = "주문 생성")
+	// public ResponseEntity<?> createOrder(
+	// 	@PathVariable Long storeId,
+	// 	@PathVariable Long tableId,
+	// 	@RequestBody @Valid OrderCreateRequestDto orderCreateRequestDto,
+	// 	HttpSession session
+	// ) {
+	// 	String sessionId = session.getId();
+	// 	OrderCreateResponseDto response = orderService.createOrder(storeId, tableId, orderCreateRequestDto, sessionId);
+	// 	return ResponseEntity
+	// 		.status(HttpStatus.CREATED)
+	// 		.body(
+	// 			ApiUtils.success(response)
+	// 		);
+	// }
+
+	@PostMapping("/create/{publicCode}/{tableId}")
 	@Operation(summary = "주문 생성", description = "특정 주점 - 특정 테이블에 대한 주문 생성")
 	@ApiResponse(responseCode = "201", description = "주문 생성")
 	public ResponseEntity<?> createOrder(
-		@PathVariable Long storeId,
+		@PathVariable String publicCode,
 		@PathVariable Long tableId,
 		@RequestBody @Valid OrderCreateRequestDto orderCreateRequestDto,
 		HttpSession session
-		) {
+	) {
 		String sessionId = session.getId();
-		OrderCreateResponseDto response = orderService.createOrder(storeId,tableId,orderCreateRequestDto,sessionId);
+		OrderCreateResponseDto response = orderService.createOrder(publicCode, tableId, orderCreateRequestDto,
+			sessionId);
 		return ResponseEntity
 			.status(HttpStatus.CREATED)
 			.body(
@@ -50,11 +69,11 @@ public class OrderController {
 			);
 	}
 
-	@GetMapping("/items/{storeId}/{tableId}")
+	@GetMapping("/items/{publicCode}/{tableId}")
 	@Operation(summary = "테이블별 주문 아이템 조회", description = "비로그인(세션) 기준으로 테이블의 내 주문 목록만 조회")
 	@ApiResponse(responseCode = "200", description = "주문 조회")
 	public ResponseEntity<?> getOrderItems(
-		@PathVariable Long storeId,
+		@PathVariable String publicCode,
 		@PathVariable Long tableId,
 		HttpServletRequest request
 	) {
@@ -64,7 +83,7 @@ public class OrderController {
 			return ResponseEntity.status(HttpStatus.OK).body(ApiUtils.success(List.of()));
 		}
 		String sessionId = session.getId();
-		List<OrderResponseDto> orderItems = orderService.getOrderItemsGroupByOrderId(storeId, tableId, sessionId);
+		List<OrderResponseDto> orderItems = orderService.getOrderItemsGroupByOrderId(publicCode, tableId, sessionId);
 		return ResponseEntity.
 			status(HttpStatus.OK)
 			.body(

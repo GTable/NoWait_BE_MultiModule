@@ -25,32 +25,32 @@ public class MenuController {
 
 	private final MenuService menuService;
 
-	@GetMapping("/all-menus/stores/{storeId}")
+	@GetMapping("/all-menus/stores/{publicCode}")
 	@Operation(summary = "가게의 모든 메뉴 조회", description = "특정 가게의 모든 메뉴를 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "모든 메뉴를 조회 성공")
-	public ResponseEntity<?> getMenusByStoreId(@PathVariable Long storeId) {
+	public ResponseEntity<?> getMenusByStoreId(@PathVariable String publicCode) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.getAllMenusByStoreId(storeId)
+					menuService.getAllMenusByStoreId(publicCode)
 				)
 			);
 	}
 
-	@GetMapping("/{storeId}/{menuId}")
+	@GetMapping("/{publicCode}/{menuId}")
 	@Operation(
 		summary = "메뉴 ID로 메뉴 조회", description = "특정 가게의 특정 메뉴를 ID로 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "메뉴 조회 성공")
 	public ResponseEntity<?> getMenuById(
-		@PathVariable Long storeId,
+		@PathVariable String publicCode,
 		@PathVariable Long menuId
 	) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					menuService.getMenuById(storeId, menuId)
+					menuService.getMenuById(publicCode, menuId)
 				)
 			);
 	}
