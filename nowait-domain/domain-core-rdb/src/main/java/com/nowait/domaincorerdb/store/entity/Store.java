@@ -28,6 +28,9 @@ public class Store extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long storeId;
 
+	@Column(nullable = false, unique = true, updatable = false, length = 12)
+	private String publicCode;
+
 	@Column(name = "department_id", nullable = false)
 	private Long departmentId;
 
@@ -56,7 +59,8 @@ public class Store extends BaseTimeEntity {
 	private Boolean deleted;
 
 	public Store(LocalDateTime createdAt, Long storeId, Long departmentId, String name, String location,
-		String description, String noticeTitle, String noticeContent, String openTime, Boolean isActive, Boolean deleted) {
+		String description, String noticeTitle, String noticeContent, String openTime, Boolean isActive,
+		Boolean deleted) {
 		super(createdAt);
 		this.storeId = storeId;
 		this.departmentId = departmentId;
@@ -70,7 +74,8 @@ public class Store extends BaseTimeEntity {
 		this.deleted = deleted;
 	}
 
-	public void updateInfo(String name, String location, String description, String noticeTitle, String notice, String openTime) {
+	public void updateInfo(String name, String location, String description, String noticeTitle, String notice,
+		String openTime) {
 		if (name != null)
 			this.name = name;
 		if (location != null)

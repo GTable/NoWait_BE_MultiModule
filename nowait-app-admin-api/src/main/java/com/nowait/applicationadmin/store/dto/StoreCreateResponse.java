@@ -14,6 +14,7 @@ import lombok.Getter;
 public class StoreCreateResponse {
 
 	private Long storeId;
+	private String publicCode;
 	private Long departmentId;
 	private String name;
 	private String location;
@@ -29,6 +30,7 @@ public class StoreCreateResponse {
 		return StoreCreateResponse.builder()
 			.createdAt(store.getCreatedAt())
 			.storeId(store.getStoreId())
+			.publicCode(store.getPublicCode())
 			.departmentId(store.getDepartmentId())
 			.name(store.getName())
 			.location(store.getLocation())
