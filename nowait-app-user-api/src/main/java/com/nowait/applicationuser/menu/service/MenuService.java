@@ -30,15 +30,16 @@ public class MenuService {
 
 
 	@Transactional(readOnly = true)
-	public MenuReadResponse getAllMenusByStoreId(Long storeId) {
-		if (storeId == null) {
+	public MenuReadResponse getAllMenusByStoreId(String publicCode) {
+		if (publicCode == null) {
 			throw new MenuParamEmptyException();
 		}
 
-		Store store = storeRepository.findById(storeId)
+		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
 
 		String storeName = store.getName();
+		Long storeId = store.getStoreId();
 		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
@@ -55,15 +56,15 @@ public class MenuService {
 	}
 
 	@Transactional(readOnly = true)
-	public MenuReadDto getMenuById(Long storeId, Long menuId) {
-		if (storeId == null || menuId == null) {
+	public MenuReadDto getMenuById(String publicCode, Long menuId) {
+		if (publicCode == null || menuId == null) {
 			throw new MenuParamEmptyException();
 		}
 
-		storeRepository.findById(storeId)
+		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
 
-		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
+		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(store.getStoreId(), menuId)
 			.orElseThrow(MenuNotFoundException::new);
 
 		List<MenuImage> images = menuImageRepository.findByMenu(menu);
