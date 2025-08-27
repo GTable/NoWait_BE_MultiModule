@@ -23,6 +23,8 @@ services:
 #      - ./nowait-app-admin-api:/app
     restart: always
     pull_policy: always
+    environment:
+      - TZ=Asia/Seoul
 
 volumes:
   mysql_data:
