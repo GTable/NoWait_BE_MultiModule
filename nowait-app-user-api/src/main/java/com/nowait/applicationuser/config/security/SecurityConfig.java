@@ -12,7 +12,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.nowait.applicationuser.oauth.oauth2.CustomOAuth2UserService;
@@ -38,12 +37,13 @@ public class SecurityConfig {
 		http
 			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			// CSRF 방어 기능 비활성화 (jwt 토큰을 사용할 것이기에 필요없음)
-			.csrf(csrf -> csrf
-				.ignoringRequestMatchers(
-					"/api/**", "/login/**", "/oauth2/**",
-					"/swagger-ui/**", "/v3/api-docs/**", "/orders/**")
-				.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-			)
+			// .csrf(csrf -> csrf
+			// 	.ignoringRequestMatchers(
+			// 		"/api/**", "/login/**", "/oauth2/**",
+			// 		"/swagger-ui/**", "/v3/api-docs/**", "/orders/**")
+			// 	.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+			// )
+			.csrf(AbstractHttpConfigurer::disable)
 			// 시큐리티 폼 로그인 비활성화
 			.formLogin(AbstractHttpConfigurer::disable)
 			// HTTP Basic 인증 비활성화
