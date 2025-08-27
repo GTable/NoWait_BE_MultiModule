@@ -4,4 +4,6 @@ COPY ${JAR_FILE} nowait-app-admin-api.jar
 
 ARG PROFILE=admin
 
-CMD ["java", "-jar", "nowait-app-admin-api.jar", "--spring.profiles.active=admin", "-Djava.security.egd=file:/dev/./urandom", "-Duser.timezone=Asia/Seoul"]
+ENV TZ=Asia/Seoul
+
+CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-Duser.timezone=Asia/Seoul", "-jar", "nowait-app-admin-api.jar", "--spring.profiles.active=admin"]
