@@ -15,6 +15,7 @@ import lombok.Getter;
 @Builder
 public class StoreDetailReadResponse {
 	private Long storeId;
+	private String publicCode;
 	private Long bookmarkId;
 	private Boolean isBookmark;
 	private Long waitingCount;
@@ -48,6 +49,7 @@ public class StoreDetailReadResponse {
 
 		return StoreDetailReadResponse.builder()
 			.storeId(store.getStoreId())
+			.publicCode(store.getPublicCode())
 			.bookmarkId(bookmarkId)
 			.isBookmark(isBookmark)
 			.waitingCount(waitingCount)
