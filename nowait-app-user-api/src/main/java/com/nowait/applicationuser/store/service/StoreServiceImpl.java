@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
@@ -143,7 +144,7 @@ public class StoreServiceImpl implements StoreService {
 	@Transactional(readOnly = true)
 	public StoreDetailReadResponse getStoreByPublicCode(String publicCode, CustomOAuth2User customOAuth2User) {
 
-		if (publicCode == null)
+		if (!StringUtils.hasText(publicCode))
 			throw new StoreParamEmptyException();
 		User user = customOAuth2User.getUser();
 
