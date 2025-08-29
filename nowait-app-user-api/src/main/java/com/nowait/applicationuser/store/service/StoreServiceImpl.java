@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.applicationuser.store.dto.StoreDepartmentReadResponse;
@@ -141,14 +142,16 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreDetailReadResponse getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User) {
+	public StoreDetailReadResponse getStoreByPublicCode(String publicCode, CustomOAuth2User customOAuth2User) {
 
-		if (storeId == null)
+		if (!StringUtils.hasText(publicCode))
 			throw new StoreParamEmptyException();
 		User user = customOAuth2User.getUser();
 
-		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
+		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
+
+		Long storeId = store.getStoreId();;
 
 		String departmentName = departmentRepository.findById(store.getDepartmentId())
 			.map(Department::getName)
