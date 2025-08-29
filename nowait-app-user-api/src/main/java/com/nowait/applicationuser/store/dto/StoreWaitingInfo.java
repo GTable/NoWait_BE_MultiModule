@@ -17,6 +17,9 @@ public class StoreWaitingInfo {
 	@Schema(description = "주점 ID", example = "1")
 	private String storeId;
 
+	@Schema(description = "주점 publicCode", example = "ad2ndkald24d")
+	private String publicCode;
+
 	@Schema(description = "주점명", example = "노웨이팅 치킨")
 	private String storeName;
 
