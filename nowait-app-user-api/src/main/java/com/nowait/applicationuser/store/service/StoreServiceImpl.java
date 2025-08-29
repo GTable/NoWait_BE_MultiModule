@@ -141,14 +141,16 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreDetailReadResponse getStoreByStoreId(Long storeId, CustomOAuth2User customOAuth2User) {
+	public StoreDetailReadResponse getStoreByStoreId(String publicCode, CustomOAuth2User customOAuth2User) {
 
-		if (storeId == null)
+		if (publicCode == null)
 			throw new StoreParamEmptyException();
 		User user = customOAuth2User.getUser();
 
-		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
+		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
+
+		Long storeId = store.getStoreId();;
 
 		String departmentName = departmentRepository.findById(store.getDepartmentId())
 			.map(Department::getName)
