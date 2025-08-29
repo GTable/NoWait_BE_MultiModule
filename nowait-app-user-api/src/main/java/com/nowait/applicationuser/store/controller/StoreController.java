@@ -46,15 +46,15 @@ public class StoreController {
 			);
 	}
 
-	@GetMapping("/{storeId}")
+	@GetMapping("/{publicCode}")
 	@Operation(summary = "주점 ID로 주점 상세 조회", description = "특정 주점을 ID로 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 상세 조회 성공")
-	public ResponseEntity<?> getStoreById(@PathVariable Long storeId, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
+	public ResponseEntity<?> getStoreById(@PathVariable String publicCode, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					storeService.getStoreByStoreId(storeId, customOAuth2User)
+					storeService.getStoreByStoreId(publicCode, customOAuth2User)
 				)
 			);
 	}
