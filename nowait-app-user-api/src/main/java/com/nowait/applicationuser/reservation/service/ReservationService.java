@@ -30,6 +30,7 @@ import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationAddUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFailException;
 import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
@@ -177,9 +178,15 @@ public class ReservationService {
 		if (storeId == null || userId.trim().isEmpty()) {
 			throw new IllegalArgumentException("Invalid storeId or userId");
 		}
+
 		Long rank = waitingUserRedisRepository.getRank(storeId, userId);
 		Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
 		String reservationId = waitingUserRedisRepository.getReservationId(storeId, userId);
+
+		if (reservationId == null) {
+			throw new ReservationNotFoundException();
+		}
+
 		return WaitingResponseDto.builder()
 			.reservationNumber(reservationId)
 			.rank(rank == null ? -1 : rank.intValue() + 1)
