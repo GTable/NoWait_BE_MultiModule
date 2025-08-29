@@ -54,7 +54,7 @@ public class StoreController {
 			.status(HttpStatus.OK)
 			.body(
 				ApiUtils.success(
-					storeService.getStoreByStoreId(publicCode, customOAuth2User)
+					storeService.getStoreByPublicCode(publicCode, customOAuth2User)
 				)
 			);
 	}

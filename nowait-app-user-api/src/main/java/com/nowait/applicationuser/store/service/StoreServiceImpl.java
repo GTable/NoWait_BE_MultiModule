@@ -141,7 +141,7 @@ public class StoreServiceImpl implements StoreService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public StoreDetailReadResponse getStoreByStoreId(String publicCode, CustomOAuth2User customOAuth2User) {
+	public StoreDetailReadResponse getStoreByPublicCode(String publicCode, CustomOAuth2User customOAuth2User) {
 
 		if (publicCode == null)
 			throw new StoreParamEmptyException();

@@ -18,7 +18,7 @@ public interface StoreService {
 
 	StoreDepartmentReadResponse getAllStoresByPageAndDeparments(Pageable pageable, CustomOAuth2User customOAuth2User);
 
-	StoreDetailReadResponse getStoreByStoreId(String publicCode, CustomOAuth2User customOAuth2User);
+	StoreDetailReadResponse getStoreByPublicCode(String publicCode, CustomOAuth2User customOAuth2User);
 
 	List<StoreSearchResponse> searchByKeywordNative(String name);
 
