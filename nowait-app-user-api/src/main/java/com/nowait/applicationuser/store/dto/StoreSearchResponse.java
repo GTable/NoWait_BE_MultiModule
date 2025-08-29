@@ -15,6 +15,7 @@ import lombok.Getter;
 @Builder
 public class StoreSearchResponse {
 	private Long storeId;
+	private String publicCode;
 	private Long waitingCount;
 	private Long departmentId;
 	private String departmentName;
@@ -34,6 +35,7 @@ public class StoreSearchResponse {
 
 		return StoreSearchResponse.builder()
 			.storeId(store.getStoreId())
+			.publicCode(store.getPublicCode())
 			.waitingCount(waitingCount)
 			.departmentId(store.getDepartmentId())
 			.departmentName(departmentName)
