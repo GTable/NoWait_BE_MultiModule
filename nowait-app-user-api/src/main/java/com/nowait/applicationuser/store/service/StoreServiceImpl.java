@@ -282,6 +282,7 @@ public class StoreServiceImpl implements StoreService {
 					imageUrl,
 					department.getName(),
 					storeId,
+					store.getPublicCode(),
 					storeName,
 					count != null ? count : 0
 				));
