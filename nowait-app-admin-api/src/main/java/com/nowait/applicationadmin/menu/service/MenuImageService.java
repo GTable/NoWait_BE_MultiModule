@@ -1,5 +1,7 @@
 package com.nowait.applicationadmin.menu.service;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +34,13 @@ public class MenuImageService {
 		String type = "menu";
 		Menu menu = menuRepository.findById(menuId)
 			.orElseThrow(MenuNotFoundException::new);
+
+		Optional<MenuImage> existingMenuImage = menuImageRepository.findByMenuId(menuId);
+
+		existingMenuImage.ifPresent(menuImage -> {
+			s3Service.delete(menuImage.getFileKey());
+			menuImageRepository.delete(menuImage);
+		});
 
 		S3Service.S3UploadResult uploadResult = s3Service.upload(type, menuId, file).join();
 
