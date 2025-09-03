@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import com.nowait.common.api.ApiUtils;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -62,5 +64,20 @@ public class OrderController {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(ApiUtils.success(response));
+	}
+
+	@DeleteMapping("/{orderId}")
+	@Operation(summary = "주문 삭제", description = "특정 주문을 삭제")
+	@ApiResponse(responseCode = "200", description = "주문 삭제 성공")
+	public ResponseEntity<?> deleteOrder(
+		@PathVariable Long orderId,
+		@AuthenticationPrincipal MemberDetails memberDetails
+	) {
+
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(ApiUtils.success(
+				orderService.deleteOrder(orderId, memberDetails)
+			));
 	}
 }
