@@ -1,7 +1,6 @@
 package com.nowait.domainadminrdb.statistic.repository;
 
 import static com.nowait.domaincorerdb.order.entity.OrderStatus.*;
-import static com.nowait.domaincorerdb.store.entity.QStore.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,6 +49,8 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 		LocalDateTime start = date.atStartOfDay(); // 해당 날짜의 자정
 		LocalDateTime end = date.plusDays(1).atStartOfDay();
 
+		LocalDateTime yesterDayStart = start.minusDays(1); // 어제 00:00
+
 		// 2) target 날짜 해당하는 매출 합산
 		Integer targetSum = queryFactory
 			.select(u.totalPrice.sum())
@@ -68,8 +69,8 @@ public class StatisticCustomRepositoryImpl implements StatisticCustomRepository 
 			.from(u)
 			.where(
 				u.store.storeId.eq(storeId),
-				u.createdAt.goe(start),
-				u.createdAt.lt(start.minusDays(1)),
+				u.createdAt.goe(yesterDayStart),
+				u.createdAt.lt(start),
 				u.status.eq(COOKED)
 			)
 			.fetchOne();

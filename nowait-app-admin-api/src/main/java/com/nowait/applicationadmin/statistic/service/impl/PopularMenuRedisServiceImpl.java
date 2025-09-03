@@ -13,6 +13,8 @@ import com.nowait.applicationadmin.statistic.service.PopularMenuRedisService;
 import com.nowait.common.enums.Role;
 import com.nowait.domainadminrdb.statistic.exception.StatisticViewUnauthorizedException;
 import com.nowait.domaincorerdb.menu.entity.Menu;
+import com.nowait.domaincorerdb.menu.entity.MenuImage;
+import com.nowait.domaincorerdb.menu.repository.MenuImageRepository;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
@@ -29,6 +31,7 @@ public class PopularMenuRedisServiceImpl implements PopularMenuRedisService {
 	private final MenuCounterService menuCounterService;
 	private final MenuRepository menuRepository;
 	private final UserRepository userRepository;
+	private final MenuImageRepository menuImageRepository;
 
 	@Override
 	public List<PopularMenuDto> getTodayTop5(MemberDetails memberDetails) {
@@ -36,8 +39,8 @@ public class PopularMenuRedisServiceImpl implements PopularMenuRedisService {
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		Long storeId = user.getStoreId();
 
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StatisticViewUnauthorizedException();
+		if (!Role.SUPER_ADMIN.equals(user.getRole())) {
+			if (storeId == null) throw new StatisticViewUnauthorizedException();
 		}
 
 		Set<ZSetOperations.TypedTuple<String>> tuples = menuCounterService.getTopMenus(storeId, 5);
@@ -53,13 +56,22 @@ public class PopularMenuRedisServiceImpl implements PopularMenuRedisService {
 				Menu::getName
 			));
 
+		var firstImageByMenu = menuImageRepository.findByMenuIdInOrderByIdAsc(menuIds).stream()
+			.collect(Collectors.toMap(
+				menuImage -> menuImage.getMenu().getId(),
+				MenuImage::getImageUrl,
+				(existing, replacement) -> existing
+			));
+
 
 		return tuples.stream()
 			.map(tuple -> {
 				Long menuId = Long.parseLong(tuple.getValue());
 				String menuName = menuIdToNameMap.getOrDefault(menuId, "Unknown Menu");
+				String imageUrl = firstImageByMenu.get(menuId);
+				long sold = tuple.getScore().longValue();
 
-				return new PopularMenuDto(menuId, menuName, tuple.getScore().longValue());
+				return new PopularMenuDto(menuId, menuName, sold, imageUrl);
 			})
 			.toList();
 	}

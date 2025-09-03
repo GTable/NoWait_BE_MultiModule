@@ -13,4 +13,5 @@ import com.nowait.domaincorerdb.menu.entity.MenuImage;
 public interface MenuImageRepository extends JpaRepository<MenuImage, Long> {
 	List<MenuImage> findByMenu(Menu menu);
 	Optional<MenuImage> findByMenuId(Long menuId);
+	List<MenuImage> findByMenuIdInOrderByIdAsc(List<Long> menuIds);
 }

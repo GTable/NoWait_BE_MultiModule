@@ -9,4 +9,5 @@ public class PopularMenuDto {
 	private Long menuId;
 	private String menuName;
 	private Long soldCount;
+	private String imageUrl;
 }
