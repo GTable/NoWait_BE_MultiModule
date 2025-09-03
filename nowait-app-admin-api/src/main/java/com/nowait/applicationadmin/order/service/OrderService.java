@@ -87,6 +87,20 @@ public class OrderService {
 		return OrderStatusUpdateResponseDto.fromEntity(userOrder);
 	}
 
+	@Transactional
+	public OrderStatusUpdateResponseDto deleteOrder(Long orderId, MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
+
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(userOrder.getStore().getStoreId())) {
+			throw new OrderUpdateUnauthorizedException();
+		}
+
+		userOrder.deleteOrder();
+
+		return OrderStatusUpdateResponseDto.fromEntity(userOrder);
+	}
+
 	@Transactional(readOnly = true)
 	public OrderSalesSumDetail getSaleSumByStoreId(MemberDetails memberDetails, LocalDate date) {
 		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
