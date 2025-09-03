@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nowait.applicationadmin.cancelOrder.dto.CancelOrderRequest;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateRequestDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
@@ -62,5 +64,21 @@ public class OrderController {
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(ApiUtils.success(response));
+	}
+
+	@DeleteMapping("/{orderId}")
+	@Operation(summary = "주문 삭제", description = "특정 주문을 삭제")
+	@ApiResponse(responseCode = "200", description = "주문 삭제 성공")
+	public ResponseEntity<?> deleteOrder(
+		@PathVariable Long orderId,
+		@RequestBody CancelOrderRequest cancelOrderRequest,
+		@AuthenticationPrincipal MemberDetails memberDetails
+	) {
+
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(ApiUtils.success(
+				orderService.cancelOrder(orderId, cancelOrderRequest, memberDetails)
+			));
 	}
 }

@@ -1,5 +1,6 @@
 package com.nowait.applicationadmin.order.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -10,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nowait.applicationadmin.cancelOrder.dto.CancelOrderRequest;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
 import com.nowait.common.enums.Role;
@@ -29,6 +31,7 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.nowaitevent.order.event.CookingCompleteEvent;
+import com.nowait.nowaitevent.order.event.OrderCancelledEvent;
 
 import lombok.RequiredArgsConstructor;
 
@@ -83,6 +86,29 @@ public class OrderService {
 				)
 			);
 		}
+
+		return OrderStatusUpdateResponseDto.fromEntity(userOrder);
+	}
+
+	@Transactional
+	public OrderStatusUpdateResponseDto cancelOrder(Long orderId, CancelOrderRequest cancelOrderRequest, MemberDetails memberDetails) {
+		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
+
+		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(userOrder.getStore().getStoreId())) {
+			throw new OrderUpdateUnauthorizedException();
+		}
+
+		userOrder.cancelOrder();
+
+		publisher.publishEvent(new OrderCancelledEvent(
+			userOrder.getId(),
+			userOrder.getStore().getStoreId(),
+			userOrder.getSignature(),
+			cancelOrderRequest.reason(),
+			Instant.now()
+		));
+
 
 		return OrderStatusUpdateResponseDto.fromEntity(userOrder);
 	}
