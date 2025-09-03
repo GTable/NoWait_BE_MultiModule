@@ -30,6 +30,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class UserOrder extends BaseTimeEntity {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -49,6 +50,7 @@ public class UserOrder extends BaseTimeEntity {
 	private List<OrderItem> orderItems = new ArrayList<>();
 
 	private String sessionId;
+
 	@Column(length = 10) // 예약자 이름 길이 제한
 	private String depositorName;
 
@@ -63,7 +65,10 @@ public class UserOrder extends BaseTimeEntity {
 		this.status = newStatus;
 	}
 
-	public void deleteOrder() {
+	public void cancelOrder() {
+		if (this.status == OrderStatus.CANCELLED) {
+			return;
+		}
 		this.status = OrderStatus.CANCELLED;
 	}
 
