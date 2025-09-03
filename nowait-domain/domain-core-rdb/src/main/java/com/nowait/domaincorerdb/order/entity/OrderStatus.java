@@ -16,7 +16,10 @@ public enum OrderStatus {
 	COOKING("조리중"),
 
 	@Schema(description = "조리완료")
-	COOKED("조리완료");
+	COOKED("조리완료"),
+
+	@Schema(description = "주문취소")
+	CANCELLED("주문취소");
 
 	private final String description;
 }
