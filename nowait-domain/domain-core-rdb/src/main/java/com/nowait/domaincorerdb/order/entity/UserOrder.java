@@ -63,4 +63,8 @@ public class UserOrder extends BaseTimeEntity {
 		this.status = newStatus;
 	}
 
+	public void deleteOrder() {
+		this.status = OrderStatus.CANCELLED;
+	}
+
 }
