@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nowait.applicationadmin.cancelOrder.dto.CancelOrderRequest;
 import com.nowait.applicationadmin.order.dto.OrderResponseDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateRequestDto;
 import com.nowait.applicationadmin.order.dto.OrderStatusUpdateResponseDto;
@@ -21,7 +22,6 @@ import com.nowait.common.api.ApiUtils;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -71,13 +71,14 @@ public class OrderController {
 	@ApiResponse(responseCode = "200", description = "주문 삭제 성공")
 	public ResponseEntity<?> deleteOrder(
 		@PathVariable Long orderId,
+		@RequestBody CancelOrderRequest cancelOrderRequest,
 		@AuthenticationPrincipal MemberDetails memberDetails
 	) {
 
 		return ResponseEntity
 			.status(HttpStatus.OK)
 			.body(ApiUtils.success(
-				orderService.deleteOrder(orderId, memberDetails)
+				orderService.cancelOrder(orderId, cancelOrderRequest, memberDetails)
 			));
 	}
 }
