@@ -18,6 +18,9 @@ public class WaitingUserResponse {
 	@Schema(description = "예약 ID", example = "16-20240201-0002")
 	private String reservationNumber;
 
+	@Schema(description = "휴대폰 번호", example = "010-1234-5678")
+	private String phoneNumber;
+
 	@Schema(description = "유저 ID", example = "16")
 	private String userId;
 
@@ -47,6 +50,7 @@ public class WaitingUserResponse {
 			.reservationNumber(reservation.getReservationNumber())
 			.userId(reservation.getUser().getId().toString())
 			.partySize(reservation.getPartySize())
+			.phoneNumber(reservation.getUser().getPhoneNumber())
 			.userName(reservation.getUser().getNickname())
 			.createdAt(reservation.getRequestedAt())
 			.updatedAt(reservation.getUpdatedAt())
@@ -54,11 +58,13 @@ public class WaitingUserResponse {
 			.build();
 	}
 
-	public static WaitingUserResponse fromRedis(String reservationId, String userId, Integer partySize, String userName,
-		LocalDateTime createdAt, LocalDateTime calledAt,String status, Double score) {
+	public static WaitingUserResponse fromRedis(String reservationId, String userId, String phoneNumber,
+		Integer partySize, String userName,
+		LocalDateTime createdAt, LocalDateTime calledAt, String status, Double score) {
 		return WaitingUserResponse.builder()
 			.reservationNumber(reservationId)
 			.userId(userId)
+			.phoneNumber(phoneNumber)
 			.partySize(partySize)
 			.userName(userName)
 			.createdAt(createdAt)

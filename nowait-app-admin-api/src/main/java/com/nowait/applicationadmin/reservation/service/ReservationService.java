@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -125,11 +125,17 @@ public class ReservationService {
 		List<Long> userIdLongs = userIds.stream()
 			.map(Long::valueOf)
 			.toList();
-		Map<String, String> nicknameMap = userRepository.findAllById(userIdLongs).stream()
-			.collect(Collectors.toMap(
-				u -> u.getId().toString(),
-				User::getNickname
-			));
+
+		List<User> userList = userRepository.findByIdIn(userIdLongs);
+
+		Map<String, String> nicknameMap = new HashMap<>(userList.size());
+		Map<String, String> phoneNumberMap = new HashMap<>(userList.size());
+
+		for (User user : userList) {
+			String key = user.getId().toString();
+			nicknameMap.put(key, user.getNickname());
+			phoneNumberMap.put(key, user.getPhoneNumber());
+		}
 
 		// 4) Redis 파이프라인: partySize, status, reservationId
 		String pk = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
@@ -174,9 +180,11 @@ public class ReservationService {
 				: null;
 
 			String userName = nicknameMap.getOrDefault(userId, "Unknown");
+			String phoneNumber = phoneNumberMap.getOrDefault(userId, "Unknown");
 
 			result.add(
-				WaitingUserResponse.fromRedis(reservationId, userId, partySize, userName, createdAt, calledAt, status,
+				WaitingUserResponse.fromRedis(reservationId, userId, phoneNumber, partySize, userName, createdAt,
+					calledAt, status,
 					score));
 		}
 
@@ -269,8 +277,10 @@ public class ReservationService {
 				} else {
 					if (reservationNumber != null) {
 						try {
-							waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
-						} catch (Exception ignore) {}
+							waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId),
+								reservationNumber);
+						} catch (Exception ignore) {
+						}
 					}
 
 					// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
@@ -322,7 +332,6 @@ public class ReservationService {
 				throw new IllegalArgumentException("지원하지 않는 상태: " + newStatus);
 		}
 	}
-
 
 	/**
 	 * 공통 메서드
