@@ -38,13 +38,14 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
 		Authentication authentication) throws IOException {
 
-		CustomOAuth2User customUserDetails = (CustomOAuth2User) authentication.getPrincipal();
+		CustomOAuth2User customUserDetails = (CustomOAuth2User)authentication.getPrincipal();
 		User user = customUserDetails.getUser();
 		Long userId = customUserDetails.getUserId();
 		String role = authentication.getAuthorities().iterator().next().getAuthority();
 
 		// JWT 발급
-		String accessToken = jwtUtil.createAccessToken("accessToken", userId, role, 30 * 60 * 1000L); // 30분
+		String accessToken = jwtUtil.createAccessToken("accessToken", userId, role,
+			Boolean.TRUE.equals(user.getPhoneEntered()),  Boolean.TRUE.equals(user.getIsMarketingAgree()),60 * 60 * 1000L); // 1시간
 		String refreshToken = jwtUtil.createRefreshToken("refreshToken", userId, 30L * 24 * 60 * 60 * 1000L); // 30일
 
 		// 1. refreshToken을 DB에 저장 or update
