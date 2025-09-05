@@ -44,8 +44,15 @@ public class TokenController {
 		}
 
 		// 리프레시 토큰 검증
-		Long userId = jwtUtil.getUserId(refreshToken);
-		String role = jwtUtil.getRole(refreshToken);
+		Long userId;
+		String role;
+		try {
+			userId = jwtUtil.getUserId(refreshToken);
+			role = jwtUtil.getRole(refreshToken);
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired refresh token");
+		}
+
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
 		if (tokenService.validateToken(refreshToken, userId)) {
