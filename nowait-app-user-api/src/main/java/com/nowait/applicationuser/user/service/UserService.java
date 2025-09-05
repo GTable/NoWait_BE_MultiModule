@@ -2,14 +2,12 @@ package com.nowait.applicationuser.user.service;
 
 import java.time.LocalDateTime;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.security.jwt.JwtUtil;
 import com.nowait.applicationuser.token.dto.AuthenticationResponse;
+import com.nowait.applicationuser.token.dto.NewAccessTokenResponse;
 import com.nowait.applicationuser.token.service.TokenService;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -26,10 +24,10 @@ public class UserService {
 	private final JwtUtil jwtUtil;
 
 	@Transactional
-	public AuthenticationResponse putOptional(String refreshToken, String phoneNumber, boolean consent) {
+	public NewAccessTokenResponse putOptional(String phoneNumber, boolean consent, String accessToken) {
 
-		Long userId = jwtUtil.getUserId(refreshToken);;
-		String role = jwtUtil.getRole(refreshToken);
+		Long userId = jwtUtil.getUserId(accessToken);;
+		String role = jwtUtil.getRole(accessToken);
 		AuthenticationResponse authenticationResponse;
 
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
@@ -49,16 +47,9 @@ public class UserService {
 			Boolean.TRUE.equals(user.getIsMarketingAgree()),
 			60 * 60 * 1000L
 		);
-		String newRefreshToken = jwtUtil.createRefreshToken(
-			"refreshToken",
-			userId,
-			60 * 60 * 1000L
-		);
 
-		tokenService.updateRefreshToken(userId, refreshToken, newRefreshToken);
+		NewAccessTokenResponse newAccessTokenResponse = new NewAccessTokenResponse(newAccessToken);
 
-		authenticationResponse = new AuthenticationResponse(newAccessToken, newRefreshToken);
-
-		return authenticationResponse;
+		return newAccessTokenResponse;
 	}
 }
