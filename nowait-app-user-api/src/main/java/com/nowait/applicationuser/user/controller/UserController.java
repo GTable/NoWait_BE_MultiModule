@@ -29,7 +29,7 @@ public class UserController {
 		@Valid @RequestBody UserUpdateRequest req) {
 
 		String newAccessToken = userService.putOptional(customOAuth2User.getUserId(), req.phoneNumber(),
-			req.consent());
+			Boolean.TRUE.equals(req.consent()));
 
 		return ResponseEntity
 			.status(HttpStatus.OK)
