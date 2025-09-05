@@ -1,9 +1,15 @@
 package com.nowait.domaincorerdb.user.entity;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import org.springframework.cglib.core.Local;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.nowait.common.enums.Role;
 import com.nowait.common.enums.SocialType;
+import com.nowait.domaincorerdb.base.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,17 +23,22 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
 @Getter
-public class User {
+@SuperBuilder
+public class User extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) // 자동 생성
     private Long id;
 
     @Column(nullable = false, unique = true)
     private String email; // 카카오 이메일
+
+    @Column(nullable = true)
+    private String phoneNumber; // 사용자 전화번호
 
     @Column(nullable = false)
     private String password; // 관리자 패스워드
@@ -44,11 +55,22 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(nullable = false)
+    private Boolean isMarketingAgree = false;
+
+    @Column(nullable = false)
+    private Boolean phoneEntered = false;
+
     private Long storeId;
 
-    @Builder
-    public User(String email,String password, String nickname, String profileImage, SocialType socialType,
-        Role role, Long storeId) {
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+
+    public User(LocalDateTime createdAt, String email,String password, String nickname, String profileImage, SocialType socialType,
+        Role role, Long storeId, LocalDateTime updatedAt ) {
+        super(createdAt);
         this.email = email;
         this.password = password;
         this.nickname = nickname;
@@ -56,6 +78,7 @@ public class User {
         this.socialType = socialType;
         this.role = role;
         this.storeId = storeId;
+        this.updatedAt = updatedAt;
     }
 
     public static User createUserWithId(Long userId, String email, String nickname, String profileImage,
@@ -67,6 +90,8 @@ public class User {
             .socialType(socialType)
             .role(role)
             .storeId(storeId)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
             .build();
         user.id = userId;
 
@@ -77,7 +102,19 @@ public class User {
     public void updateNickname(String nickname){
         this.nickname = nickname;
     }
+
     public void encodePassword(PasswordEncoder passwordEncoder) {
         password = passwordEncoder.encode(password);
+    }
+
+    public void setPhoneNumberAndMarkEntered(String phoneNumber, LocalDateTime ts) {
+        this.phoneNumber = phoneNumber;
+        this.phoneEntered = true;
+        this.updatedAt = ts;
+    }
+
+    public void setIsMarketingAgree(boolean agree, LocalDateTime ts) {
+        this.isMarketingAgree = agree;
+        this.updatedAt = ts;
     }
 }
