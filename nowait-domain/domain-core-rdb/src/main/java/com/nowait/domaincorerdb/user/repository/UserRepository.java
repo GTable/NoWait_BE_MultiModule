@@ -11,5 +11,5 @@ import com.nowait.domaincorerdb.user.entity.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByNickname(String nickName);
-    boolean existsByPhoneNumber(String phoneNumber);
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
 }

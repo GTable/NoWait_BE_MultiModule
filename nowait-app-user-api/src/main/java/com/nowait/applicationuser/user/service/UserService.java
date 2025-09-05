@@ -25,8 +25,8 @@ public class UserService {
 		User user = userRepository.findById(userId)
 			.orElseThrow(UserNotFoundException::new);
 
-		if (userRepository.existsByPhoneNumber(phoneNumber)) {
-			throw new IllegalArgumentException("Phone number already in use");
+		if (userRepository.existsByPhoneNumberAndIdNot(phoneNumber, userId)) {
+			throw new IllegalArgumentException("이미 사용 중인 휴대폰 번호입니다.");
 		}
 
 		user.setPhoneNumberAndMarkEntered(phoneNumber, LocalDateTime.now());
