@@ -23,11 +23,14 @@ public class JwtUtil {
 		);
 	}
 
-	public String createAccessToken(String tokenCategory, Long userId, String role, Long expiredMs) {
+	public String createAccessToken(String tokenCategory, Long userId, String role, boolean phoneEntered,
+		boolean marketingAgree, Long expiredMs) {
 		return Jwts.builder()
 			.claim("tokenCategory", tokenCategory) // accessToken
 			.claim("userId", userId)
 			.claim("role", role)
+			.claim("phoneEntered", phoneEntered)
+			.claim("marketingAgree", marketingAgree)
 			.issuedAt(new Date(System.currentTimeMillis()))
 			.expiration(new Date(System.currentTimeMillis() + expiredMs))
 			.signWith(secretKey)
