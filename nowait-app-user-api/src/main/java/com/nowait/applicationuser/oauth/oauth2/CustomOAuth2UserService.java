@@ -1,5 +1,6 @@
 package com.nowait.applicationuser.oauth.oauth2;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -50,11 +51,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
 			User user = User.builder()
 				.email(oAuth2Response.getEmail())
+				.phoneNumber("")
 				.nickname(oAuth2Response.getNickName())
 				.profileImage(oAuth2Response.getProfileImage())
 				.socialType(SocialType.KAKAO)
 				.role(Role.USER) // 일반 유저 설정
 				.storeId(0L)
+				.phoneEntered(false)
+				.isMarketingAgree(false)
+				.createdAt(LocalDateTime.now())
+				.updatedAt(LocalDateTime.now())
 				.build();
 
 			userRepository.save(user);

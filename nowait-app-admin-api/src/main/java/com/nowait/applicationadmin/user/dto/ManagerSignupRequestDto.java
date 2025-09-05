@@ -1,5 +1,7 @@
 package com.nowait.applicationadmin.user.dto;
 
+import java.time.LocalDateTime;
+
 import com.nowait.common.enums.Role;
 import com.nowait.common.enums.SocialType;
 import com.nowait.domaincorerdb.user.entity.User;
@@ -7,7 +9,6 @@ import com.nowait.domaincorerdb.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -39,10 +40,13 @@ public class ManagerSignupRequestDto {
 	public User toEntity() {
 		return User.builder()
 			.email(email)
+			.phoneNumber("")
 			.password(password)
 			.nickname(nickname)
 			.socialType(SocialType.LOCAL)
 			.role(Role.MANAGER)
+			.createdAt(LocalDateTime.now())
+			.updatedAt(LocalDateTime.now())
 			.build();
 
 	}
