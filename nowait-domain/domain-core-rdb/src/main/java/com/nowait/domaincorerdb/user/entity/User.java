@@ -1,9 +1,7 @@
 package com.nowait.domaincorerdb.user.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.springframework.cglib.core.Local;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -20,7 +18,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
