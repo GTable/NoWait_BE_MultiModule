@@ -27,14 +27,14 @@ public class UserController {
 
 	@PutMapping("/optional-info")
 	public ResponseEntity<?> putOptional(
-		@CookieValue(value = "accessToken", required = false) String accessToken,
+		@CookieValue(value = "refreshToken", required = false) String refreshToken,
 		@Valid @RequestBody UserUpdateRequest req) {
 
-		if (accessToken == null) {
+		if (refreshToken == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("accessToken not found in cookies");
 		}
 
-		AuthenticationResponse authenticationResponse = userService.putOptional(accessToken, req.phoneNumber(),
+		AuthenticationResponse authenticationResponse = userService.putOptional(refreshToken, req.phoneNumber(),
 			Boolean.TRUE.equals(req.consent()));
 
 		return ResponseEntity

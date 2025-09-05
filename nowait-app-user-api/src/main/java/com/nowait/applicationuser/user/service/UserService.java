@@ -26,10 +26,10 @@ public class UserService {
 	private final JwtUtil jwtUtil;
 
 	@Transactional
-	public AuthenticationResponse putOptional(String accessToken, String phoneNumber, boolean consent) {
+	public AuthenticationResponse putOptional(String refreshToken, String phoneNumber, boolean consent) {
 
-		Long userId = jwtUtil.getUserId(accessToken);;
-		String role = jwtUtil.getRole(accessToken);
+		Long userId = jwtUtil.getUserId(refreshToken);;
+		String role = jwtUtil.getRole(refreshToken);
 		AuthenticationResponse authenticationResponse;
 
 		User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
@@ -55,7 +55,7 @@ public class UserService {
 			60 * 60 * 1000L
 		);
 
-		tokenService.updateRefreshToken(userId, accessToken, newRefreshToken);
+		tokenService.updateRefreshToken(userId, refreshToken, newRefreshToken);
 
 		authenticationResponse = new AuthenticationResponse(newAccessToken, newRefreshToken);
 
