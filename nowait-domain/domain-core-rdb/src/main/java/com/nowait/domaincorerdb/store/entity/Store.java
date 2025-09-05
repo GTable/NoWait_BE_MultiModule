@@ -40,13 +40,13 @@ public class Store extends BaseTimeEntity {
 	@Column(nullable = true, length = 200)
 	private String location;
 
-	@Column(nullable = true, length = 200)
+	@Column(nullable = true, length = 250)
 	private String description;
 
 	@Column(nullable = true, length = 200)
 	private String noticeTitle;
 
-	@Column(nullable = true, length = 200)
+	@Column(nullable = true, length = 500)
 	private String noticeContent;
 
 	@Column(nullable = true, length = 200)
