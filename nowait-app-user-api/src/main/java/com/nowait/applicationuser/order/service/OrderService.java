@@ -17,16 +17,19 @@ import com.nowait.applicationuser.order.dto.OrderCreateResponseDto;
 import com.nowait.applicationuser.order.dto.OrderMenuDto;
 import com.nowait.applicationuser.order.dto.OrderResponseDto;
 import com.nowait.domaincorerdb.menu.entity.Menu;
+import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.order.entity.OrderItem;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
+import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.order.repository.OrderItemRepository;
 import com.nowait.domaincorerdb.order.repository.OrderRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -49,7 +52,7 @@ public class OrderService {
 
 		// 1. Store 조회
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
-			.orElseThrow(() -> new IllegalArgumentException("store not found"));
+			.orElseThrow(StoreNotFoundException::new);
 
 		// 2. UserOrder 생성 및 signature 저장
 		UserOrder order = UserOrder.builder()
@@ -77,7 +80,7 @@ public class OrderService {
 		List<OrderItem> orderItems = orderCreateRequestDto.getItems().stream()
 			.map(item -> {
 				Menu menu = Optional.ofNullable(menuMap.get(item.getMenuId()))
-					.orElseThrow(() -> new IllegalArgumentException("menu not found: " + item.getMenuId()));
+					.orElseThrow(MenuNotFoundException::new);
 				return OrderItem.builder()
 					.userOrder(savedOrder)
 					.menu(menu)
@@ -127,7 +130,7 @@ public class OrderService {
 				throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getDepositorName().length() > 20) {
-				throw new IllegalArgumentException("Depositor name is too long");
+				throw new DepositorNameTooLongException();
 		}
 	}
 	private String generateOrderSignature(String storeId, Long tableId, List<CartItemDto> items) {
