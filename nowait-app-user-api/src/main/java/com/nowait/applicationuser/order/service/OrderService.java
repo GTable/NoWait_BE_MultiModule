@@ -41,6 +41,7 @@ public class OrderService {
 	private final StoreRepository storeRepository;
 	private final MenuRepository menuRepository;
 	private final OrderItemRepository orderItemRepository;
+
 	@Transactional
 	public OrderCreateResponseDto createOrder(String publicCode, Long tableId,
 		OrderCreateRequestDto orderCreateRequestDto, String sessionId) {
@@ -89,18 +90,18 @@ public class OrderService {
 			})
 			.collect(Collectors.toList());
 
-
 		orderItemRepository.saveAll(orderItems);
 
 		// 5. 응답 반환
-		return OrderCreateResponseDto.fromEntity(savedOrder,orderItems);
+		return OrderCreateResponseDto.fromEntity(savedOrder, orderItems);
 	}
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> getOrderItemsGroupByOrderId(
 		String publicCode, Long tableId, String sessionId) {
 
-		List<UserOrder> userOrders = orderRepository.findByStore_PublicCodeAndTableIdAndSessionId(publicCode, tableId, sessionId);
+		List<UserOrder> userOrders = orderRepository.findByStore_PublicCodeAndTableIdAndSessionId(publicCode, tableId,
+			sessionId);
 
 		// orderId 기준으로 바로 변환
 		return userOrders.stream()
@@ -118,21 +119,24 @@ public class OrderService {
 			.toList();
 	}
 
-
-	private static void parameterValidation(String publicCode, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {
+	private static void parameterValidation(String publicCode, Long tableId,
+		OrderCreateRequestDto orderCreateRequestDto) {
 		if (publicCode == null || tableId == null || orderCreateRequestDto == null) {
-				throw new OrderParameterEmptyException();
+			throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getItems() == null || orderCreateRequestDto.getItems().isEmpty()) {
-				throw new OrderItemsEmptyException();
+			throw new OrderItemsEmptyException();
 		}
-		if (orderCreateRequestDto.getDepositorName() == null || orderCreateRequestDto.getDepositorName().trim().isEmpty()) {
-				throw new OrderParameterEmptyException();
+		if (orderCreateRequestDto.getDepositorName() == null || orderCreateRequestDto.getDepositorName()
+			.trim()
+			.isEmpty()) {
+			throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getDepositorName().length() > 20) {
-				throw new DepositorNameTooLongException();
+			throw new DepositorNameTooLongException();
 		}
 	}
+
 	private String generateOrderSignature(String storeId, Long tableId, List<CartItemDto> items) {
 		String cartString = items.stream()
 			.sorted((a, b) -> a.getMenuId().compareTo(b.getMenuId())) // 메뉴 ID 기준 정렬
