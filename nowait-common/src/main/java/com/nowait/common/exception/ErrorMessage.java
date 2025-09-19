@@ -55,6 +55,11 @@ public enum ErrorMessage {
 	MENU_VIEW_UNAUTHORIZED("메뉴 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu004"),
 	MENU_UPDATE_UNAUTHORIZED("메뉴 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu005"),
 	MENU_DELETE_UNAUTHORIZED("메뉴 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu006"),
+	MENU_INVALID_SORT_ORDER("잘못된 정렬 순서가 포함되어 있습니다. 정렬 순서는 0 이상의 정수여야 합니다.", "menu007"),
+	MENU_DUPLICATE_ID("중복된 메뉴 ID가 포함되어 있습니다.", "menu008"),
+	MENU_CROSS_STORE_CONFLICT("서로 다른 매장의 메뉴가 포함되어 있습니다.", "menu009"),
+	MENU_ALREADY_DELETED("이미 삭제된 메뉴입니다.", "menu010"),
+	MENU_TOGGLE_UNAUTHORIZED("메뉴 품절 상태 변경 권한이 없습니다.", "menu011"),
 
 	// store
 	STORE_PARAMETER_EMPTY("주점 생성 시 파라미터 정보가 없습니다.", "store001"),

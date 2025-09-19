@@ -23,11 +23,16 @@ import com.nowait.applicationadmin.security.exception.UnauthorizedException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
 import com.nowait.discord.service.DiscordAlarmService;
+import com.nowait.domaincorerdb.menu.exception.MenuAlreadyDeletedException;
 import com.nowait.domaincorerdb.menu.exception.MenuCreationUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuCrossStoreConflictException;
 import com.nowait.domaincorerdb.menu.exception.MenuDeleteUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuDuplicateIdException;
 import com.nowait.domaincorerdb.menu.exception.MenuImageEmptyException;
+import com.nowait.domaincorerdb.menu.exception.MenuInvalidSortOrderException;
 import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.exception.MenuParamEmptyException;
+import com.nowait.domaincorerdb.menu.exception.MenuToggleUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuViewUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
@@ -331,6 +336,14 @@ public class GlobalExceptionHandler {
 	/**
 	 *  메뉴 관련 예외 처리
 	 */
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(MenuAlreadyDeletedException.class)
+	public ErrorResponse menuAlreadyDeletedException(MenuAlreadyDeletedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("menuAlreadyDeletedException", e);
+		return new ErrorResponse(e.getMessage(), MENU_ALREADY_DELETED.getCode());
+	}
+
 	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(MenuCreationUnauthorizedException.class)
 	public ErrorResponse menuCreationUnauthorizedException(MenuCreationUnauthorizedException e, WebRequest request) {
@@ -339,12 +352,28 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), MENU_CREATION_UNAUTHORIZED.getCode());
 	}
 
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(MenuCrossStoreConflictException.class)
+	public ErrorResponse menuCrossStoreConflictException(MenuCrossStoreConflictException e, WebRequest request) {
+		alarm(e, request);
+		log.error("menuCrossStoreConflictException", e);
+		return new ErrorResponse(e.getMessage(), MENU_CROSS_STORE_CONFLICT.getCode());
+	}
+
 	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(MenuDeleteUnauthorizedException.class)
 	public ErrorResponse menuDeleteUnauthorizedException(MenuDeleteUnauthorizedException e, WebRequest request) {
 		alarm(e, request);
 		log.error("menuDeleteUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), MENU_DELETE_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(MenuDuplicateIdException.class)
+	public ErrorResponse menuDuplicateIdException(MenuDuplicateIdException e, WebRequest request) {
+		alarm(e, request);
+		log.error("menuDuplicateIdException", e);
+		return new ErrorResponse(e.getMessage(), MENU_DUPLICATE_ID.getCode());
 	}
 
 	@ResponseStatus(BAD_REQUEST)
@@ -364,6 +393,14 @@ public class GlobalExceptionHandler {
 	}
 
 	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(MenuInvalidSortOrderException.class)
+	public ErrorResponse menuInvalidSortOrderException(MenuInvalidSortOrderException e, WebRequest request) {
+		alarm(e, request);
+		log.error("menuInvalidSortOrderException", e);
+		return new ErrorResponse(e.getMessage(), MENU_INVALID_SORT_ORDER.getCode());
+	}
+
+	@ResponseStatus(BAD_REQUEST)
 	@ExceptionHandler(MenuParamEmptyException.class)
 	public ErrorResponse menuParamEmptyException(MenuParamEmptyException e, WebRequest request) {
 		alarm(e, request);
@@ -377,6 +414,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("menuUpdateUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), MENU_UPDATE_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(FORBIDDEN)
+	@ExceptionHandler(MenuToggleUnauthorizedException.class)
+	public ErrorResponse menuToggleUnauthorizedException(MenuToggleUnauthorizedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("menuToggleUnauthorizedException", e);
+		return new ErrorResponse(e.getMessage(), MENU_TOGGLE_UNAUTHORIZED.getCode());
 	}
 
 	@ResponseStatus(FORBIDDEN)

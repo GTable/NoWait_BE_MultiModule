@@ -139,14 +139,14 @@ public class StoreServiceImpl implements StoreService {
 	private void validateViewAuthorization(User user, Long storeId) {
 		if (!(Role.SUPER_ADMIN.equals(user.getRole())
 			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
-			throw new OrderViewUnauthorizedException();
+			throw new StoreViewUnauthorizedException();
 		}
 	}
 
 	private void validateUpdateAuthorization(User user, Long storeId) {
 		if (!(Role.SUPER_ADMIN.equals(user.getRole())
 			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
-			throw new OrderUpdateUnauthorizedException();
+			throw new StoreUpdateUnauthorizedException();
 		}
 	}
 
