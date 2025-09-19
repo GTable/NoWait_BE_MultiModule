@@ -25,14 +25,12 @@ public class WaitingRedisRepository {
 		return waitingSet == null ? List.of() : new ArrayList<>(waitingSet);
 	}
 
-
 	public List<String> getAllWaitingUserIds(Long storeId) {
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 		// 0부터 -1까지: 전체 범위
 		Set<String> userIds = redisTemplate.opsForZSet().range(queueKey, 0, -1);
 		return userIds == null ? List.of() : new ArrayList<>(userIds);
 	}
-
 
 	// 상태값 저장 및 변경
 	public void setWaitingStatus(Long storeId, String userId, String status) {
@@ -54,7 +52,7 @@ public class WaitingRedisRepository {
 		return value == null ? null : Integer.valueOf(value.toString());
 	}
 
-	// ReservationNumber 조회
+	// userId → reservationNumber 조회
 	public String getReservationId(Long storeId, String userId) {
 		String status = getWaitingStatus(storeId, userId);
 		if (!"WAITING".equals(status) && !"CALLING".equals(status)) {
@@ -67,7 +65,27 @@ public class WaitingRedisRepository {
 		return val != null ? val.toString() : null;
 	}
 
+	// reservationNumber → userId 조회
+	public String getUserIdByReservationNumber(Long storeId, String reservationNumber) {
+		String userMapKey = RedisKeyUtils.buildReservationUserKey(storeId);
+		Object val = redisTemplate.opsForHash().get(userMapKey, reservationNumber);
+		return val == null ? null : val.toString();
+	}
+
 	public void deleteWaiting(Long storeId, String userId) {
+		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
+		String userMapKey   = RedisKeyUtils.buildReservationUserKey(storeId);
+
+		Object reservationNumber = redisTemplate.opsForHash().get(numberMapKey, userId);
+
+		// userId → reservationNumber 삭제
+		redisTemplate.opsForHash().delete(numberMapKey, userId);
+
+		// reservationNumber → userId 삭제
+		if (reservationNumber != null) {
+			redisTemplate.opsForHash().delete(userMapKey, reservationNumber);
+		}
+
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		redisTemplate.opsForHash().delete(statusKey, userId);
 
@@ -77,11 +95,8 @@ public class WaitingRedisRepository {
 		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
 		redisTemplate.opsForHash().delete(partyKey, userId);
 
-		String numberMapKey  = RedisKeyUtils.buildReservationNumberKey(storeId);
-		redisTemplate.opsForHash().delete(numberMapKey, userId);
-
-		String key = RedisKeyUtils.buildWaitingCalledAtKeyPrefix() + storeId;
-		redisTemplate.opsForHash().delete(key, userId);
+		String calledAtKey = RedisKeyUtils.buildWaitingCalledAtKeyPrefix() + storeId;
+		redisTemplate.opsForHash().delete(calledAtKey, userId);
 	}
 
 	// 호출 시각 기록
