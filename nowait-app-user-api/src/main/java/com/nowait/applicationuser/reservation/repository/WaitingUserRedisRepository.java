@@ -37,6 +37,7 @@ public class WaitingUserRedisRepository {
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		String seqKey = RedisKeyUtils.buildReservationSeqKey(storeId);
 		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
+		String userMapKey = RedisKeyUtils.buildReservationUserKey(storeId);
 
 		Boolean added = redisTemplate.opsForZSet().addIfAbsent(queueKey, userId, timestamp);
 		String reservationId;
@@ -47,7 +48,7 @@ public class WaitingUserRedisRepository {
 
 			// 5) Hash에 저장
 			redisTemplate.opsForHash().put(numberMapKey, userId, reservationId);
-
+			redisTemplate.opsForHash().put(userMapKey, reservationId, userId);
 			// 6) 기존 partySize, status, TTL 설정
 			redisTemplate.opsForHash().put(partyKey, userId, partySize.toString());
 			redisTemplate.opsForHash().put(statusKey, userId, "WAITING");

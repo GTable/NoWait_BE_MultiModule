@@ -3,6 +3,9 @@ package com.nowait.domaincorerdb.reservation.entity;
 import java.time.LocalDateTime;
 
 import com.nowait.common.enums.ReservationStatus;
+import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationAlreadyCancelledException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationAlreadyConfirmedException;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.user.entity.User;
 
@@ -59,8 +62,31 @@ public class Reservation {
 	@Column(name = "party_size", nullable = false)
 	private Integer partySize;
 
-	public void markUpdated(LocalDateTime ts, ReservationStatus status) {
-		this.status = status;
-		this.updatedAt = ts;
+	public void markUpdated(LocalDateTime updatedAt, ReservationStatus newStatus) {
+		if (this.status == newStatus) {
+			switch (newStatus) {
+				case CONFIRMED -> throw new ReservationAlreadyConfirmedException();
+				case CANCELLED -> throw new ReservationAlreadyCancelledException();
+				default -> {}
+			}
+		}
+
+		if (!isValidTransition(this.status, newStatus)) {
+			throw new InvalidReservationStatusTransitionException(this.status, newStatus);
+		}
+		this.status = newStatus;
+		this.updatedAt = updatedAt;
+	}
+
+	private boolean isValidTransition(ReservationStatus current, ReservationStatus target) {
+		return switch (current) {
+			case WAITING -> target == ReservationStatus.CALLING
+							|| target == ReservationStatus.CONFIRMED
+							|| target == ReservationStatus.CANCELLED;
+			case CALLING -> target == ReservationStatus.CONFIRMED
+							|| target == ReservationStatus.CANCELLED;
+			case CONFIRMED -> target == ReservationStatus.CANCELLED;
+			case CANCELLED -> false;
+		};
 	}
 }

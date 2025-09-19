@@ -46,11 +46,10 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> findAllOrders(Long storeId, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		storeRepository.findByStoreIdAndDeletedFalse(storeId).orElseThrow(StoreNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new OrderViewUnauthorizedException();
-		}
+
+		validateViewAuthorization(user, storeId);
 
 		LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 		LocalDateTime startDateTime = today.atStartOfDay();
@@ -64,11 +63,12 @@ public class OrderService {
 	@Transactional
 	public OrderStatusUpdateResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus,
 		MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(userOrder.getStore().getStoreId())) {
-			throw new OrderUpdateUnauthorizedException();
-		}
+		Long storeId = userOrder.getStore().getStoreId();
+
+		validateUpdateAuthorization(user, storeId);
+
 		userOrder.updateStatus(newStatus);
 
 		if (OrderStatus.COOKED.equals(newStatus)) {
@@ -92,12 +92,10 @@ public class OrderService {
 
 	@Transactional
 	public OrderStatusUpdateResponseDto cancelOrder(Long orderId, CancelOrderRequest cancelOrderRequest, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
 
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(userOrder.getStore().getStoreId())) {
-			throw new OrderUpdateUnauthorizedException();
-		}
+		validateUpdateAuthorization(user, userOrder.getStore().getStoreId());
 
 		userOrder.cancelOrder();
 
@@ -115,25 +113,43 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public OrderSalesSumDetail getSaleSumByStoreId(MemberDetails memberDetails, LocalDate date) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		Long storeId = user.getStoreId();
 
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new OrderViewUnauthorizedException();
-		}
+		validateViewAuthorization(user, storeId);
 
 		return statisticCustomRepository.findSalesSumByStoreId(storeId, date);
 	}
 
+	// 현재는 사용하지 않음. 향후 관리자 통계 페이지 확장 시 활용 가능
 	@Transactional(readOnly = true)
 	public List<TopSalesStoresDetail> getTop5StoresBySalesToday(MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		Long storeId = user.getStoreId();
 
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new OrderViewUnauthorizedException();
-		}
+		validateUpdateAuthorization(user, storeId);
 
 		return statisticCustomRepository.getTop4PlusMine(storeId);
+	}
+
+	private void validateViewAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new OrderViewUnauthorizedException();
+		}
+	}
+
+	private void validateUpdateAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new OrderUpdateUnauthorizedException();
+		}
+	}
+
+	private User getUser(MemberDetails memberDetails) {
+		if (memberDetails == null) {
+			throw new OrderViewUnauthorizedException();
+		}
+		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 	}
 }

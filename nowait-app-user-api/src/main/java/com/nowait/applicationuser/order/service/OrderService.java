@@ -17,16 +17,19 @@ import com.nowait.applicationuser.order.dto.OrderCreateResponseDto;
 import com.nowait.applicationuser.order.dto.OrderMenuDto;
 import com.nowait.applicationuser.order.dto.OrderResponseDto;
 import com.nowait.domaincorerdb.menu.entity.Menu;
+import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.order.entity.OrderItem;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
 import com.nowait.domaincorerdb.order.entity.UserOrder;
+import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.order.repository.OrderItemRepository;
 import com.nowait.domaincorerdb.order.repository.OrderRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
+import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,7 @@ public class OrderService {
 	private final StoreRepository storeRepository;
 	private final MenuRepository menuRepository;
 	private final OrderItemRepository orderItemRepository;
+
 	@Transactional
 	public OrderCreateResponseDto createOrder(String publicCode, Long tableId,
 		OrderCreateRequestDto orderCreateRequestDto, String sessionId) {
@@ -49,7 +53,7 @@ public class OrderService {
 
 		// 1. Store 조회
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
-			.orElseThrow(() -> new IllegalArgumentException("store not found"));
+			.orElseThrow(StoreNotFoundException::new);
 
 		// 2. UserOrder 생성 및 signature 저장
 		UserOrder order = UserOrder.builder()
@@ -77,7 +81,7 @@ public class OrderService {
 		List<OrderItem> orderItems = orderCreateRequestDto.getItems().stream()
 			.map(item -> {
 				Menu menu = Optional.ofNullable(menuMap.get(item.getMenuId()))
-					.orElseThrow(() -> new IllegalArgumentException("menu not found: " + item.getMenuId()));
+					.orElseThrow(MenuNotFoundException::new);
 				return OrderItem.builder()
 					.userOrder(savedOrder)
 					.menu(menu)
@@ -86,18 +90,18 @@ public class OrderService {
 			})
 			.collect(Collectors.toList());
 
-
 		orderItemRepository.saveAll(orderItems);
 
 		// 5. 응답 반환
-		return OrderCreateResponseDto.fromEntity(savedOrder,orderItems);
+		return OrderCreateResponseDto.fromEntity(savedOrder, orderItems);
 	}
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> getOrderItemsGroupByOrderId(
 		String publicCode, Long tableId, String sessionId) {
 
-		List<UserOrder> userOrders = orderRepository.findByStore_PublicCodeAndTableIdAndSessionId(publicCode, tableId, sessionId);
+		List<UserOrder> userOrders = orderRepository.findByStore_PublicCodeAndTableIdAndSessionId(publicCode, tableId,
+			sessionId);
 
 		// orderId 기준으로 바로 변환
 		return userOrders.stream()
@@ -115,21 +119,24 @@ public class OrderService {
 			.toList();
 	}
 
-
-	private static void parameterValidation(String publicCode, Long tableId, OrderCreateRequestDto orderCreateRequestDto) {
+	private static void parameterValidation(String publicCode, Long tableId,
+		OrderCreateRequestDto orderCreateRequestDto) {
 		if (publicCode == null || tableId == null || orderCreateRequestDto == null) {
-				throw new OrderParameterEmptyException();
+			throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getItems() == null || orderCreateRequestDto.getItems().isEmpty()) {
-				throw new OrderItemsEmptyException();
+			throw new OrderItemsEmptyException();
 		}
-		if (orderCreateRequestDto.getDepositorName() == null || orderCreateRequestDto.getDepositorName().trim().isEmpty()) {
-				throw new OrderParameterEmptyException();
+		if (orderCreateRequestDto.getDepositorName() == null || orderCreateRequestDto.getDepositorName()
+			.trim()
+			.isEmpty()) {
+			throw new OrderParameterEmptyException();
 		}
 		if (orderCreateRequestDto.getDepositorName().length() > 20) {
-				throw new IllegalArgumentException("Depositor name is too long");
+			throw new DepositorNameTooLongException();
 		}
 	}
+
 	private String generateOrderSignature(String storeId, Long tableId, List<CartItemDto> items) {
 		String cartString = items.stream()
 			.sorted((a, b) -> a.getMenuId().compareTo(b.getMenuId())) // 메뉴 ID 기준 정렬

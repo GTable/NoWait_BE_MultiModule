@@ -12,7 +12,7 @@ public enum ErrorMessage {
 	DOES_NOT_MATCH_REFRESH_TOKEN("기존 리프레시 토큰이 일치하지 않습니다.", "token002"),
 
 	// user
-	NOTFOUND_USER("저장된 사용자 정보가 없습니다.", "user001"),
+	NOT_FOUND_USER("저장된 사용자 정보가 없습니다.", "user001"),
 
 	//order
 	ORDER_PARAMETER_EMPTY("주문 생성 시 파라미터 정보가 없습니다.", "order001"),
@@ -22,6 +22,8 @@ public enum ErrorMessage {
 	ORDER_VIEW_UNAUTHORIZED("주문 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "order005"),
 	ORDER_NOT_FOUND("해당 주문을 찾을 수 없습니다.", "order006"),
 	ORDER_UPDATE_UNAUTHORIZED("주문 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "order007"),
+	ORDER_ALREADY_CANCELLED("이미 취소된 주문입니다.", "order008"),
+	INVALID_ORDER_STATUS_TRANSITION("유효하지 않은 주문 상태 변경입니다. (현재: %s, 요청: %s)", "order009"),
 
 	//reservation
 	NOTFOUND_RESERVATION("저장된 예약 정보가 없습니다.", "reservation001"),
@@ -31,13 +33,20 @@ public enum ErrorMessage {
 	USER_WAITING_LIMIT_EXCEEDED("유저당 웨이팅 가능 개수(3개)를 초과했습니다.", "reservation005"),
 	RESERVATION_NUMBER_ISSUE_FAIL("예약 번호 발급에 실패했습니다.", "reservation006"),
 	RESERVATION_ADD_UNAUTHORIZED("MANAGER는 예약 대기를 할 수 없습니다.", "reservation007"),
+	INVALID_RESERVATION_STATUS_TRANSITION("유효하지 않은 예약 상태 변경입니다. (현재: %s, 요청: %s)", "reservation008"),
+	RESERVATION_ALREADY_CONFIRMED("이미 확정된 예약입니다.", "reservation009"),
+	RESERVATION_ALREADY_CANCELLED("이미 취소된 예약입니다.", "reservation010"),
+	UNSUPPORTED_RESERVATION_STATUS("지원하지 않는 예약 상태입니다: %s", "reservation011"),
+	INVALID_RESERVATION_PARAMETER("잘못된 예약 요청 파라미터입니다. (%s)", "reservation012"),
+
+	// redis
+	RESERVATION_DATA_INCONSISTENCY("예약 데이터가 Redis와 DB 간 일치하지 않습니다. (%s)", "redis001"),
 
 	// bookmark
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
 	NOT_OWN_BOOKMARK("해당 주점은 다른 사용자가 북마크한 주점입니다.", "bookmark002"),
 	NOT_FOUND_BOOKMARK("북마크를 찾을 수 없습니다", "bookmark003"),
 	ALREADY_DELETED_BOOKMARK("이미 삭제된 북마크입니다.", "bookmark004"),
-
 
 	// menu
 	MENU_PARAMETER_EMPTY("메뉴 생성 시 파라미터 정보가 없습니다.", "menu001"),
@@ -46,6 +55,11 @@ public enum ErrorMessage {
 	MENU_VIEW_UNAUTHORIZED("메뉴 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu004"),
 	MENU_UPDATE_UNAUTHORIZED("메뉴 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu005"),
 	MENU_DELETE_UNAUTHORIZED("메뉴 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "menu006"),
+	MENU_INVALID_SORT_ORDER("잘못된 정렬 순서가 포함되어 있습니다. 정렬 순서는 0 이상의 정수여야 합니다.", "menu007"),
+	MENU_DUPLICATE_ID("중복된 메뉴 ID가 포함되어 있습니다.", "menu008"),
+	MENU_CROSS_STORE_CONFLICT("서로 다른 매장의 메뉴가 포함되어 있습니다.", "menu009"),
+	MENU_ALREADY_DELETED("이미 삭제된 메뉴입니다.", "menu010"),
+	MENU_TOGGLE_UNAUTHORIZED("메뉴 품절 상태 변경 권한이 없습니다.", "menu011"),
 
 	// store
 	STORE_PARAMETER_EMPTY("주점 생성 시 파라미터 정보가 없습니다.", "store001"),
@@ -60,20 +74,23 @@ public enum ErrorMessage {
 	STORE_PAYMENT_NOT_FOUND("해당 주점 결제 정보를 찾을 수 없습니다.", "storePayment002"),
 	STORE_PAYMENT_VIEW_UNAUTHORIZED("주점 결제 정보 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment003"),
 	STORE_PAYMENT_CREATION_UNAUTHORIZED("주점 결제 정보 생성 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment004"),
-	STORE_PAYMENT_UPDATE_UNAUTHORIZED("주점 결제 정보 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment004"),
-	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment005"),
-	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment006"),
+	STORE_PAYMENT_UPDATE_UNAUTHORIZED("주점 결제 정보 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment005"),
+	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment006"),
+	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment007"),
 
 	// Statistics
 	STATISTIC_VIEW_UNAUTHORIZED("통계 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "statistics001"),
 	MENU_COUNTER_UPDATE("메뉴 카운터 업데이트 실패", "statistics002"),
 
 	// image
-	IMAGE_FILE_EMPTY("이미지 파일을 업로드 해주세요", "image001"),
-	IMAGE_FILE_NOT_FOUND("이미지 파일을 업로드 해주세요", "image001"),
+	IMAGE_FILE_EMPTY("업로드 된 이미지 파일이 없습니다.", "image001"),
+	IMAGE_FILE_NOT_FOUND("DB에 해당 이미지 메타데이터가 존재하지 않습니다.", "image002"),
 
 	// search
-	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001");
+	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001"),
+
+	// common
+	UNEXPECTED_ERROR("예상하지 못한 오류가 발생했습니다.", "common999");
 
 	private final String message;
 	private final String code;
@@ -89,5 +106,9 @@ public enum ErrorMessage {
 
 	public String getCode() {
 		return code;
+	}
+
+	public String format(Object... args) {
+		return String.format(message, args);
 	}
 }

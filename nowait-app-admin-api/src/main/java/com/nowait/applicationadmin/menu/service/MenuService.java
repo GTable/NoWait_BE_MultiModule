@@ -17,13 +17,18 @@ import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.menu.entity.Menu;
 import com.nowait.domaincorerdb.menu.entity.MenuImage;
 import com.nowait.domaincorerdb.menu.exception.MenuCreationUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuCrossStoreConflictException;
 import com.nowait.domaincorerdb.menu.exception.MenuDeleteUnauthorizedException;
+import com.nowait.domaincorerdb.menu.exception.MenuDuplicateIdException;
+import com.nowait.domaincorerdb.menu.exception.MenuInvalidSortOrderException;
 import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.exception.MenuParamEmptyException;
 import com.nowait.domaincorerdb.menu.exception.MenuUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuViewUnauthorizedException;
 import com.nowait.domaincorerdb.menu.repository.MenuImageRepository;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
+import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
@@ -42,12 +47,10 @@ public class MenuService {
 	@Transactional
 	public MenuCreateResponse createMenu(MenuCreateRequest request, MemberDetails memberDetails) {
 		// 사용자 정보 가져오기
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-
+		User user = getUser(memberDetails);
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(request.getStoreId())) {
-			throw new MenuCreationUnauthorizedException();
-		}
+		validateViewAuthorization(user, request.getStoreId());
+
 		// 메뉴 생성 로직
 		Menu toSave = request.toEntity();
 		Menu saved = menuRepository.save(toSave);
@@ -58,10 +61,10 @@ public class MenuService {
 	@Transactional(readOnly = true)
 	public MenuReadResponse getAllMenusByStoreId(Long storeId, MemberDetails memberDetails) {
 		// 사용자 정보 가져오기
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-
+		User user = getUser(memberDetails);
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
-		validateMenuViewAuthorization(user, storeId);
+		validateViewAuthorization(user, storeId);
+
 		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
 
 		List<MenuReadDto> menuReadResponse = menus.stream()
@@ -83,11 +86,10 @@ public class MenuService {
 			throw new MenuParamEmptyException();
 		}
 		// 사용자 정보 가져오기
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(storeId, menuId)
-			.orElseThrow(MenuNotFoundException::new);
+		User user = getUser(memberDetails);
+		Menu menu = getMenu(menuId);
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
-		validateMenuViewAuthorization(user, menu.getStoreId());
+		validateViewAuthorization(user, menu.getStoreId());
 
 		List<MenuImage> images = menuImageRepository.findByMenu(menu);
 		List<MenuImageUploadResponse> imageDto = images.stream()
@@ -100,13 +102,10 @@ public class MenuService {
 
 	@Transactional
 	public MenuReadDto updateMenu(Long menuId, MenuUpdateRequest request, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		Menu menu = menuRepository.findByIdAndDeletedFalse(menuId)
-			.orElseThrow(MenuNotFoundException::new);
+		User user = getUser(memberDetails);
+		Menu menu = getMenu(menuId);
 
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(menu.getStoreId())) {
-			throw new MenuUpdateUnauthorizedException();
-		}
+		validateUpdateAuthorization(user, menu.getStoreId());
 
 		menu.updateInfo(
 			request.getAdminDisplayName(),
@@ -138,11 +137,11 @@ public class MenuService {
 		}
 
 		if (requests.stream().map(MenuSortUpdateRequest::getMenuId).distinct().count() != requests.size()) {
-			throw new IllegalArgumentException("중복된 메뉴 ID가 포함되어 있습니다.");
+			throw new MenuDuplicateIdException();
 		}
 
 		if (requests.stream().anyMatch(r -> r.getSortOrder() == null || r.getSortOrder() < 0)) {
-			throw new IllegalArgumentException("잘못된 정렬 순서가 포함되어 있습니다. 정렬 순서는 0 이상의 정수여야 합니다.");
+			throw new MenuInvalidSortOrderException();
 		}
 
 		List<Long> ids = requests.stream().map(MenuSortUpdateRequest::getMenuId).toList();
@@ -153,7 +152,7 @@ public class MenuService {
 
 		Long storeId = menus.get(0).getStoreId();
 		if (!menus.stream().allMatch(m -> storeId.equals(m.getStoreId()))) {
-			throw new IllegalArgumentException("다른 매장의 메뉴가 있습니다.");
+			throw new MenuCrossStoreConflictException();
 		}
 
 		Map<Long, Long> idToSort = requests.stream()
@@ -169,12 +168,10 @@ public class MenuService {
 
 	@Transactional
 	public String deleteMenu(Long menuId, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		Menu menu = menuRepository.findById(menuId).orElseThrow(MenuNotFoundException::new);
+		User user = getUser(memberDetails);
+		Menu menu = getMenu(menuId);
 
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(menu.getStoreId())) {
-			throw new MenuDeleteUnauthorizedException();
-		}
+		validateDeleteAuthorization(user, menu.getStoreId());
 		menu.markAsDeleted();
 		menuRepository.save(menu);
 
@@ -191,10 +188,34 @@ public class MenuService {
 		return menu.getIsSoldOut();
 	}
 
-	private static void validateMenuViewAuthorization(User user, Long storeId) {
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
+
+	private void validateViewAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
 			throw new MenuViewUnauthorizedException();
 		}
 	}
 
+	private void validateUpdateAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new MenuUpdateUnauthorizedException();
+		}
+	}
+
+	private void validateDeleteAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new MenuDeleteUnauthorizedException();
+		}
+	}
+
+	private User getUser(MemberDetails memberDetails) {
+		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	}
+
+	private Menu getMenu(Long menuId) {
+		return menuRepository.findByIdAndDeletedFalse(menuId)
+			.orElseThrow(MenuNotFoundException::new);
+	}
 }
