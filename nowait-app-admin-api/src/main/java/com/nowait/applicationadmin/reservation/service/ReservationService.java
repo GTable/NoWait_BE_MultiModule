@@ -26,6 +26,8 @@ import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateReques
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
+import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
@@ -56,10 +58,8 @@ public class ReservationService {
 	//TODO 성능 비교를 위해 남겨둔 로직
 	@Transactional(readOnly = true)
 	public ReservationStatusSummaryDto getReservationListByStoreId(Long storeId, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new ReservationViewUnauthorizedException();
-		}
+		User user = getUser(memberDetails);
+		validateViewAuthorization(user, storeId);
 		List<Reservation> reservations = reservationRepository.findAllByStore_StoreIdOrderByRequestedAtAsc(storeId);
 
 		// 상태별 카운트 집계
@@ -93,13 +93,11 @@ public class ReservationService {
 	@Transactional
 	public CallGetResponseDto updateReservationStatus(Long reservationId, ReservationStatusUpdateRequestDto requestDto,
 		MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		Reservation reservation = reservationRepository.findById(reservationId)
 			.orElseThrow(ReservationNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId()
-			.equals(reservation.getStore().getStoreId())) {
-			throw new ReservationUpdateUnauthorizedException();
-		}
+		validateUpdateAuthorization(user, reservation.getStore().getStoreId());
+
 		reservation.markUpdated(LocalDateTime.now(), requestDto.getStatus());
 		return CallGetResponseDto.fromEntity(reservation);
 	}
@@ -194,7 +192,8 @@ public class ReservationService {
 	// 완료 or 취소 처리된 대기 리스트 조회
 	@Transactional(readOnly = true)
 	public List<WaitingUserResponse> getCompletedWaitingUserDetails(Long storeId, MemberDetails memberDetails) {
-		authorize(storeId, memberDetails);
+		User user = getUser(memberDetails);
+		validateViewAuthorization(user, storeId);
 		List<Reservation> reservations = findTodayWaiting(storeId);
 
 		return reservations.stream()
@@ -212,7 +211,8 @@ public class ReservationService {
 	public EntryStatusResponseDto processEntryStatus(Long storeId, String userId, MemberDetails member,
 		ReservationStatus newStatus) {
 
-		authorize(storeId, member);
+		User user = getUser(member);
+		validateUpdateAuthorization(user, storeId);
 
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 
@@ -350,13 +350,22 @@ public class ReservationService {
 	}
 
 	// 사용자 인증
-	private User authorize(Long storeId, MemberDetails member) {
-		User u = userRepository.findById(member.getId())
-			.orElseThrow(UserNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(u.getRole()) && !storeId.equals(u.getStoreId())) {
+	private void validateViewAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
 			throw new ReservationViewUnauthorizedException();
 		}
-		return u;
+	}
+
+	private void validateUpdateAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new ReservationUpdateUnauthorizedException();
+		}
+	}
+
+	private User getUser(MemberDetails memberDetails) {
+		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 	}
 }
 
