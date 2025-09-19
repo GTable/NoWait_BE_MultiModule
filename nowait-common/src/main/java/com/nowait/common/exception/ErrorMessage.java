@@ -12,7 +12,7 @@ public enum ErrorMessage {
 	DOES_NOT_MATCH_REFRESH_TOKEN("기존 리프레시 토큰이 일치하지 않습니다.", "token002"),
 
 	// user
-	NOTFOUND_USER("저장된 사용자 정보가 없습니다.", "user001"),
+	NOT_FOUND_USER("저장된 사용자 정보가 없습니다.", "user001"),
 
 	//order
 	ORDER_PARAMETER_EMPTY("주문 생성 시 파라미터 정보가 없습니다.", "order001"),
@@ -22,6 +22,8 @@ public enum ErrorMessage {
 	ORDER_VIEW_UNAUTHORIZED("주문 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "order005"),
 	ORDER_NOT_FOUND("해당 주문을 찾을 수 없습니다.", "order006"),
 	ORDER_UPDATE_UNAUTHORIZED("주문 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "order007"),
+	ORDER_ALREADY_CANCELLED("이미 취소된 주문입니다.", "order008"),
+	INVALID_ORDER_STATUS_TRANSITION("유효하지 않은 주문 상태 변경입니다. (현재: %s, 요청: %s)", "order009"),
 
 	//reservation
 	NOTFOUND_RESERVATION("저장된 예약 정보가 없습니다.", "reservation001"),
@@ -59,9 +61,9 @@ public enum ErrorMessage {
 	STORE_PAYMENT_NOT_FOUND("해당 주점 결제 정보를 찾을 수 없습니다.", "storePayment002"),
 	STORE_PAYMENT_VIEW_UNAUTHORIZED("주점 결제 정보 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment003"),
 	STORE_PAYMENT_CREATION_UNAUTHORIZED("주점 결제 정보 생성 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment004"),
-	STORE_PAYMENT_UPDATE_UNAUTHORIZED("주점 결제 정보 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment004"),
-	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment005"),
-	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment006"),
+	STORE_PAYMENT_UPDATE_UNAUTHORIZED("주점 결제 정보 수정 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment005"),
+	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment006"),
+	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment007"),
 
 	// Statistics
 	STATISTIC_VIEW_UNAUTHORIZED("통계 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "statistics001"),
@@ -69,7 +71,7 @@ public enum ErrorMessage {
 
 	// image
 	IMAGE_FILE_EMPTY("업로드 된 이미지 파일이 없습니다.", "image001"),
-	IMAGE_FILE_NOT_FOUND("DB에 해당 이미지 메타데이터가 존재하지 않습니다.", "image001"),
+	IMAGE_FILE_NOT_FOUND("DB에 해당 이미지 메타데이터가 존재하지 않습니다.", "image002"),
 
 	// search
 	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001");
@@ -88,5 +90,9 @@ public enum ErrorMessage {
 
 	public String getCode() {
 		return code;
+	}
+
+	public String format(Object... args) {
+		return String.format(message, args);
 	}
 }
