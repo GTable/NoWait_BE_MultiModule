@@ -26,12 +26,14 @@ import com.nowait.applicationadmin.reservation.dto.ReservationStatusUpdateReques
 import com.nowait.applicationadmin.reservation.dto.WaitingUserResponse;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
-import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
-import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
+import com.nowait.domaincorerdb.reservation.exception.InvalidReservationParameterException;
+import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationDataInconsistencyException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.UnsupportedReservationStatusException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
@@ -214,6 +216,10 @@ public class ReservationService {
 		User user = getUser(member);
 		validateUpdateAuthorization(user, storeId);
 
+		if (userId == null || userId.isBlank()) {
+			throw new InvalidReservationParameterException("userId 값이 비어있습니다.");
+		}
+
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 
 		// Redis에서 상태·score·partySize·calledAt 조회
@@ -221,6 +227,17 @@ public class ReservationService {
 		String currStatus = waitingRedisRepository.getWaitingStatus(storeId, userId);
 		Double score = redisTemplate.opsForZSet().score(queueKey, userId);
 		Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
+
+		if (partySize == null || partySize <= 0) {
+			throw new InvalidReservationParameterException("partySize가 유효하지 않습니다. (storeId=" + storeId + ", userId=" + userId + ")");
+		}
+
+		if (reservationNumber == null || currStatus == null) {
+			throw new ReservationDataInconsistencyException(
+				String.format("storeId=%d, userId=%s, reservationNumber=%s, status=%s, partySize=%s",
+					storeId, userId, reservationNumber, currStatus, partySize)
+			);
+		}
 
 		LocalDateTime requestedAt = score != null
 			? Instant.ofEpochMilli(score.longValue()).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
@@ -230,7 +247,9 @@ public class ReservationService {
 		switch (newStatus) {
 			case CALLING:
 				if (!ReservationStatus.WAITING.name().equals(currStatus)) {
-					throw new IllegalStateException("WAITING 상태에서만 CALLING 가능합니다.");
+					throw new InvalidReservationStatusTransitionException(
+						ReservationStatus.valueOf(currStatus), ReservationStatus.CALLING
+					);
 				}
 				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
 				waitingRedisRepository.setWaitingCalledAt(storeId, userId,
@@ -294,7 +313,9 @@ public class ReservationService {
 							List.of(ReservationStatus.CANCELLED),
 							start,
 							end
-						).orElseThrow(() -> new IllegalStateException("취소된 예약이 없습니다."));
+						).orElseThrow(() -> new ReservationDataInconsistencyException(
+							String.format("취소된 예약이 DB에 존재하지 않습니다. (storeId=%d, userId=%s)", storeId, userId)
+						));
 
 					existing.markUpdated(LocalDateTime.now(ZoneId.of("Asia/Seoul")), ReservationStatus.CONFIRMED);
 					Reservation saved = reservationRepository.save(existing);
@@ -304,7 +325,9 @@ public class ReservationService {
 			case CANCELLED:
 				if (!(ReservationStatus.WAITING.name().equals(currStatus)
 					  || ReservationStatus.CALLING.name().equals(currStatus))) {
-					throw new IllegalStateException("WAITING/CALLING 상태에서만 취소 가능합니다.");
+					throw new InvalidReservationStatusTransitionException(
+						ReservationStatus.valueOf(currStatus), ReservationStatus.CANCELLED
+					);
 				}
 
 				if (reservationNumber != null) {
@@ -329,7 +352,7 @@ public class ReservationService {
 				return EntryStatusResponseDto.fromEntity(saved);
 
 			default:
-				throw new IllegalArgumentException("지원하지 않는 상태: " + newStatus);
+				throw new UnsupportedReservationStatusException(newStatus);
 		}
 	}
 
