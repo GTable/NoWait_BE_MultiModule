@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.nowait.domaincorerdb.base.entity.BaseTimeEntity;
+import com.nowait.domaincorerdb.order.exception.InvalidOrderStatusTransitionException;
+import com.nowait.domaincorerdb.order.exception.OrderAlreadyCancelledException;
 import com.nowait.domaincorerdb.store.entity.Store;
 
 import jakarta.persistence.CascadeType;
@@ -62,14 +64,25 @@ public class UserOrder extends BaseTimeEntity {
 	private Integer totalPrice;
 
 	public void updateStatus(OrderStatus newStatus) {
+		if (!isValidTransition(this.status, newStatus)) {
+			throw new InvalidOrderStatusTransitionException(this.status, newStatus);
+		}
 		this.status = newStatus;
 	}
 
 	public void cancelOrder() {
 		if (this.status == OrderStatus.CANCELLED) {
-			return;
+			throw new OrderAlreadyCancelledException();
 		}
 		this.status = OrderStatus.CANCELLED;
+	}
+
+	private boolean isValidTransition(OrderStatus current, OrderStatus target) {
+		return switch (current) {
+			case WAITING_FOR_PAYMENT, COOKED -> target == OrderStatus.COOKING || target == OrderStatus.CANCELLED;
+			case COOKING -> target == OrderStatus.COOKED || target == OrderStatus.CANCELLED;
+			case CANCELLED -> false;
+		};
 	}
 
 }
