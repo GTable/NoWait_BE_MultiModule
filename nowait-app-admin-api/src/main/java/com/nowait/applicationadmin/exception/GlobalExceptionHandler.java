@@ -562,6 +562,20 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), MENU_COUNTER_UPDATE.getCode());
 	}
 
+	/**
+	 * *  그 외 예외처리
+	 */
+	@ResponseStatus(INTERNAL_SERVER_ERROR)
+	@ExceptionHandler(Exception.class)
+	public ErrorResponse handleUnexpectedException(Exception e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleUnexpectedException", e);
+		return new ErrorResponse(
+			ErrorMessage.UNEXPECTED_ERROR.getMessage(),
+			ErrorMessage.UNEXPECTED_ERROR.getCode()
+		);
+	}
+
 
 	// 공통 에러 Map 생성
 	private static Map<String, String> getErrors(MethodArgumentNotValidException e) {

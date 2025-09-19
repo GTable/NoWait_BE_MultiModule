@@ -87,7 +87,10 @@ public enum ErrorMessage {
 	IMAGE_FILE_NOT_FOUND("DB에 해당 이미지 메타데이터가 존재하지 않습니다.", "image002"),
 
 	// search
-	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001");
+	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001"),
+
+	// common
+	UNEXPECTED_ERROR("예상하지 못한 오류가 발생했습니다.", "common999");
 
 	private final String message;
 	private final String code;
