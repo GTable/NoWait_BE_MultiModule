@@ -13,6 +13,7 @@ import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.storepayment.entity.StorePayment;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentAlreadyExistsException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentCreationUnauthorizedException;
+import com.nowait.domaincorerdb.storepayment.exception.StorePaymentDeleteUnauthorizedException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentNotFoundException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentParamEmptyException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentUpdateUnauthorizedException;
@@ -37,14 +38,13 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	public StorePaymentCreateResponse createStorePayment(StorePaymentCreateRequest request, MemberDetails memberDetails) {
 		if (request == null) throw new StorePaymentParamEmptyException();
 
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		Long storeId = user.getStoreId();
 		if (storePaymentRepository.findByStoreId(storeId).isPresent()) {
 			throw new StorePaymentAlreadyExistsException();
 		}
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StorePaymentCreationUnauthorizedException();
-		}
+		validateCreationAuthorization(user, storeId);
+
 		StorePayment toSave = request.toEntity(storeId);
 		StorePayment saved = storePaymentRepository.save(toSave);
 
@@ -56,11 +56,9 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	public Optional<StorePaymentReadDto> getStorePaymentByStoreId(MemberDetails memberDetails) {
 		if (memberDetails == null) throw new StorePaymentParamEmptyException();
 
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		Long storeId = user.getStoreId();
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StorePaymentViewUnauthorizedException();
-		}
+		validateViewAuthorization(user, storeId);
 
 		return storePaymentRepository.findByStoreId(storeId)
 			.map(StorePaymentReadDto::fromEntity);
@@ -71,11 +69,9 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	public StorePaymentReadDto updateStorePayment(StorePaymentUpdateRequest request, MemberDetails memberDetails) {
 		if (request == null) throw new StorePaymentParamEmptyException();
 
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+		User user = getUser(memberDetails);
 		Long storeId = user.getStoreId();
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StorePaymentUpdateUnauthorizedException();
-		}
+		validateUpdateAuthorization(user, storeId);
 		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
 			.orElseThrow(StorePaymentNotFoundException::new);
 
@@ -88,5 +84,33 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 		storePaymentRepository.save(storePayment);
 
 		return StorePaymentReadDto.fromEntity(storePayment);
+	}
+
+	private User getUser(MemberDetails memberDetails) {
+		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	}
+
+	private void validateViewAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole()) || user.getStoreId().equals(storeId))) {
+			throw new StorePaymentViewUnauthorizedException();
+		}
+	}
+
+	private void validateCreationAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole()) || user.getStoreId().equals(storeId))) {
+			throw new StorePaymentCreationUnauthorizedException();
+		}
+	}
+
+	private void validateUpdateAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole()) || user.getStoreId().equals(storeId))) {
+			throw new StorePaymentUpdateUnauthorizedException();
+		}
+	}
+
+	private void validateDeleteAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole()) || user.getStoreId().equals(storeId))) {
+			throw new StorePaymentDeleteUnauthorizedException();
+		}
 	}
 }
