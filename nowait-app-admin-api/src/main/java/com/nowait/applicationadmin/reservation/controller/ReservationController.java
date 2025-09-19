@@ -96,4 +96,22 @@ public class ReservationController {
 				));
 	}
 
+	@PatchMapping("/admin/{storeId}/{reservationNumber}")
+	@Operation(summary = "예약팀 상태 업데이트 처리", description = "특정 예약에 대한 입장 완료 처리")
+	@ApiResponse(responseCode = "200", description = "예약팀 상태 변경 :  CALLING -> CONFIRMED")
+	public ResponseEntity<?> updateEntryWithReservationNumber(
+		@PathVariable Long storeId,
+		@PathVariable String reservationNumber,
+		@RequestBody ReservationStatusRequest request,
+		@AuthenticationPrincipal MemberDetails memberDetails
+	) {
+		EntryStatusResponseDto response = reservationService.processEntryStatusByReservationNumber(storeId, reservationNumber, memberDetails, request.getStatus());
+		return ResponseEntity
+			.status(HttpStatus.OK)
+			.body(
+				ApiUtils.success(
+					response
+				));
+	}
+
 }

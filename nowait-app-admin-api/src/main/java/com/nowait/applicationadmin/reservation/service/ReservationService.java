@@ -29,7 +29,7 @@ import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationParameterException;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
-import com.nowait.domaincorerdb.reservation.exception.ReservationDataInconsistencyException;
+import com.nowait.domaincoreredis.reservation.exception.ReservationDataInconsistencyException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
@@ -233,7 +233,7 @@ public class ReservationService {
 		}
 
 		if (reservationNumber == null || currStatus == null) {
-			throw new ReservationDataInconsistencyException(
+			new ReservationDataInconsistencyException(
 				String.format("storeId=%d, userId=%s, reservationNumber=%s, status=%s, partySize=%s",
 					storeId, userId, reservationNumber, currStatus, partySize)
 			);
@@ -355,6 +355,158 @@ public class ReservationService {
 				throw new UnsupportedReservationStatusException(newStatus);
 		}
 	}
+
+
+	@Transactional
+	public EntryStatusResponseDto processEntryStatusByReservationNumber(Long storeId, String reservationNumber,
+		MemberDetails member, ReservationStatus newStatus) {
+
+		User user = getUser(member);
+		validateUpdateAuthorization(user, storeId);
+
+		if (reservationNumber == null || reservationNumber.isBlank()) {
+			throw new InvalidReservationParameterException("reservationNumber 값이 비어있습니다.");
+		}
+
+		// Redis에서 userId 역추적
+		String userId = waitingRedisRepository.getUserIdByReservationNumber(storeId, reservationNumber);
+		if (userId == null) {
+			throw new ReservationDataInconsistencyException(
+				String.format("storeId=%d, reservationNumber=%s 에 해당하는 userId를 찾을 수 없습니다.", storeId, reservationNumber)
+			);
+		}
+
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+
+		String currStatus = waitingRedisRepository.getWaitingStatus(storeId, userId);
+		Double score = redisTemplate.opsForZSet().score(queueKey, userId);
+		Integer partySize = waitingRedisRepository.getWaitingPartySize(storeId, userId);
+
+
+		if (partySize == null || partySize <= 0) {
+			throw new InvalidReservationParameterException("partySize가 유효하지 않습니다. (storeId=" + storeId + ", reservationNumber=" + reservationNumber + ")");
+		}
+
+		if (currStatus == null) {
+			throw new ReservationDataInconsistencyException(
+				String.format("storeId=%d, reservationNumber=%s 의 상태값을 찾을 수 없습니다.", storeId, reservationNumber)
+			);
+		}
+
+		LocalDateTime requestedAt = score != null
+			? Instant.ofEpochMilli(score.longValue()).atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime()
+			: LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
+		switch (newStatus) {
+			case CALLING:
+				if (!ReservationStatus.WAITING.name().equals(currStatus)) {
+					throw new InvalidReservationStatusTransitionException(
+						ReservationStatus.valueOf(currStatus), ReservationStatus.CALLING
+					);
+				}
+				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
+				waitingRedisRepository.setWaitingCalledAt(storeId, userId,
+					now.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli());
+
+				return EntryStatusResponseDto.builder()
+					.reservationNumber(reservationNumber)
+					.userId(userId)
+					.partySize(partySize)
+					.userName(userRepository.getReferenceById(Long.valueOf(userId)).getNickname())
+					.createdAt(requestedAt)
+					.status("CALLING")
+					.updatedAt(now)
+					.message("호출되었습니다.")
+					.build();
+
+			case CONFIRMED:
+				// 1) 기존 대기 중이거나 호출 중일 때: Redis → DB 최초 저장
+				if (ReservationStatus.WAITING.name().equals(currStatus) || ReservationStatus.CALLING.name()
+					.equals(currStatus)) {
+
+					if (reservationNumber != null) {
+						waitingPermitLuaRepository.removeActiveMember(
+							userId, String.valueOf(storeId), reservationNumber
+						);
+					}
+
+					// 새 Reservation 생성 & 저장
+					Reservation r = Reservation.builder()
+						.reservationNumber(reservationNumber)
+						.store(storeRepository.getReferenceById(storeId))
+						.user(userRepository.getReferenceById(Long.valueOf(userId)))
+						.partySize(partySize)
+						.requestedAt(requestedAt)
+						.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+						.status(ReservationStatus.valueOf(currStatus))
+						.build();
+
+					// 호출 시각 반영
+					r.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
+					Reservation saved = reservationRepository.save(r);
+					// Redis 전부 삭제
+					waitingRedisRepository.deleteWaiting(storeId, userId);
+					return EntryStatusResponseDto.fromEntity(saved);
+				} else {
+					if (reservationNumber != null) {
+						try {
+							waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId),
+								reservationNumber);
+						} catch (Exception ignore) {
+						}
+					}
+
+					// 2) 이미 취소(CANCELLED)된 경우: DB 레코드 찾아 바로 CONFIRMED 로 전환
+					LocalDateTime start = LocalDate.now().atStartOfDay();
+					LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
+					Reservation existing = reservationRepository
+						.findFirstByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetweenOrderByRequestedAtDesc(
+							storeId,
+							Long.valueOf(userId),
+							List.of(ReservationStatus.CANCELLED),
+							start,
+							end
+						).orElseThrow(() -> new ReservationDataInconsistencyException(
+							String.format("취소된 예약이 DB에 존재하지 않습니다. (storeId=%d, userId=%s)", storeId, userId)
+						));
+
+					existing.markUpdated(LocalDateTime.now(ZoneId.of("Asia/Seoul")), ReservationStatus.CONFIRMED);
+					Reservation saved = reservationRepository.save(existing);
+					return EntryStatusResponseDto.fromEntity(saved);
+				}
+
+			case CANCELLED:
+				if (!(ReservationStatus.WAITING.name().equals(currStatus)
+					  || ReservationStatus.CALLING.name().equals(currStatus))) {
+					throw new InvalidReservationStatusTransitionException(
+						ReservationStatus.valueOf(currStatus), ReservationStatus.CANCELLED
+					);
+				}
+
+				waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
+
+				Reservation r = Reservation.builder()
+					.reservationNumber(reservationNumber)
+					.store(storeRepository.getReferenceById(storeId))
+					.user(userRepository.getReferenceById(Long.valueOf(userId)))
+					.partySize(partySize)
+					.requestedAt(requestedAt)
+					.updatedAt(now)
+					.status(ReservationStatus.valueOf(currStatus))
+					.build();
+
+				r.markUpdated(now, ReservationStatus.CANCELLED);
+				Reservation saved = reservationRepository.save(r);
+				waitingRedisRepository.deleteWaiting(storeId, userId);
+
+				return EntryStatusResponseDto.fromEntity(saved);
+
+			default:
+				throw new UnsupportedReservationStatusException(newStatus);
+		}
+	}
+
 
 	/**
 	 * 공통 메서드
