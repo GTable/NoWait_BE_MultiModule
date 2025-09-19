@@ -286,6 +286,7 @@ public class ReservationService {
 						.partySize(partySize)
 						.requestedAt(requestedAt)
 						.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+						.status(ReservationStatus.valueOf(currStatus))
 						.build();
 
 					// 호출 시각 반영
@@ -344,6 +345,7 @@ public class ReservationService {
 					.partySize(partySize)
 					.requestedAt(requestedAt)
 					.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+					.status(ReservationStatus.valueOf(currStatus))
 					.build();
 
 				r.markUpdated(LocalDateTime.now(), ReservationStatus.CANCELLED);
