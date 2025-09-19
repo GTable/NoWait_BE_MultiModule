@@ -39,11 +39,16 @@ import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
+import com.nowait.domaincorerdb.reservation.exception.InvalidReservationParameterException;
+import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationAddUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationAlreadyCancelledException;
+import com.nowait.domaincorerdb.reservation.exception.ReservationAlreadyConfirmedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFailException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.UnsupportedReservationStatusException;
 import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.store.exception.StoreDeleteUnauthorizedException;
 import com.nowait.domaincorerdb.store.exception.StoreImageEmptyException;
@@ -234,12 +239,44 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
 	}
 
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(InvalidReservationParameterException.class)
+	public ErrorResponse invalidReservationParameterException(InvalidReservationParameterException e, WebRequest request) {
+		alarm(e, request);
+		log.error("invalidReservationParameterException", e);
+		return new ErrorResponse(e.getMessage(), INVALID_RESERVATION_PARAMETER.getCode());
+	}
+
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(InvalidReservationStatusTransitionException.class)
+	public ErrorResponse invalidReservationStatusTransitionException(InvalidReservationStatusTransitionException e, WebRequest request) {
+		alarm(e, request);
+		log.error("invalidReservationStatusTransitionException", e);
+		return new ErrorResponse(e.getMessage(), INVALID_RESERVATION_STATUS_TRANSITION.getCode());
+	}
+
 	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(ReservationAddUnauthorizedException.class)
 	public ErrorResponse reservationAddUnauthorizedException(ReservationAddUnauthorizedException e, WebRequest request) {
 		alarm(e, request);
 		log.error("reservationAddUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), RESERVATION_ADD_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(ReservationAlreadyCancelledException.class)
+	public ErrorResponse reservationAlreadyCancelledException(ReservationAlreadyCancelledException e, WebRequest request) {
+		alarm(e, request);
+		log.error("reservationAlreadyCancelledException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_ALREADY_CANCELLED.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(ReservationAlreadyConfirmedException.class)
+	public ErrorResponse reservationAlreadyConfirmedException(ReservationAlreadyConfirmedException e, WebRequest request) {
+		alarm(e, request);
+		log.error("reservationAlreadyConfirmedException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_ALREADY_CONFIRMED.getCode());
 	}
 
 	@ResponseStatus(NOT_FOUND)
@@ -272,6 +309,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("reservation_viewUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), RESERVATION_VIEW_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(UnsupportedReservationStatusException.class)
+	public ErrorResponse unsupportedReservationStatusException(UnsupportedReservationStatusException e, WebRequest request) {
+		alarm(e, request);
+		log.error("unsupportedReservationStatusException", e);
+		return new ErrorResponse(e.getMessage(), UNSUPPORTED_RESERVATION_STATUS.getCode());
 	}
 
 	@ResponseStatus(BAD_REQUEST)

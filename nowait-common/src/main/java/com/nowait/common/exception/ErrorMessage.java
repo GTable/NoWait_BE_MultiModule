@@ -33,6 +33,13 @@ public enum ErrorMessage {
 	USER_WAITING_LIMIT_EXCEEDED("유저당 웨이팅 가능 개수(3개)를 초과했습니다.", "reservation005"),
 	RESERVATION_NUMBER_ISSUE_FAIL("예약 번호 발급에 실패했습니다.", "reservation006"),
 	RESERVATION_ADD_UNAUTHORIZED("MANAGER는 예약 대기를 할 수 없습니다.", "reservation007"),
+	INVALID_RESERVATION_STATUS_TRANSITION("유효하지 않은 예약 상태 변경입니다. (현재: %s, 요청: %s)", "reservation008"),
+	RESERVATION_ALREADY_CONFIRMED("이미 확정된 예약입니다.", "reservation009"),
+	RESERVATION_ALREADY_CANCELLED("이미 취소된 예약입니다.", "reservation010"),
+	RESERVATION_DATA_INCONSISTENCY("예약 데이터가 Redis와 DB 간 일치하지 않습니다. (%s)", "reservation011"),
+	UNSUPPORTED_RESERVATION_STATUS("지원하지 않는 예약 상태입니다: %s", "reservation012"),
+	INVALID_RESERVATION_PARAMETER("잘못된 예약 요청 파라미터입니다. (%s)", "reservation013"),
+
 
 	// bookmark
 	DUPLICATE_BOOKMARK("이미 북마크한 주점입니다.", "bookmark001"),
