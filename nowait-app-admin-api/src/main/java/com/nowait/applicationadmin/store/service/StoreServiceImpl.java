@@ -130,7 +130,7 @@ public class StoreServiceImpl implements StoreService {
 	@Transactional
 	public Boolean toggleActive(Long storeId) {
 		Store store = storeRepository.findById(storeId)
-			.orElseThrow(() -> new IllegalArgumentException("해당 스토어가 존재하지 않습니다."));
+			.orElseThrow(StoreNotFoundException::new);
 
 		store.toggleActive();
 		return store.getIsActive();
