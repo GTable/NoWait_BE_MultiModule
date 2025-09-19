@@ -76,6 +76,10 @@ public class RedisKeyUtils {
 		return String.format("reservation:number:%d", storeId);
 	}
 
+	public static String buildReservationUserKey(Long storeId) {
+		return String.format("reservation:user:%d", storeId);
+	}
+
 	/**
 	 * 대기 호출 시각(hash)에 사용할 키 접두사
 	 */
