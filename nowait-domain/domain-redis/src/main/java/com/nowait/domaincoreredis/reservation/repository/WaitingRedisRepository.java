@@ -82,9 +82,7 @@ public class WaitingRedisRepository {
 		redisTemplate.opsForHash().delete(numberMapKey, userId);
 
 		// reservationNumber → userId 삭제
-		if (reservationNumber != null) {
-			redisTemplate.opsForHash().delete(userMapKey, reservationNumber);
-		}
+		redisTemplate.opsForHash().delete(userMapKey, reservationNumber);
 
 		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
 		redisTemplate.opsForHash().delete(statusKey, userId);

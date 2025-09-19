@@ -72,6 +72,7 @@ import com.nowait.domaincorerdb.storepayment.exception.StorePaymentViewUnauthori
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincoreredis.rank.exception.MenuCounterUpdateException;
+import com.nowait.domaincoreredis.reservation.exception.ReservationDataInconsistencyException;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
@@ -560,6 +561,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("menuCounterUpdateException", e);
 		return new ErrorResponse(e.getMessage(), MENU_COUNTER_UPDATE.getCode());
+	}
+
+	@ResponseStatus(NOT_FOUND)
+	@ExceptionHandler(ReservationDataInconsistencyException.class)
+	public ErrorResponse reservationDataInconsistencyException(ReservationDataInconsistencyException e, WebRequest request) {
+		alarm(e, request);
+		log.error("reservationDataInconsistencyException", e);
+		return new ErrorResponse(e.getMessage(), RESERVATION_DATA_INCONSISTENCY.getCode());
 	}
 
 	/**
