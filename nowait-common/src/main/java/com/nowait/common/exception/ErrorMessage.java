@@ -38,7 +38,6 @@ public enum ErrorMessage {
 	NOT_FOUND_BOOKMARK("북마크를 찾을 수 없습니다", "bookmark003"),
 	ALREADY_DELETED_BOOKMARK("이미 삭제된 북마크입니다.", "bookmark004"),
 
-
 	// menu
 	MENU_PARAMETER_EMPTY("메뉴 생성 시 파라미터 정보가 없습니다.", "menu001"),
 	MENU_NOT_FOUND("해당 메뉴를 찾을 수 없습니다.", "menu002"),
@@ -69,8 +68,8 @@ public enum ErrorMessage {
 	MENU_COUNTER_UPDATE("메뉴 카운터 업데이트 실패", "statistics002"),
 
 	// image
-	IMAGE_FILE_EMPTY("이미지 파일을 업로드 해주세요", "image001"),
-	IMAGE_FILE_NOT_FOUND("이미지 파일을 업로드 해주세요", "image001"),
+	IMAGE_FILE_EMPTY("업로드 된 이미지 파일이 없습니다.", "image001"),
+	IMAGE_FILE_NOT_FOUND("DB에 해당 이미지 메타데이터가 존재하지 않습니다.", "image001"),
 
 	// search
 	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001");
