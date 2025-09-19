@@ -32,6 +32,7 @@ import com.nowait.domaincorerdb.menu.exception.MenuUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.menu.exception.MenuViewUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
+import com.nowait.domaincorerdb.order.exception.OrderAlreadyCancelledException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
@@ -149,7 +150,7 @@ public class GlobalExceptionHandler {
 	public ErrorResponse userNotFoundException(UserNotFoundException e, WebRequest request) {
 		alarm(e, request);
 		log.error("userNotFoundException", e);
-		return new ErrorResponse(e.getMessage(), NOTFOUND_USER.getCode());
+		return new ErrorResponse(e.getMessage(), NOT_FOUND_USER.getCode());
 	}
 
 
@@ -171,6 +172,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("duplicateOrderException", e);
 		return new ErrorResponse(e.getMessage(), ErrorMessage.DUPLICATE_ORDER.getCode());
+	}
+
+	@ResponseStatus(BAD_REQUEST)
+	@ExceptionHandler(OrderAlreadyCancelledException.class)
+	public ErrorResponse orderAlreadyCancelledException(OrderAlreadyCancelledException e, WebRequest request) {
+		alarm(e, request);
+		log.error("orderAlreadyCancelledException", e);
+		return new ErrorResponse(e.getMessage(), ORDER_ALREADY_CANCELLED.getCode());
 	}
 
 	@ResponseStatus(BAD_REQUEST)

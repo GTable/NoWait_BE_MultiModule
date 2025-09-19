@@ -172,7 +172,7 @@ public class GlobalExceptionHandler {
 	public ErrorResponse userNotFoundException(UserNotFoundException e, WebRequest request) {
 		alarm(e, request);
 		log.error("userNotFoundException", e);
-		return new ErrorResponse(e.getMessage(), NOTFOUND_USER.getCode());
+		return new ErrorResponse(e.getMessage(), NOT_FOUND_USER.getCode());
 	}
 
 	@ResponseStatus(BAD_REQUEST)
