@@ -15,6 +15,8 @@ import com.nowait.applicationadmin.store.dto.StoreUpdateRequest;
 import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
+import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
+import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.entity.StoreImage;
@@ -57,10 +59,9 @@ public class StoreServiceImpl implements StoreService {
 	@Transactional(readOnly = true)
 	public StoreDetailReadResponse getStoreByStoreId(Long storeId, MemberDetails memberDetails) {
 		if (storeId == null) throw new StoreParamEmptyException();
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StoreViewUnauthorizedException();
-		}
+		User user = getUser(memberDetails);
+		validateViewAuthorization(user, storeId);
+
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -79,11 +80,11 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional
 	public StoreReadDto updateStore(Long storeId, StoreUpdateRequest request, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 		if (storeId == null || request == null) throw new StoreParamEmptyException();
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StoreUpdateUnauthorizedException();
-		}
+
+		User user = getUser(memberDetails);
+		validateUpdateAuthorization(user, storeId);
+
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
 
@@ -109,13 +110,13 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	@Transactional
 	public String deleteStore(Long storeId, MemberDetails memberDetails) {
-		User user = userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+
 		if (storeId == null) {
 			throw new StoreParamEmptyException();
 		}
-		if (!Role.SUPER_ADMIN.equals(user.getRole()) && !user.getStoreId().equals(storeId)) {
-			throw new StoreDeleteUnauthorizedException();
-		}
+
+		User user = getUser(memberDetails);
+		validateUpdateAuthorization(user, storeId);
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
 			.orElseThrow(StoreNotFoundException::new);
@@ -133,5 +134,23 @@ public class StoreServiceImpl implements StoreService {
 
 		store.toggleActive();
 		return store.getIsActive();
+	}
+
+	private void validateViewAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new OrderViewUnauthorizedException();
+		}
+	}
+
+	private void validateUpdateAuthorization(User user, Long storeId) {
+		if (!(Role.SUPER_ADMIN.equals(user.getRole())
+			  || (Role.MANAGER.equals(user.getRole()) && storeId.equals(user.getStoreId())))) {
+			throw new OrderUpdateUnauthorizedException();
+		}
+	}
+
+	private User getUser(MemberDetails memberDetails) {
+		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 	}
 }
