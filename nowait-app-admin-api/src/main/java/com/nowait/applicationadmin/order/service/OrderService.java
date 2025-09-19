@@ -147,6 +147,9 @@ public class OrderService {
 	}
 
 	private User getUser(MemberDetails memberDetails) {
+		if (memberDetails == null) {
+			throw new OrderViewUnauthorizedException();
+		}
 		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 	}
 }

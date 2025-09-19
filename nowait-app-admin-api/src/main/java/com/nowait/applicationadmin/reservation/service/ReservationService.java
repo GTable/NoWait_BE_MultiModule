@@ -29,6 +29,7 @@ import com.nowait.common.enums.Role;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationParameterException;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
+import com.nowait.domaincorerdb.store.exception.StoreViewUnauthorizedException;
 import com.nowait.domaincoreredis.reservation.exception.ReservationDataInconsistencyException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
@@ -233,7 +234,7 @@ public class ReservationService {
 		}
 
 		if (reservationNumber == null || currStatus == null) {
-			new ReservationDataInconsistencyException(
+			throw new ReservationDataInconsistencyException(
 				String.format("storeId=%d, userId=%s, reservationNumber=%s, status=%s, partySize=%s",
 					storeId, userId, reservationNumber, currStatus, partySize)
 			);
@@ -540,6 +541,9 @@ public class ReservationService {
 	}
 
 	private User getUser(MemberDetails memberDetails) {
+		if (memberDetails == null) {
+			throw new ReservationViewUnauthorizedException();
+		}
 		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
 	}
 }
