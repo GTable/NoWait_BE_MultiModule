@@ -1,4 +1,4 @@
-FROM openjdk:21-slim
+FROM eclipse-temurin:21
 
 WORKDIR /app
 COPY build/libs/*.jar nowait-common.jar
