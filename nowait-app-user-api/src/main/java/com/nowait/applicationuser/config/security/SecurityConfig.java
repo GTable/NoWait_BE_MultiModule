@@ -37,12 +37,6 @@ public class SecurityConfig {
 		http
 			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			// CSRF 방어 기능 비활성화 (jwt 토큰을 사용할 것이기에 필요없음)
-			// .csrf(csrf -> csrf
-			// 	.ignoringRequestMatchers(
-			// 		"/api/**", "/login/**", "/oauth2/**",
-			// 		"/swagger-ui/**", "/v3/api-docs/**", "/orders/**")
-			// 	.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-			// )
 			.csrf(AbstractHttpConfigurer::disable)
 			// 시큐리티 폼 로그인 비활성화
 			.formLogin(AbstractHttpConfigurer::disable)
