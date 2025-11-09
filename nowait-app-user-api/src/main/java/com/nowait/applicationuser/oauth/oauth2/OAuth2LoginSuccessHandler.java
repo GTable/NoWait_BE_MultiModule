@@ -64,7 +64,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 			.secure(false) // 운영환경에서는 true
 			.path("/")
 			.maxAge(30L * 24 * 60 * 60) // 30일 (초 단위)
-			.sameSite("Strict")
+			.sameSite("Lax")
 			.build();
 
 		// 기존 방식 대신 ResponseCookie.toString()을 헤더로 추가
