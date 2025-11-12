@@ -149,11 +149,4 @@ public class StoreServiceImpl implements StoreService {
 			throw new StoreUpdateUnauthorizedException();
 		}
 	}
-
-	// private User getUser(MemberDetails memberDetails) {
-	// 	if (memberDetails == null) {
-	// 		throw new StoreViewUnauthorizedException();
-	// 	}
-	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	// }
 }

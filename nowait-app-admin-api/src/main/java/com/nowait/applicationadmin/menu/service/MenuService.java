@@ -210,10 +210,6 @@ public class MenuService {
 		}
 	}
 
-	// private User getUser(MemberDetails memberDetails) {
-	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	// }
-
 	private Menu getMenu(Long menuId) {
 		return menuRepository.findByIdAndDeletedFalse(menuId)
 			.orElseThrow(MenuNotFoundException::new);

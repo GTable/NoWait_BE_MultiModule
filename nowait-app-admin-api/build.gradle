@@ -34,7 +34,7 @@ dependencies {
     implementation project(':nowait-domain:domain-admin-rdb')
     implementation project(':nowait-domain:domain-core-rdb')
     implementation project(':nowait-domain:domain-redis')
-    implementation project(":nowait-event")
+    implementation project(':nowait-event')
 
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
