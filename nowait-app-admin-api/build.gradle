@@ -12,6 +12,7 @@ bootJar {
 group = 'com.nowait'
 version = '0.0.1-SNAPSHOT'
 
+
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
@@ -29,11 +30,11 @@ dependencyManagement {
 
 dependencies {
     implementation project(':nowait-common')
-    implementation project(':nowait-infra')
+    implementation project(':nowait-infra')           // 사용자 관련 도메인
     implementation project(':nowait-domain:domain-admin-rdb')
     implementation project(':nowait-domain:domain-core-rdb')
     implementation project(':nowait-domain:domain-redis')
-    implementation project(':nowait-event')
+    implementation project(":nowait-event")
 
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -42,22 +43,26 @@ dependencies {
     // SPRING SECURITY
     implementation 'org.springframework.boot:spring-boot-starter-security'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
     // jwt
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
-    // redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
-    // SWAGGER
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    // OAUTH2
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 
     // DB
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // SWAGGER
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     // 디스코드 웹훅
     implementation 'com.github.napstr:logback-discord-appender:1.0.0'
@@ -78,10 +83,12 @@ dependencies {
 
     // test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation platform("org.testcontainers:testcontainers-bom:1.20.1")
-    testImplementation "org.testcontainers:junit-jupiter"
-    testImplementation "org.testcontainers:testcontainers"
-
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'com.redis:testcontainers-redis:2.2.4'
 }
 
 test {

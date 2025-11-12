@@ -13,6 +13,7 @@ import com.nowait.domaincorerdb.order.entity.UserOrder;
 public interface OrderRepository extends JpaRepository<UserOrder, Long> {
 	boolean existsBySignatureAndCreatedAtAfter(String signature, LocalDateTime createdAt);
 
+	@EntityGraph(attributePaths = {"store", "orderItems", "orderItems.menu"})
 	List<UserOrder> findByStore_PublicCodeAndTableIdAndSessionId(String publicCode, Long tableId, String sessionId);
 
 	@EntityGraph(attributePaths = {"orderItems", "orderItems.menu"})

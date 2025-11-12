@@ -34,9 +34,11 @@ import com.nowait.nowaitevent.order.event.CookingCompleteEvent;
 import com.nowait.nowaitevent.order.event.OrderCancelledEvent;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 	private final OrderRepository orderRepository;
 	private final StatisticCustomRepository statisticCustomRepository;
@@ -46,24 +48,29 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> findAllOrders(Long storeId, MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		log.info("getUser 호출 전");
+		User user = memberDetails.getUser();
+		log.info("getUser 호출 완료");
 		storeRepository.findByStoreIdAndDeletedFalse(storeId).orElseThrow(StoreNotFoundException::new);
+		log.info("Store 조회 완료");
 
 		validateViewAuthorization(user, storeId);
 
 		LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 		LocalDateTime startDateTime = today.atStartOfDay();
 		LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
-		return orderRepository.findAllByStore_StoreIdAndCreatedAtBetween(storeId, startDateTime, endDateTime)
+		List<OrderResponseDto> order = orderRepository.findAllByStore_StoreIdAndCreatedAtBetween(storeId, startDateTime, endDateTime)
 			.stream()
 			.map(OrderResponseDto::fromEntity)
 			.collect(Collectors.toList());
+		log.info("Order 조회 완료");
+		return order;
 	}
 
 	@Transactional
 	public OrderStatusUpdateResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus,
 		MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
 		Long storeId = userOrder.getStore().getStoreId();
 
@@ -92,7 +99,7 @@ public class OrderService {
 
 	@Transactional
 	public OrderStatusUpdateResponseDto cancelOrder(Long orderId, CancelOrderRequest cancelOrderRequest, MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		UserOrder userOrder = orderRepository.findById(orderId).orElseThrow(OrderNotFoundException::new);
 
 		validateUpdateAuthorization(user, userOrder.getStore().getStoreId());
@@ -113,7 +120,7 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public OrderSalesSumDetail getSaleSumByStoreId(MemberDetails memberDetails, LocalDate date) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Long storeId = user.getStoreId();
 
 		validateViewAuthorization(user, storeId);
@@ -124,7 +131,7 @@ public class OrderService {
 	// 현재는 사용하지 않음. 향후 관리자 통계 페이지 확장 시 활용 가능
 	@Transactional(readOnly = true)
 	public List<TopSalesStoresDetail> getTop5StoresBySalesToday(MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Long storeId = user.getStoreId();
 
 		validateUpdateAuthorization(user, storeId);
@@ -146,10 +153,11 @@ public class OrderService {
 		}
 	}
 
-	private User getUser(MemberDetails memberDetails) {
-		if (memberDetails == null) {
-			throw new OrderViewUnauthorizedException();
-		}
-		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	}
+	// private User getUser(MemberDetails memberDetails) {
+	// 	if (memberDetails == null) {
+	// 		throw new OrderViewUnauthorizedException();
+	// 	}
+	// 	// findById로 Select 쿼리 나가는 것을 getReferenceById로 변경하여 방지
+	// 	return userRepository.getReferenceById(memberDetails.getId());
+	// }
 }
