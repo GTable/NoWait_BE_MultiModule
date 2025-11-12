@@ -30,9 +30,8 @@ dependencyManagement {
 dependencies {
     implementation project(":nowait-common")
     implementation project(":nowait-domain:domain-core-rdb")
-    implementation project(":nowait-domain:domain-user-rdb") // ✅ 이 줄 꼭 있어야 합니다
+    implementation project(":nowait-domain:domain-user-rdb")
     implementation project(":nowait-domain:domain-redis")
-    implementation project(":nowait-event")
     implementation project(":nowait-infra")
 
     // Spring Boot Starter
