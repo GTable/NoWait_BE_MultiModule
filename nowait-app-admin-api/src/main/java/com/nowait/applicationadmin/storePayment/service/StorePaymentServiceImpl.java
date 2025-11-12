@@ -86,10 +86,6 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 		return StorePaymentReadDto.fromEntity(storePayment);
 	}
 
-	// private User getUser(MemberDetails memberDetails) {
-	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	// }
-
 	private void validateViewAuthorization(User user, Long storeId) {
 		if (!(Role.SUPER_ADMIN.equals(user.getRole()) || user.getStoreId().equals(storeId))) {
 			throw new StorePaymentViewUnauthorizedException();

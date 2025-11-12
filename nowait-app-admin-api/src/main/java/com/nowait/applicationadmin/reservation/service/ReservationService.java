@@ -541,12 +541,5 @@ public class ReservationService {
 			throw new ReservationUpdateUnauthorizedException();
 		}
 	}
-
-	// private User getUser(MemberDetails memberDetails) {
-	// 	if (memberDetails == null) {
-	// 		throw new ReservationViewUnauthorizedException();
-	// 	}
-	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	// }
 }
 

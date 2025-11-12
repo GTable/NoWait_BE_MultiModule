@@ -48,11 +48,8 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public List<OrderResponseDto> findAllOrders(Long storeId, MemberDetails memberDetails) {
-		log.info("getUser 호출 전");
 		User user = memberDetails.getUser();
-		log.info("getUser 호출 완료");
 		storeRepository.findByStoreIdAndDeletedFalse(storeId).orElseThrow(StoreNotFoundException::new);
-		log.info("Store 조회 완료");
 
 		validateViewAuthorization(user, storeId);
 
@@ -63,7 +60,6 @@ public class OrderService {
 			.stream()
 			.map(OrderResponseDto::fromEntity)
 			.collect(Collectors.toList());
-		log.info("Order 조회 완료");
 		return order;
 	}
 
@@ -152,12 +148,4 @@ public class OrderService {
 			throw new OrderUpdateUnauthorizedException();
 		}
 	}
-
-	// private User getUser(MemberDetails memberDetails) {
-	// 	if (memberDetails == null) {
-	// 		throw new OrderViewUnauthorizedException();
-	// 	}
-	// 	// findById로 Select 쿼리 나가는 것을 getReferenceById로 변경하여 방지
-	// 	return userRepository.getReferenceById(memberDetails.getId());
-	// }
 }
