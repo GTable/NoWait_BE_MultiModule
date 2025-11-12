@@ -59,7 +59,7 @@ public class StoreServiceImpl implements StoreService {
 	@Transactional(readOnly = true)
 	public StoreDetailReadResponse getStoreByStoreId(Long storeId, MemberDetails memberDetails) {
 		if (storeId == null) throw new StoreParamEmptyException();
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		validateViewAuthorization(user, storeId);
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
@@ -82,7 +82,7 @@ public class StoreServiceImpl implements StoreService {
 	public StoreReadDto updateStore(Long storeId, StoreUpdateRequest request, MemberDetails memberDetails) {
 		if (storeId == null || request == null) throw new StoreParamEmptyException();
 
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		validateUpdateAuthorization(user, storeId);
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
@@ -115,7 +115,7 @@ public class StoreServiceImpl implements StoreService {
 			throw new StoreParamEmptyException();
 		}
 
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		validateUpdateAuthorization(user, storeId);
 
 		Store store = storeRepository.findByStoreIdAndDeletedFalse(storeId)
@@ -150,10 +150,10 @@ public class StoreServiceImpl implements StoreService {
 		}
 	}
 
-	private User getUser(MemberDetails memberDetails) {
-		if (memberDetails == null) {
-			throw new StoreViewUnauthorizedException();
-		}
-		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	}
+	// private User getUser(MemberDetails memberDetails) {
+	// 	if (memberDetails == null) {
+	// 		throw new StoreViewUnauthorizedException();
+	// 	}
+	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	// }
 }

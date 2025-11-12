@@ -16,6 +16,7 @@ public class MemberDetails implements UserDetails {
 	private final String email;
 	private final String password;
 	private final Collection<? extends GrantedAuthority> authorities;
+	private final User user;
 
 	public static MemberDetails create(User user) {
 		return MemberDetails.builder()
@@ -23,7 +24,12 @@ public class MemberDetails implements UserDetails {
 			.email(user.getEmail())
 			.password(user.getPassword())
 			.authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+			.user(user)
 			.build();
+	}
+
+	public User getUser() {
+		return user;
 	}
 
 	public Long getId() { return id; }

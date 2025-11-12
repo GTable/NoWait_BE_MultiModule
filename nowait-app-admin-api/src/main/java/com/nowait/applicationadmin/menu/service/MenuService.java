@@ -47,7 +47,7 @@ public class MenuService {
 	@Transactional
 	public MenuCreateResponse createMenu(MenuCreateRequest request, MemberDetails memberDetails) {
 		// 사용자 정보 가져오기
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
 		validateViewAuthorization(user, request.getStoreId());
 
@@ -61,7 +61,7 @@ public class MenuService {
 	@Transactional(readOnly = true)
 	public MenuReadResponse getAllMenusByStoreId(Long storeId, MemberDetails memberDetails) {
 		// 사용자 정보 가져오기
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
 		validateViewAuthorization(user, storeId);
 
@@ -86,7 +86,7 @@ public class MenuService {
 			throw new MenuParamEmptyException();
 		}
 		// 사용자 정보 가져오기
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Menu menu = getMenu(menuId);
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
 		validateViewAuthorization(user, menu.getStoreId());
@@ -102,7 +102,7 @@ public class MenuService {
 
 	@Transactional
 	public MenuReadDto updateMenu(Long menuId, MenuUpdateRequest request, MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Menu menu = getMenu(menuId);
 
 		validateUpdateAuthorization(user, menu.getStoreId());
@@ -168,7 +168,7 @@ public class MenuService {
 
 	@Transactional
 	public String deleteMenu(Long menuId, MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Menu menu = getMenu(menuId);
 
 		validateDeleteAuthorization(user, menu.getStoreId());
@@ -210,9 +210,9 @@ public class MenuService {
 		}
 	}
 
-	private User getUser(MemberDetails memberDetails) {
-		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	}
+	// private User getUser(MemberDetails memberDetails) {
+	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	// }
 
 	private Menu getMenu(Long menuId) {
 		return menuRepository.findByIdAndDeletedFalse(menuId)

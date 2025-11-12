@@ -61,7 +61,7 @@ public class ReservationService {
 	//TODO 성능 비교를 위해 남겨둔 로직
 	@Transactional(readOnly = true)
 	public ReservationStatusSummaryDto getReservationListByStoreId(Long storeId, MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		validateViewAuthorization(user, storeId);
 		List<Reservation> reservations = reservationRepository.findAllByStore_StoreIdOrderByRequestedAtAsc(storeId);
 
@@ -96,7 +96,7 @@ public class ReservationService {
 	@Transactional
 	public CallGetResponseDto updateReservationStatus(Long reservationId, ReservationStatusUpdateRequestDto requestDto,
 		MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Reservation reservation = reservationRepository.findById(reservationId)
 			.orElseThrow(ReservationNotFoundException::new);
 		validateUpdateAuthorization(user, reservation.getStore().getStoreId());
@@ -195,7 +195,7 @@ public class ReservationService {
 	// 완료 or 취소 처리된 대기 리스트 조회
 	@Transactional(readOnly = true)
 	public List<WaitingUserResponse> getCompletedWaitingUserDetails(Long storeId, MemberDetails memberDetails) {
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		validateViewAuthorization(user, storeId);
 		List<Reservation> reservations = findTodayWaiting(storeId);
 
@@ -214,7 +214,7 @@ public class ReservationService {
 	public EntryStatusResponseDto processEntryStatus(Long storeId, String userId, MemberDetails member,
 		ReservationStatus newStatus) {
 
-		User user = getUser(member);
+		User user = member.getUser();
 		validateUpdateAuthorization(user, storeId);
 
 		if (userId == null || userId.isBlank()) {
@@ -364,7 +364,7 @@ public class ReservationService {
 	public EntryStatusResponseDto processEntryStatusByReservationNumber(Long storeId, String reservationNumber,
 		MemberDetails member, ReservationStatus newStatus) {
 
-		User user = getUser(member);
+		User user = member.getUser();
 		validateUpdateAuthorization(user, storeId);
 
 		if (reservationNumber == null || reservationNumber.isBlank()) {
@@ -542,11 +542,11 @@ public class ReservationService {
 		}
 	}
 
-	private User getUser(MemberDetails memberDetails) {
-		if (memberDetails == null) {
-			throw new ReservationViewUnauthorizedException();
-		}
-		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	}
+	// private User getUser(MemberDetails memberDetails) {
+	// 	if (memberDetails == null) {
+	// 		throw new ReservationViewUnauthorizedException();
+	// 	}
+	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	// }
 }
 

@@ -36,15 +36,23 @@ public class ManagerSignupRequestDto {
 	@Schema(description = "로그인타입", example = "LOCAL")
 	private String socialType;
 
+	@Schema(description = "마케팅 수신 동의", example = "true")
+	private boolean isMarketingAgree;
+
+	@Schema(description = "폰 번호 입력 여부", example = "true")
+	private boolean phoneEntered;
 
 	public User toEntity() {
 		return User.builder()
+			.profileImage("no")
 			.email(email)
 			.phoneNumber("")
 			.password(password)
 			.nickname(nickname)
 			.socialType(SocialType.LOCAL)
 			.role(Role.MANAGER)
+			.isMarketingAgree(isMarketingAgree)
+			.phoneEntered(false)
 			.createdAt(LocalDateTime.now())
 			.updatedAt(LocalDateTime.now())
 			.build();

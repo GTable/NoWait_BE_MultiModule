@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nowait.applicationadmin.storePayment.service.StorePaymentService;
 import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateRequest;
 import com.nowait.applicationadmin.storepayment.dto.StorePaymentCreateResponse;
 import com.nowait.applicationadmin.storepayment.dto.StorePaymentReadDto;
@@ -21,7 +22,6 @@ import com.nowait.domaincorerdb.storepayment.exception.StorePaymentViewUnauthori
 import com.nowait.domaincorerdb.storepayment.repository.StorePaymentRepository;
 import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
-import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	public StorePaymentCreateResponse createStorePayment(StorePaymentCreateRequest request, MemberDetails memberDetails) {
 		if (request == null) throw new StorePaymentParamEmptyException();
 
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Long storeId = user.getStoreId();
 		if (storePaymentRepository.findByStoreId(storeId).isPresent()) {
 			throw new StorePaymentAlreadyExistsException();
@@ -56,7 +56,7 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	public Optional<StorePaymentReadDto> getStorePaymentByStoreId(MemberDetails memberDetails) {
 		if (memberDetails == null) throw new StorePaymentParamEmptyException();
 
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Long storeId = user.getStoreId();
 		validateViewAuthorization(user, storeId);
 
@@ -69,7 +69,7 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 	public StorePaymentReadDto updateStorePayment(StorePaymentUpdateRequest request, MemberDetails memberDetails) {
 		if (request == null) throw new StorePaymentParamEmptyException();
 
-		User user = getUser(memberDetails);
+		User user = memberDetails.getUser();
 		Long storeId = user.getStoreId();
 		validateUpdateAuthorization(user, storeId);
 		StorePayment storePayment = storePaymentRepository.findByStoreId(storeId)
@@ -86,9 +86,9 @@ public class StorePaymentServiceImpl implements StorePaymentService {
 		return StorePaymentReadDto.fromEntity(storePayment);
 	}
 
-	private User getUser(MemberDetails memberDetails) {
-		return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
-	}
+	// private User getUser(MemberDetails memberDetails) {
+	// 	return userRepository.findById(memberDetails.getId()).orElseThrow(UserNotFoundException::new);
+	// }
 
 	private void validateViewAuthorization(User user, Long storeId) {
 		if (!(Role.SUPER_ADMIN.equals(user.getRole()) || user.getStoreId().equals(storeId))) {

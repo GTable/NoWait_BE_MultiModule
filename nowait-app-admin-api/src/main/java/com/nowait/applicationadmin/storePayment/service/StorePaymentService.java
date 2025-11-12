@@ -1,4 +1,4 @@
-package com.nowait.applicationadmin.storepayment.service;
+package com.nowait.applicationadmin.storePayment.service;
 
 import java.util.Optional;
 
