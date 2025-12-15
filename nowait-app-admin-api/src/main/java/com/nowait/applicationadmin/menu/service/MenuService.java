@@ -2,6 +2,7 @@ package com.nowait.applicationadmin.menu.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -156,7 +157,7 @@ public class MenuService {
 		}
 
 		Map<Long, Long> idToSort = requests.stream()
-			.collect(java.util.stream.Collectors.toMap(MenuSortUpdateRequest::getMenuId,
+			.collect(Collectors.toMap(MenuSortUpdateRequest::getMenuId,
 				MenuSortUpdateRequest::getSortOrder));
 
 		menus.forEach(m -> m.updateSortOrder(idToSort.get(m.getId())));
