@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+// TODO : 사용하는 DTO인지 확인 필요
 @Getter
 @NoArgsConstructor
 public class RefreshTokenRequest {
