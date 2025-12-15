@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.oauth.dto;
+package com.nowait.applicationuser.oauth.dto.web;
 
 public interface OAuth2Response {
 	// 제공자 (ex. naver, kakao)
