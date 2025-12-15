@@ -1,8 +1,6 @@
 package com.nowait.applicationuser.oauth.oauth2;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -10,9 +8,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.applicationuser.security.jwt.JwtUtil;
-import com.nowait.domaincorerdb.token.entity.Token;
-import com.nowait.domaincorerdb.token.repository.TokenRepository;
+import com.nowait.applicationuser.token.dto.AuthenticationResponse;
+import com.nowait.applicationuser.token.service.AuthTokenService;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -30,8 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-	private final JwtUtil jwtUtil;
-	private final TokenRepository tokenRepository;
+	private final AuthTokenService authTokenService;
 
 	@Override
 	@Transactional
@@ -40,26 +36,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
 		CustomOAuth2User customUserDetails = (CustomOAuth2User)authentication.getPrincipal();
 		User user = customUserDetails.getUser();
-		Long userId = customUserDetails.getUserId();
-		String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-		// JWT 발급
-		String accessToken = jwtUtil.createAccessToken("accessToken", userId, role,
-			Boolean.TRUE.equals(user.getPhoneEntered()),  Boolean.TRUE.equals(user.getIsMarketingAgree()),60 * 60 * 1000L); // 1시간
-		String refreshToken = jwtUtil.createRefreshToken("refreshToken", userId, 30L * 24 * 60 * 60 * 1000L); // 30일
-
-		// 1. refreshToken을 DB에 저장 or update
-		Optional<Token> tokenOptional = tokenRepository.findByUserId(user.getId());
-		if (tokenOptional.isPresent()) {
-			Token token = tokenOptional.get();
-			token.updateRefreshToken(refreshToken, LocalDateTime.now().plusDays(30));
-		} else {
-			Token token = Token.toEntity(user, refreshToken, LocalDateTime.now().plusDays(30));
-			tokenRepository.save(token);
-		}
+		AuthenticationResponse authenticationResponse = authTokenService.issueTokens(user);
 
 		// 2. refreshToken을 HttpOnly 쿠키로 설정 (ResponseCookie로)
-		ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
+		ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authenticationResponse.getRefreshToken())
 			.httpOnly(true)
 			.secure(false) // 운영환경에서는 true
 			.path("/")
@@ -71,7 +52,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		response.setHeader("Set-Cookie", refreshTokenCookie.toString());
 
 		// 3. 프론트엔드로 리다이렉트 (accessToken만 쿼리로 전달)
-		String targetUrl = "https://app.nowait.co.kr/login/success?accessToken=" + accessToken;
+		String targetUrl = "https://app.nowait.co.kr/login/success?accessToken=" + authenticationResponse.getAccessToken();
 		response.sendRedirect(targetUrl);
 	}
 }
