@@ -1,7 +1,4 @@
-package com.nowait.applicationuser.oauth.oauth2;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
+package com.nowait.applicationuser.oauth.oauth2.web;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -9,12 +6,10 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import com.nowait.applicationuser.oauth.dto.KaKaoResponse;
-import com.nowait.applicationuser.oauth.dto.OAuth2Response;
-import com.nowait.common.enums.Role;
-import com.nowait.common.enums.SocialType;
+import com.nowait.applicationuser.oauth.dto.web.KaKaoResponse;
+import com.nowait.applicationuser.oauth.dto.web.OAuth2Response;
+import com.nowait.applicationuser.oauth.oauth2.global.OAuthUserService;
 import com.nowait.domaincorerdb.user.entity.User;
-import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-	private final UserRepository userRepository;
+	private final OAuthUserService oAuthUserService;
 
 	@Override
 	public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -44,34 +39,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 		}
 
 		// DB에 유저가 있는지 판단
-		Optional<User> foundUser = userRepository.findByEmail(oAuth2Response.getEmail());
+		User user  = oAuthUserService.loadOrCreateUser(oAuth2Response);
 
-		// DB에 유저 없으면 - 회원가입
-		if (foundUser.isEmpty()) {
-
-			User user = User.builder()
-				.email(oAuth2Response.getEmail())
-				.phoneNumber("")
-				.nickname(oAuth2Response.getNickName())
-				.profileImage(oAuth2Response.getProfileImage())
-				.socialType(SocialType.KAKAO)
-				.role(Role.USER) // 일반 유저 설정
-				.storeId(0L)
-				.phoneEntered(false)
-				.isMarketingAgree(false)
-				.createdAt(LocalDateTime.now())
-				.updatedAt(LocalDateTime.now())
-				.build();
-
-			userRepository.save(user);
-
-			return new CustomOAuth2User(user);
-		} else {
-			// DB에 유저 존재하면 - 로그인 진행 (이때 로그인 처리는 안하고, OAuth2LoginSuccessHandler에서 담당함)
-			User user = foundUser.get();
-
-			return new CustomOAuth2User(user);
-		}
+		return new CustomOAuth2User(user);
 	}
-
 }
