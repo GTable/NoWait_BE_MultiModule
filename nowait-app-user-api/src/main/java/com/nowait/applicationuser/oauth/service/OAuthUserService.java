@@ -1,11 +1,11 @@
-package com.nowait.applicationuser.oauth.oauth2.global;
+package com.nowait.applicationuser.oauth.service;
 
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.applicationuser.oauth.dto.web.OAuth2Response;
+import com.nowait.applicationuser.oauth.dto.OAuth2Response;
 import com.nowait.common.enums.Role;
 import com.nowait.common.enums.SocialType;
 import com.nowait.domaincorerdb.user.entity.User;

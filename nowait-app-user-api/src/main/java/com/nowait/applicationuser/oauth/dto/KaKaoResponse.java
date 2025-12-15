@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.oauth.dto.web;
+package com.nowait.applicationuser.oauth.dto;
 
 import java.util.Map;
 

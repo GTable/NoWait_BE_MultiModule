@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nowait.applicationuser.oauth.dto.app.KakaoAppLoginRequest;
-import com.nowait.applicationuser.oauth.dto.app.KakaoAppLoginResponse;
-import com.nowait.applicationuser.oauth.oauth2.app.KakaoAppLoginService;
+import com.nowait.applicationuser.oauth.dto.KakaoAppLoginRequest;
+import com.nowait.applicationuser.oauth.dto.KakaoAppLoginResponse;
+import com.nowait.applicationuser.oauth.service.KakaoAppLoginService;
 import com.nowait.common.api.ApiUtils;
 
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.oauth.dto.app;
+package com.nowait.applicationuser.oauth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -14,8 +14,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import com.nowait.applicationuser.oauth.oauth2.web.CustomOAuth2UserService;
-import com.nowait.applicationuser.oauth.oauth2.web.OAuth2LoginSuccessHandler;
+import com.nowait.applicationuser.oauth.service.CustomOAuth2UserService;
+import com.nowait.applicationuser.oauth.oauth2.OAuth2LoginSuccessHandler;
 import com.nowait.applicationuser.security.jwt.JwtAuthorizationFilter;
 import com.nowait.applicationuser.security.jwt.JwtUtil;
 import com.nowait.applicationuser.security.service.CustomUserDetailService;

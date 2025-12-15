@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.oauth.oauth2.web;
+package com.nowait.applicationuser.oauth.service;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -6,9 +6,8 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import com.nowait.applicationuser.oauth.dto.web.KaKaoResponse;
-import com.nowait.applicationuser.oauth.dto.web.OAuth2Response;
-import com.nowait.applicationuser.oauth.oauth2.global.OAuthUserService;
+import com.nowait.applicationuser.oauth.dto.KaKaoResponse;
+import com.nowait.applicationuser.oauth.dto.OAuth2Response;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
