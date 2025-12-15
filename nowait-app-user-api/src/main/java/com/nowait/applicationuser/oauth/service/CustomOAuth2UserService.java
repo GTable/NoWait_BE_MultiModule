@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.nowait.applicationuser.oauth.dto.KaKaoResponse;
 import com.nowait.applicationuser.oauth.dto.OAuth2Response;
+import com.nowait.applicationuser.oauth.dto.OAuthUserResult;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -38,8 +39,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 		}
 
 		// DB에 유저가 있는지 판단
-		User user  = oAuthUserService.loadOrCreateUser(oAuth2Response);
+		OAuthUserResult result = oAuthUserService.loadOrCreateUser(oAuth2Response);
+		User user = result.getUser();
+		boolean newUser = result.isNewUser();
 
-		return new CustomOAuth2User(user);
+		return new CustomOAuth2User(user, newUser);
 	}
 }

@@ -63,7 +63,7 @@ public class KakaoAppLoginService {
 			.profileImage(user.getProfileImage())
 			.phoneEntered(user.getPhoneEntered())
 			.marketingAgree(user.getIsMarketingAgree())
-			.isNewUser(false) // 앱 로그인에서는 항상 false로 설정
+			.isNewUser(customUser.isNewUser())
 			.build();
 	}
 }
