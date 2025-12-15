@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.oauth.oauth2.web;
+package com.nowait.applicationuser.oauth.oauth2;
 
 import java.io.IOException;
 
@@ -8,7 +8,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.applicationuser.oauth.oauth2.global.AuthTokenService;
+import com.nowait.applicationuser.token.dto.AuthenticationResponse;
+import com.nowait.applicationuser.token.service.AuthTokenService;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -36,10 +37,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		CustomOAuth2User customUserDetails = (CustomOAuth2User)authentication.getPrincipal();
 		User user = customUserDetails.getUser();
 
-		AuthTokenService.TokenResult tokenResult = authTokenService.issueTokens(user);
+		AuthenticationResponse authenticationResponse = authTokenService.issueTokens(user);
 
 		// 2. refreshToken을 HttpOnly 쿠키로 설정 (ResponseCookie로)
-		ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", tokenResult.getRefreshToken())
+		ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", authenticationResponse.getRefreshToken())
 			.httpOnly(true)
 			.secure(false) // 운영환경에서는 true
 			.path("/")
@@ -51,7 +52,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 		response.setHeader("Set-Cookie", refreshTokenCookie.toString());
 
 		// 3. 프론트엔드로 리다이렉트 (accessToken만 쿼리로 전달)
-		String targetUrl = "https://app.nowait.co.kr/login/success?accessToken=" + tokenResult.getAccessToken();
+		String targetUrl = "https://app.nowait.co.kr/login/success?accessToken=" + authenticationResponse.getAccessToken();
 		response.sendRedirect(targetUrl);
 	}
 }

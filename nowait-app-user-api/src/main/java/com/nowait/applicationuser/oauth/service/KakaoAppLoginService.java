@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.oauth.oauth2.app;
+package com.nowait.applicationuser.oauth.service;
 
 import java.time.Instant;
 
@@ -10,10 +10,10 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import com.nowait.applicationuser.oauth.dto.app.KakaoAppLoginRequest;
-import com.nowait.applicationuser.oauth.dto.app.KakaoAppLoginResponse;
-import com.nowait.applicationuser.oauth.oauth2.global.AuthTokenService;
-import com.nowait.applicationuser.oauth.oauth2.web.CustomOAuth2UserService;
+import com.nowait.applicationuser.oauth.dto.KakaoAppLoginRequest;
+import com.nowait.applicationuser.oauth.dto.KakaoAppLoginResponse;
+import com.nowait.applicationuser.token.dto.AuthenticationResponse;
+import com.nowait.applicationuser.token.service.AuthTokenService;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -52,11 +52,11 @@ public class KakaoAppLoginService {
 		CustomOAuth2User customUser = (CustomOAuth2User) oAuth2User;
 		User user = customUser.getUser();
 
-		AuthTokenService.TokenResult tokenResult = authTokenService.issueTokens(user);
+		AuthenticationResponse authenticationResponse = authTokenService.issueTokens(user);
 
 		return KakaoAppLoginResponse.builder()
-			.accessToken(tokenResult.getAccessToken())
-			.refreshToken(tokenResult.getRefreshToken())
+			.accessToken(authenticationResponse.getAccessToken())
+			.refreshToken(authenticationResponse.getRefreshToken())
 			.userId(user.getId())
 			.email(user.getEmail())
 			.nickName(user.getNickname())
