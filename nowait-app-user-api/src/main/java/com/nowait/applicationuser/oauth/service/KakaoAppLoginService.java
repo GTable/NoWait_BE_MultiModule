@@ -30,6 +30,10 @@ public class KakaoAppLoginService {
 	public KakaoAppLoginResponse login(KakaoAppLoginRequest request) {
 		String kakaoAccessTokenValue = request.getKakaoAccessToken();
 
+		if (kakaoAccessTokenValue == null || kakaoAccessTokenValue.isEmpty()) {
+			throw new OAuth2AuthenticationException("Kakao Access Token is missing.");
+		}
+
 		ClientRegistration kakaoRegistration = clientRegistrationRepository.findByRegistrationId("kakao");
 
 		if (kakaoRegistration == null) {
