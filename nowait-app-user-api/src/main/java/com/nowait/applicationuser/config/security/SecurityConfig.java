@@ -14,8 +14,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import com.nowait.applicationuser.oauth.oauth2.CustomOAuth2UserService;
-import com.nowait.applicationuser.oauth.oauth2.OAuth2LoginSuccessHandler;
+import com.nowait.applicationuser.oauth.oauth2.web.CustomOAuth2UserService;
+import com.nowait.applicationuser.oauth.oauth2.web.OAuth2LoginSuccessHandler;
 import com.nowait.applicationuser.security.jwt.JwtAuthorizationFilter;
 import com.nowait.applicationuser.security.jwt.JwtUtil;
 import com.nowait.applicationuser.security.service.CustomUserDetailService;
@@ -58,6 +58,7 @@ public class SecurityConfig {
 					"/oauth2/authorization/kakao", // 카카오 로그인 요청
 					"/login/oauth2/code/**", // 카카오 인증 콜백
 					"/api/refresh-token", // refresh token (토큰 갱신)
+					"/v2/app/oauth/kakao/login", // 카카오 앱 로그인
 					"/v1/menus/**", // 모든 메뉴 조회
 					"/v1/store-payments/**", // 결제 관련 API
 					"/orders/**",
