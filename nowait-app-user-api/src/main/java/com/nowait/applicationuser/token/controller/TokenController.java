@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationuser.security.jwt.JwtUtil;
 import com.nowait.applicationuser.token.dto.AuthenticationResponse;
-import com.nowait.applicationuser.token.service.TokenService;
+import com.nowait.applicationuser.token.service.AuthTokenService;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TokenController {
 	private final JwtUtil jwtUtil;
-	private final TokenService tokenService;
+	private final AuthTokenService tokenService;
 	private final UserRepository userRepository;
 	@Value("${jwt.access-token-expiration-ms}")
 	private long accessTokenExpiration;
