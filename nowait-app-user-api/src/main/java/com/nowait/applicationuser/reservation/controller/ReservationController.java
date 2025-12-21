@@ -28,13 +28,15 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Reservation API", description = "예약 API")
 @RestController
-@RequestMapping("/reservations")
+@RequestMapping("/v1/users/me/waitings")
 @RequiredArgsConstructor
 public class ReservationController {
 
 	private final ReservationService reservationService;
 
-	@PostMapping("/create/{storeId}")
+	// 성능 비교를 위해 남겨둔 레거시 웨이팅 등록 API
+	@PostMapping("/legacy/{storeId}")
+	@Operation(summary = "웨이팅 등록", description = "특정 주점에 대한 웨이팅 등록 레거시")
 	public ResponseEntity<?> create(
 		@PathVariable Long storeId,
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
@@ -49,7 +51,7 @@ public class ReservationController {
 			);
 	}
 
-	@PostMapping("/create/redis/{storeId}")
+	@PostMapping("/{storeId}")
 	@Operation(summary = "대기열 등록", description = "특정 주점에 대한 대기열 등록")
 	@ApiResponse(responseCode = "201", description = "대기열 등록")
 	public ResponseEntity<?> createQueue(
@@ -67,7 +69,7 @@ public class ReservationController {
 			);
 	}
 
-	@GetMapping("/get/queue/redis/{storeId}")
+	@GetMapping("/{storeId}")
 	@Operation(summary = "특정 주점의 본인 대기열 조회", description = "특정 주점에 대한 본인 대기열 조회")
 	@ApiResponse(responseCode = "200", description = "본인 대기열 조회")
 	public ResponseEntity<?> getQueue(
@@ -84,7 +86,8 @@ public class ReservationController {
 			);
 	}
 
-	@DeleteMapping("/delete/queue/redis/{storeId}")
+	// TODO : 대기열 취소 시 예약 번호 사용하도록 변경 (현재는 주점 아이디로 처리 중)
+	@DeleteMapping("{storeId}")
 	@Operation(summary = "내 대기열 취소", description = "특정 주점에 대한 대기열 취소")
 	@ApiResponse(responseCode = "200", description = "대기열 취소")
 	public ResponseEntity<?> deleteQueue(
@@ -100,7 +103,7 @@ public class ReservationController {
 			);
 	}
 
-	@GetMapping("/my/waitings")
+	@GetMapping
 	@Operation(summary = "내 모든 대기열 리스트 확인", description = "내가 신청한 모든 대기열 리스트 확인")
 	@ApiResponse(responseCode = "200", description = "대기열 리스트 조회")
 	public ResponseEntity<?> getAllMyWaitings(@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {

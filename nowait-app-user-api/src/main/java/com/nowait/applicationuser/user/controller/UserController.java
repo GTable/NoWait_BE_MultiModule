@@ -16,18 +16,19 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/v1/users/me")
 @RequiredArgsConstructor
 public class UserController {
 
 	private final UserService userService;
 
-	@PutMapping("/optional-info")
+	// TODO : Pathch로 변경 고려 및 토큰 전달 방식 변경 고려 (SecurityContext)
+	@PutMapping("/optional")
 	public ResponseEntity<?> putOptional(
-		@Valid @RequestBody UserUpdateRequest req) {
+		@Valid @RequestBody UserUpdateRequest request) {
 
-		AuthenticationResponse authenticationResponse = userService.putOptional(req.phoneNumber(),
-			Boolean.TRUE.equals(req.consent()), req.accessToken());
+		AuthenticationResponse authenticationResponse = userService.putOptional(request.phoneNumber(),
+			Boolean.TRUE.equals(request.consent()), request.accessToken());
 
 		return ResponseEntity
 			.status(HttpStatus.OK)

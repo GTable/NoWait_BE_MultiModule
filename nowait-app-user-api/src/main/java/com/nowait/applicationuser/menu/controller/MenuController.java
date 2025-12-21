@@ -18,14 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "Menu API", description = "메뉴 API")
 @RestController
-@RequestMapping("/v1/menus")
+@RequestMapping("/v1/stores/{publicCode}/menus")
 @RequiredArgsConstructor
 @Slf4j
 public class MenuController {
 
 	private final MenuService menuService;
 
-	@GetMapping("/all-menus/stores/{publicCode}")
+	@GetMapping
 	@Operation(summary = "가게의 모든 메뉴 조회", description = "특정 가게의 모든 메뉴를 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "모든 메뉴를 조회 성공")
 	public ResponseEntity<?> getMenusByStoreId(@PathVariable String publicCode) {
@@ -38,7 +38,7 @@ public class MenuController {
 			);
 	}
 
-	@GetMapping("/{publicCode}/{menuId}")
+	@GetMapping("/{menuId}")
 	@Operation(
 		summary = "메뉴 ID로 메뉴 조회", description = "특정 가게의 특정 메뉴를 ID로 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "메뉴 조회 성공")

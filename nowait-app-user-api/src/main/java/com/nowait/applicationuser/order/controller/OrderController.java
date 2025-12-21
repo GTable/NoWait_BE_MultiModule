@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Order API", description = "주문 API")
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/v1/stores/{publicCode}/tables/{tableId}/orders")
 @RequiredArgsConstructor
 public class OrderController {
 	private final OrderService orderService;
@@ -50,7 +50,7 @@ public class OrderController {
 	// 		);
 	// }
 
-	@PostMapping("/create/{publicCode}/{tableId}")
+	@PostMapping
 	@Operation(summary = "주문 생성", description = "특정 주점 - 특정 테이블에 대한 주문 생성")
 	@ApiResponse(responseCode = "201", description = "주문 생성")
 	public ResponseEntity<?> createOrder(
@@ -69,7 +69,7 @@ public class OrderController {
 			);
 	}
 
-	@GetMapping("/items/{publicCode}/{tableId}")
+	@GetMapping
 	@Operation(summary = "테이블별 주문 아이템 조회", description = "비로그인(세션) 기준으로 테이블의 내 주문 목록만 조회")
 	@ApiResponse(responseCode = "200", description = "주문 조회")
 	public ResponseEntity<?> getOrderItems(
