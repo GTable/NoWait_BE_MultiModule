@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/refresh-token")
+@RequestMapping("/v1/auth/token/refresh")
 @Slf4j
 public class TokenController {
 	private final JwtUtil jwtUtil;

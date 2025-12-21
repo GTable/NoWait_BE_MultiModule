@@ -21,35 +21,29 @@ import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "Store Payment API", description = "주점 결제 정보 API")
 @RestController
-@RequestMapping("v1/store-payments")
+@RequestMapping("/v1/stores/{publicCode}/payments")
 @RequiredArgsConstructor
 @Slf4j
 public class StorePaymentController {
 
 	private final StorePaymentService storePaymentService;
 
-	@GetMapping(("/{publicCode}"))
+	@GetMapping
 	@Operation(summary = "주점 결제 정보 조회", description = "주점 ID로 주점 결제 정보를 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "주점 결제 정보 조회 성공")
+	@ApiResponse(responseCode = "204", description = "결제 정보 없음")
 	public ResponseEntity<?> getStorePaymentByStoreId(@PathVariable String publicCode) {
-		Optional<StorePaymentReadDto> response = storePaymentService.getStorePaymentByStoreId(publicCode);
 
-		if (response.isPresent()) {
-			return ResponseEntity
+		return storePaymentService.getStorePaymentByStoreId(publicCode)
+			.map(response -> ResponseEntity
 				.status(HttpStatus.OK)
 				.body(
 					ApiUtils.success(
 						response
 					)
+				))
+			.orElseGet(() -> ResponseEntity
+				.status(HttpStatus.NO_CONTENT).build()
 				);
-		} else {
-			return ResponseEntity
-				.status(HttpStatus.OK)
-				.body(
-					ApiUtils.success(
-						"해당 주점의 등록된 결제 정보가 존재하지 않습니다."
-					)
-				);
-		}
 	}
 }

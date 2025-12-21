@@ -15,7 +15,7 @@ import com.nowait.common.api.ApiUtils;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v2/app/oauth/kakao")
+@RequestMapping("/v1/auth/app/kakao")
 @RequiredArgsConstructor
 public class KakaoAppAuthController {
 

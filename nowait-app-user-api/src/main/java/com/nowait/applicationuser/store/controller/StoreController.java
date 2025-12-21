@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "Store API", description = "주점(Store) API")
 @RestController
-@RequestMapping("v1/stores")
+@RequestMapping("/v1/stores")
 @RequiredArgsConstructor
 @Slf4j
 public class StoreController {
@@ -30,13 +30,10 @@ public class StoreController {
 	private final StoreService storeService;
 
 
-	@GetMapping("/all-stores")
-	@Operation(
-		summary = "모든 주점 페이지네이션 조회",
-		description = "모든 주점을 페이지네이션으로 조회합니다."
-	)
+	@GetMapping
+	@Operation(summary = "모든 주점 페이지네이션 조회", description = "모든 주점을 페이지네이션으로 조회합니다.")
 	@ApiResponse(responseCode = "200", description = "모든 주점 페이지네이션 조회 성공")
-	public ResponseEntity<?> getAllStoresByPageAndDeparments(Pageable pageable, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
+	public ResponseEntity<?> getAllStoresByPageAndDepartments(Pageable pageable, @AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
 		return ResponseEntity
 			.ok()
 			.body(
@@ -72,7 +69,7 @@ public class StoreController {
 			);
 	}
 
-	@GetMapping("/waiting-list")
+	@GetMapping("/waiting-count")
 	@Operation(summary = "예약 많은순/적은순 주점 리스트 조회", description = "desc(대기 많은순) , asc(대기 적은순)")
 	@ApiResponse(responseCode = "200", description = "주점 대기순 정렬")
 	public ResponseEntity<?> getStoreWaitingList(
