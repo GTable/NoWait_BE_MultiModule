@@ -57,10 +57,10 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/oauth2/authorization/kakao", // 카카오 로그인 요청
 					"/login/oauth2/code/**", // 카카오 인증 콜백
-					"/api/refresh-token", // refresh token (토큰 갱신)
-					"/v2/app/oauth/kakao/login", // 카카오 앱 로그인
-					"/v1/menus/**", // 모든 메뉴 조회
-					"/v1/store-payments/**", // 결제 관련 API
+					"/v1/auth/token/refresh", // refresh token (토큰 갱신)
+					"/v1/auth/app/kakao/login", // 카카오 앱 로그인
+					"/v1/stores/*/menus/**", // 모든 메뉴 조회
+					"/v1/stores/*/payments/**", // 결제 관련 API
 					"/orders/**",
 					"/swagger-ui/**",
 					"/v3/api-docs/**",
