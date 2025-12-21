@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 	@Tag(name = "Store Payment API", description = "주점 결제 정보 API")
 	@RestController
-	@RequestMapping("/v1/store//{publicCode}/payments")
+	@RequestMapping("/v1/store/{publicCode}/payments")
 	@RequiredArgsConstructor
 	@Slf4j
 	public class StorePaymentController {
