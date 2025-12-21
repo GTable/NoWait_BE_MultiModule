@@ -32,24 +32,6 @@ import lombok.RequiredArgsConstructor;
 public class OrderController {
 	private final OrderService orderService;
 
-	// @PostMapping("/create/{storeId}/{tableId}")
-	// @Operation(summary = "주문 생성", description = "특정 주점 - 특정 테이블에 대한 주문 생성")
-	// @ApiResponse(responseCode = "201", description = "주문 생성")
-	// public ResponseEntity<?> createOrder(
-	// 	@PathVariable Long storeId,
-	// 	@PathVariable Long tableId,
-	// 	@RequestBody @Valid OrderCreateRequestDto orderCreateRequestDto,
-	// 	HttpSession session
-	// ) {
-	// 	String sessionId = session.getId();
-	// 	OrderCreateResponseDto response = orderService.createOrder(storeId, tableId, orderCreateRequestDto, sessionId);
-	// 	return ResponseEntity
-	// 		.status(HttpStatus.CREATED)
-	// 		.body(
-	// 			ApiUtils.success(response)
-	// 		);
-	// }
-
 	@PostMapping
 	@Operation(summary = "주문 생성", description = "특정 주점 - 특정 테이블에 대한 주문 생성")
 	@ApiResponse(responseCode = "201", description = "주문 생성")
