@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Bookmark API", description = "북마크 API")
 @RestController
-@RequestMapping("v1/users/me/bookmarks")
+@RequestMapping("/v1/users/me/bookmarks")
 @RequiredArgsConstructor
 public class BookmarkController {
 	private final BookmarkService bookmarkService;
