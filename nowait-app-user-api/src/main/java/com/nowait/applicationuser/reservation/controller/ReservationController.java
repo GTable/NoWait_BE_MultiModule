@@ -87,7 +87,7 @@ public class ReservationController {
 	}
 
 	// TODO : 대기열 취소 시 예약 번호 사용하도록 변경 (현재는 주점 아이디로 처리 중)
-	@DeleteMapping("{storeId}")
+	@DeleteMapping("/{storeId}")
 	@Operation(summary = "내 대기열 취소", description = "특정 주점에 대한 대기열 취소")
 	@ApiResponse(responseCode = "200", description = "대기열 취소")
 	public ResponseEntity<?> deleteQueue(
