@@ -60,8 +60,8 @@ public class SecurityConfig {
 					"/v1/auth/token/refresh", // refresh token (토큰 갱신)
 					"/v1/auth/app/kakao/login", // 카카오 앱 로그인
 					"/v1/stores/*/menus/**", // 모든 메뉴 조회
+					"/v1/stores/*/tables/*/orders", // 주문 생성 및 조회
 					"/v1/stores/*/payments/**", // 결제 관련 API
-					"/orders/**",
 					"/swagger-ui/**",
 					"/v3/api-docs/**",
 					"/v3/api-docs.json",
@@ -69,7 +69,6 @@ public class SecurityConfig {
 					"/swagger-resources/**",
 					"/webjars/**",
 					"/demo-ui.html",
-					"/v1/menus/all-menus/stores/**",
 					"/nowait/management/**",
 					"/health-check"
 				)
