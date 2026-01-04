@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -120,7 +121,7 @@ public class ReservationService {
 		Duration ttlTo3am = waitingUserRedisRepository.calculateTTLUntilNext03AM();
 
 		// 1) 임대 획득
-		String token = java.util.UUID.randomUUID().toString();
+		String token = UUID.randomUUID().toString();
 		int attempts = 0;
 		while (true) {
 			boolean ok = waitingPermitLuaRepository.acquireLease(userId, token, System.currentTimeMillis(), LEASE_MS,
@@ -142,16 +143,30 @@ public class ReservationService {
 			throw new DuplicateReservationException();
 		}
 
+		WaitingSnapshot snapshot = null;
 		try {
 			// 2) 스토어 큐 등록(기존 메서드 그대로)
 			long ts = System.currentTimeMillis();
-			existingSnapshot = waitingUserRedisRepository.addToWaitingQueueLua(storeId, userId, dto.getPartySize(), ts, ttlTo3am);
-			if (existingSnapshot.getReservationId().isEmpty())
+
+			snapshot = waitingUserRedisRepository.addToWaitingQueueLua(
+				storeId, userId, dto.getPartySize(), ts, ttlTo3am
+			);
+
+			if (snapshot == null || snapshot.getReservationId() == null)
 				throw new ReservationNumberIssueFailException();
 
-			// 3) 확정(holding → active)
-			waitingPermitLuaRepository.finalizeActive(userId, token, String.valueOf(storeId), existingSnapshot.getReservationId(), ttlTo3am);
 
+			if (snapshot.isNew()) {
+				waitingPermitLuaRepository.finalizeActive(
+					userId,
+					token,
+					String.valueOf(storeId),
+					snapshot.getReservationId(),
+					ttlTo3am
+				);
+			}
+
+			// 3) 확정(holding → active)
 			WaitingSnapshot after = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
 
 			// 4) 응답
@@ -163,7 +178,9 @@ public class ReservationService {
 
 		} catch (RuntimeException e) {
 			// 실패 시 임대 반납
-			waitingPermitLuaRepository.releaseLease(userId, token);
+			if (snapshot != null && snapshot.isNew()) {
+				waitingPermitLuaRepository.releaseLease(userId, token);
+			}
 			throw e;
 		}
 	}

@@ -9,4 +9,5 @@ public class WaitingSnapshot {
 	private final Long rank;
 	private final Integer partySize;
 	private final String reservationId;
+	private final boolean isNew;
 }

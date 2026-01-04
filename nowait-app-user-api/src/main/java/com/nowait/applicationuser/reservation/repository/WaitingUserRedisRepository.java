@@ -31,46 +31,50 @@ import lombok.RequiredArgsConstructor;
 public class WaitingUserRedisRepository {
 	private final StringRedisTemplate redisTemplate;
 	private static final String ADD_WAITING_LUA = """
-  		-- KEYS
-		  -- 1: queueKey
-		  -- 2: partyKey
-		  -- 3: statusKey
-		  -- 4: numberMapKey
-		  -- 5: dailySeqKey
-		  
-		  -- ARGV
-		  -- 1: userId
-		  -- 2: timestamp (ms)
-		  -- 3: partySize
-		  -- 4: today (YYYYMMDD)
-		  -- 5: storeId
-		  -- 6: ttlMillis
-		  
-		  -- 1) 큐 등록 (중복 방지)
-		  local added = redis.call('ZADD', KEYS[1], 'NX', ARGV[2], ARGV[1])
-		  if added == 0 then
-		    local rid = redis.call('HGET', KEYS[4], ARGV[1])
-		    return {0, rid}
-		  end
-		  
-		  -- 2) 일일 시퀀스
-		  local seq = redis.call('INCR', KEYS[5])
-		  local seqStr = string.format('%04d', seq)
-		  local reservationId = ARGV[5] .. '-' .. ARGV[4] .. '-' .. seqStr
-		  
-		  -- 3) 메타 저장
-		  redis.call('HSET', KEYS[4], ARGV[1], reservationId)
-		  redis.call('HSET', KEYS[2], ARGV[1], ARGV[3])
-		  redis.call('HSET', KEYS[3], ARGV[1], 'WAITING')
-		  
-		  -- 4) TTL은 최초 1회만
-		  if redis.call('PTTL', KEYS[1]) < 0 then
-		    for i = 1, #KEYS do
-		      redis.call('PEXPIRE', KEYS[i], ARGV[6])
-		    end
-		  end
-		  
-		  return {1, reservationId}
+		-- KEYS
+		-- 1: queueKey
+		-- 2: partyKey
+		-- 3: statusKey
+		-- 4: numberMapKey
+		-- 5: dailySeqKey
+		
+		-- ARGV
+		-- 1: userId
+		-- 2: timestamp (ms)
+		-- 3: partySize
+		-- 4: today (YYYYMMDD)
+		-- 5: storeId
+		-- 6: ttlMillis
+		
+		-- 1) ZADD NX
+		local added = redis.call('ZADD', KEYS[1], 'NX', ARGV[2], ARGV[1])
+		
+		local isNew = 0
+		local reservationId
+		
+		if added == 1 then
+			isNew = 1
+			local seq = redis.call('INCR', KEYS[5])
+			local seqStr = string.format('%04d', seq)
+			reservationId = ARGV[5] .. '-' .. ARGV[4] .. '-' .. seqStr
+			
+			redis.call('HSET', KEYS[4], ARGV[1], reservationId)
+			redis.call('HSET', KEYS[2], ARGV[1], ARGV[3])
+			redis.call('HSET', KEYS[3], ARGV[1], 'WAITING')
+		else
+			reservationId = redis.call('HGET', KEYS[4], ARGV[1])
+		end
+		
+		local rank = redis.call('ZRANK', KEYS[1], ARGV[1])
+		
+		-- TTL: 키가 처음 생성된 경우만
+		if redis.call('PTTL', KEYS[1]) == -1 then
+			for i = 1, #KEYS do
+				redis.call('PEXPIRE', KEYS[i], ARGV[6])
+			end
+		end
+		
+		return {isNew, rank, ARGV[3], reservationId}          
 		""";
 
 	// 중복 등록 방지: 이미 있으면 추가X
@@ -151,21 +155,20 @@ public class WaitingUserRedisRepository {
 
 		@SuppressWarnings("unchecked")
 		List<Object> response = (List<Object>) result;
-		if (response.size() < 2) return null;
+		if (response == null || response.size() < 4) return null;
 
-		Long added = response.get(0) instanceof Long l ? l : Long.parseLong(String.valueOf(response.get(0)));
-		String reservationId = String.valueOf(response.get(1));
+		boolean isNew = ((Long) response.get(0)) == 1L;
+		Long rank = response.get(1) == null ? null : (Long) response.get(1);
+		Integer ps = response.get(2) == null ? null : Integer.valueOf(response.get(2).toString());
+		String reservationId = response.get(3) == null ? null : response.get(3).toString();
 
-		// added == 0이면 중복, 1이면 신규 등록
-		// 중복인 경우 rank를 null로 반환하여 구분 가능하게 함
-		if (added == 0) {
-			Integer existingPartySize = getPartySize(storeId, userId);
-			Long existingRank = getRank(storeId, userId);
-			return new WaitingSnapshot(existingRank, existingPartySize, reservationId);
+		if (!isNew) {
+			// 중복 등록: Redis 재조회 없음
+			return new WaitingSnapshot(rank, ps, reservationId, false);
 		}
 
-		Long actualRank = getRank(storeId, userId);
-		return new WaitingSnapshot(actualRank, partySize, reservationId);
+		// 신규 등록
+		return new WaitingSnapshot(rank, ps, reservationId, true);
 	}
 
 	// 예약한 사람이 등록한 동반인원(partySize) 조회
