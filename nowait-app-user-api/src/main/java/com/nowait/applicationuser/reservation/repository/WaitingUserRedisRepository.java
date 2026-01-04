@@ -336,7 +336,7 @@ public class WaitingUserRedisRepository {
 		});
 
 		if (results == null || results.size() < 3) {
-			return new WaitingSnapshot(null, null, null);
+			return new WaitingSnapshot(null, null, null, false);
 		}
 
 		// 1) rank
@@ -361,7 +361,7 @@ public class WaitingUserRedisRepository {
 			reservationId = redisTemplate.getStringSerializer().deserialize(b);
 		}
 
-		return new WaitingSnapshot(rank, partySize, reservationId);
+		return new WaitingSnapshot(rank, partySize, reservationId, false);
 	}
 }
 
