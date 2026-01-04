@@ -18,8 +18,10 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Repository;
 
+import com.nowait.applicationuser.reservation.dto.WaitingSnapshot;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,48 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WaitingUserRedisRepository {
 	private final StringRedisTemplate redisTemplate;
+	private static final String ADD_WAITING_LUA = """
+  		-- KEYS
+		  -- 1: queueKey
+		  -- 2: partyKey
+		  -- 3: statusKey
+		  -- 4: numberMapKey
+		  -- 5: dailySeqKey
+		  
+		  -- ARGV
+		  -- 1: userId
+		  -- 2: timestamp (ms)
+		  -- 3: partySize
+		  -- 4: today (YYYYMMDD)
+		  -- 5: storeId
+		  -- 6: ttlMillis
+		  
+		  -- 1) 큐 등록 (중복 방지)
+		  local added = redis.call('ZADD', KEYS[1], 'NX', ARGV[2], ARGV[1])
+		  if added == 0 then
+		    local rid = redis.call('HGET', KEYS[4], ARGV[1])
+		    return {0, rid}
+		  end
+		  
+		  -- 2) 일일 시퀀스
+		  local seq = redis.call('INCR', KEYS[5])
+		  local seqStr = string.format('%04d', seq)
+		  local reservationId = ARGV[5] .. '-' .. ARGV[4] .. '-' .. seqStr
+		  
+		  -- 3) 메타 저장
+		  redis.call('HSET', KEYS[4], ARGV[1], reservationId)
+		  redis.call('HSET', KEYS[2], ARGV[1], ARGV[3])
+		  redis.call('HSET', KEYS[3], ARGV[1], 'WAITING')
+		  
+		  -- 4) TTL은 최초 1회만
+		  if redis.call('PTTL', KEYS[1]) < 0 then
+		    for i = 1, #KEYS do
+		      redis.call('PEXPIRE', KEYS[i], ARGV[6])
+		    end
+		  end
+		  
+		  return {1, reservationId}
+		""";
 
 	// 중복 등록 방지: 이미 있으면 추가X
 	// 특정 주점에 대한 예약 등록
@@ -66,6 +110,49 @@ public class WaitingUserRedisRepository {
 		}
 
 		return reservationId;
+	}
+
+	// 루아 스크립트 사용
+	public String addToWaitingQueueLua(
+		Long storeId,
+		String userId,
+		Integer partySize,
+		long ts,
+		Duration ttl
+	) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
+		String statusKey = RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId;
+		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
+
+		String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+		String dailySeqKey = RedisKeyUtils.buildReservationSeqKey(storeId) + ":" + today;
+
+		List<String> keys = List.of(
+			queueKey,
+			partyKey,
+			statusKey,
+			numberMapKey,
+			dailySeqKey
+		);
+
+		Object result = redisTemplate.execute(
+			new DefaultRedisScript<>(ADD_WAITING_LUA, List.class),
+			keys,
+			userId,
+			String.valueOf(ts),
+			String.valueOf(partySize),
+			today,
+			String.valueOf(storeId),
+			String.valueOf(ttl.toMillis())
+		);
+
+		if (result == null) return null;
+
+		@SuppressWarnings("unchecked")
+		List<Object> response = (List<Object>) result;
+		return response.size() >= 2 ? String.valueOf(response.get(1)) : null;
+
 	}
 
 	// 예약한 사람이 등록한 동반인원(partySize) 조회
@@ -213,6 +300,53 @@ public class WaitingUserRedisRepository {
 		String reservationId = storeId + "-" + today + "-" + seqStr;
 
 		return reservationId;
+	}
+
+	public WaitingSnapshot getWaitingSnapshot(Long storeId, String userId) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		String partyKey = RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId;
+		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
+
+		List<Object> results = redisTemplate.executePipelined((RedisCallback<Object>) conn -> {
+			byte[] qk = redisTemplate.getStringSerializer().serialize(queueKey);
+			byte[] pk = redisTemplate.getStringSerializer().serialize(partyKey);
+			byte[] nk = redisTemplate.getStringSerializer().serialize(numberMapKey);
+			byte[] uid = redisTemplate.getStringSerializer().serialize(userId);
+
+			conn.zRank(qk, uid);
+			conn.hGet(pk, uid);
+			conn.hGet(nk, uid);
+			return null;
+		});
+
+		if (results == null || results.size() < 3) {
+			return new WaitingSnapshot(null, null, null);
+		}
+
+		// 1) rank
+		Long rank = (results.get(0) instanceof Long r) ? r : null;
+
+		// 2) partySize
+		Integer partySize = null;
+		Object psObj = results.get(1);
+		if (psObj instanceof String s) {
+			partySize = Integer.valueOf(s);
+		} else if (psObj instanceof byte[] b) {
+			partySize = Integer.valueOf(
+				redisTemplate.getStringSerializer().deserialize(b)
+			);
+		}
+
+		// 3) reservationId
+		String reservationId = null;
+		Object ridObj = results.get(2);
+		if (ridObj instanceof String s) {
+			reservationId = s;
+		} else if (ridObj instanceof byte[] b) {
+			reservationId = redisTemplate.getStringSerializer().deserialize(b);
+		}
+
+		return new WaitingSnapshot(rank, partySize, reservationId);
 	}
 }
 
