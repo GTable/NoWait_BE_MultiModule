@@ -119,12 +119,6 @@ public class ReservationService {
 		String userId = user.getId().toString();
 		Duration ttlTo3am = waitingUserRedisRepository.calculateTTLUntilNext03AM();
 
-		// 1) 이미 해당 store에 대기 중이면 임대 없이 현재 상태 반환 (중복 요청 허용 X)
-		WaitingSnapshot waitingSnapshot = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
-		if (waitingSnapshot.getRank() != null) {
-			throw new DuplicateReservationException();
-		}
-
 		// 1) 임대 획득
 		String token = java.util.UUID.randomUUID().toString();
 		int attempts = 0;
@@ -139,6 +133,13 @@ public class ReservationService {
 				Thread.sleep((long)(5 * Math.pow(3, attempts - 1)));
 			} catch (InterruptedException ignored) {
 			}
+		}
+
+		// 2) 임대 획득 후 중복 체크
+		WaitingSnapshot existingSnapshot = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
+		if (existingSnapshot.getRank() != null) {
+			waitingPermitLuaRepository.releaseLease(userId, token);
+			throw new DuplicateReservationException();
 		}
 
 		WaitingSnapshot snapshot;
