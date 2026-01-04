@@ -113,7 +113,7 @@ public class WaitingUserRedisRepository {
 	}
 
 	// 루아 스크립트 사용
-	public String addToWaitingQueueLua(
+	public WaitingSnapshot addToWaitingQueueLua(
 		Long storeId,
 		String userId,
 		Integer partySize,
@@ -151,8 +151,18 @@ public class WaitingUserRedisRepository {
 
 		@SuppressWarnings("unchecked")
 		List<Object> response = (List<Object>) result;
-		return response.size() >= 2 ? String.valueOf(response.get(1)) : null;
+		if (response.size() < 2) return null;
 
+		Long added = response.get(0) instanceof Long l ? l : Long.parseLong(String.valueOf(response.get(0)));
+		String reservationId = String.valueOf(response.get(1));
+
+		// added == 0이면 중복, 1이면 신규 등록
+		// 중복인 경우 rank를 null로 반환하여 구분 가능하게 함
+		if (added == 0) {
+			return new WaitingSnapshot(null, partySize, reservationId); // 기존 데이터
+		}
+
+		return new WaitingSnapshot(0L, partySize, reservationId); // 신규 등록
 	}
 
 	// 예약한 사람이 등록한 동반인원(partySize) 조회

@@ -141,17 +141,17 @@ public class ReservationService {
 			}
 		}
 
-		String reservationId;
+		WaitingSnapshot snapshot;
 		try {
 			// 2) 스토어 큐 등록(기존 메서드 그대로)
 			long ts = System.currentTimeMillis();
 			// reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, dto.getPartySize(), ts);
-			reservationId = waitingUserRedisRepository.addToWaitingQueueLua(storeId, userId, dto.getPartySize(), ts, ttlTo3am);
-			if (reservationId.isEmpty())
+			snapshot = waitingUserRedisRepository.addToWaitingQueueLua(storeId, userId, dto.getPartySize(), ts, ttlTo3am);
+			if (snapshot.getReservationId().isEmpty())
 				throw new ReservationNumberIssueFailException();
 
 			// 3) 확정(holding→active)
-			waitingPermitLuaRepository.finalizeActive(userId, token, String.valueOf(storeId), reservationId, ttlTo3am);
+			waitingPermitLuaRepository.finalizeActive(userId, token, String.valueOf(storeId), snapshot.getReservationId(), ttlTo3am);
 
 			WaitingSnapshot after = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
 
