@@ -141,7 +141,7 @@ public class ReservationService {
 			}
 		}
 
-		String reservationId = "";
+		String reservationId;
 		try {
 			// 2) 스토어 큐 등록(기존 메서드 그대로)
 			long ts = System.currentTimeMillis();
