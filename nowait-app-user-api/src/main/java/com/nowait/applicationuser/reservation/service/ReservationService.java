@@ -22,6 +22,7 @@ import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.dto.WaitingSnapshot;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
@@ -118,16 +119,10 @@ public class ReservationService {
 		String userId = user.getId().toString();
 		Duration ttlTo3am = waitingUserRedisRepository.calculateTTLUntilNext03AM();
 
-		// 1) 이미 해당 store에 대기 중이면 임대 없이 현재 상태 반환 (중복 요청 허용)
-		if (Boolean.TRUE.equals(waitingUserRedisRepository.isUserWaiting(storeId, userId))) {
-			Long rank = waitingUserRedisRepository.getRank(storeId, userId);
-			Integer ps = waitingUserRedisRepository.getPartySize(storeId, userId);
-			String reservationId = waitingUserRedisRepository.getReservationId(storeId, userId);
-			return WaitingResponseDto.builder()
-				.reservationNumber(reservationId)
-				.rank(rank == null ? -1 : rank.intValue() + 1)
-				.partySize(ps == null ? 0 : ps)
-				.build();
+		// 1) 이미 해당 store에 대기 중이면 임대 없이 현재 상태 반환 (중복 요청 허용 X)
+		WaitingSnapshot waitingSnapshot = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
+		if (waitingSnapshot.getRank() != null) {
+			throw new DuplicateReservationException();
 		}
 
 		// 1) 임대 획득
@@ -146,23 +141,25 @@ public class ReservationService {
 			}
 		}
 
-		String reservationId = null;
+		String reservationId = "";
 		try {
 			// 2) 스토어 큐 등록(기존 메서드 그대로)
 			long ts = System.currentTimeMillis();
-			reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, dto.getPartySize(), ts);
-			if (reservationId == null)
+			// reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, dto.getPartySize(), ts);
+			reservationId = waitingUserRedisRepository.addToWaitingQueueLua(storeId, userId, dto.getPartySize(), ts, ttlTo3am);
+			if (reservationId.isEmpty())
 				throw new ReservationNumberIssueFailException();
 
 			// 3) 확정(holding→active)
 			waitingPermitLuaRepository.finalizeActive(userId, token, String.valueOf(storeId), reservationId, ttlTo3am);
 
+			WaitingSnapshot after = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
+
 			// 4) 응답
-			Long rank = waitingUserRedisRepository.getRank(storeId, userId);
 			return WaitingResponseDto.builder()
-				.reservationNumber(reservationId)
-				.rank(rank == null ? -1 : rank.intValue() + 1)
-				.partySize(dto.getPartySize() == null ? 0 : dto.getPartySize())
+				.reservationNumber(after.getReservationId())
+				.rank(after.getRank() == null ? -1 : after.getRank().intValue() + 1)
+				.partySize(after.getPartySize() == null ? 0 : after.getPartySize())
 				.build();
 
 		} catch (RuntimeException e) {
