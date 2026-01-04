@@ -159,10 +159,13 @@ public class WaitingUserRedisRepository {
 		// added == 0이면 중복, 1이면 신규 등록
 		// 중복인 경우 rank를 null로 반환하여 구분 가능하게 함
 		if (added == 0) {
-			return new WaitingSnapshot(null, partySize, reservationId); // 기존 데이터
+			Integer existingPartySize = getPartySize(storeId, userId);
+			Long existingRank = getRank(storeId, userId);
+			return new WaitingSnapshot(existingRank, existingPartySize, reservationId);
 		}
 
-		return new WaitingSnapshot(0L, partySize, reservationId); // 신규 등록
+		Long actualRank = getRank(storeId, userId);
+		return new WaitingSnapshot(actualRank, partySize, reservationId);
 	}
 
 	// 예약한 사람이 등록한 동반인원(partySize) 조회
