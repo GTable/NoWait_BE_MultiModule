@@ -332,9 +332,8 @@ public class WaitingUserRedisRepository {
 		if (psObj instanceof String s) {
 			partySize = Integer.valueOf(s);
 		} else if (psObj instanceof byte[] b) {
-			partySize = Integer.valueOf(
-				redisTemplate.getStringSerializer().deserialize(b)
-			);
+			String deserialized = redisTemplate.getStringSerializer().deserialize(b);
+			partySize = deserialized != null ? Integer.valueOf(deserialized) : null;
 		}
 
 		// 3) reservationId
