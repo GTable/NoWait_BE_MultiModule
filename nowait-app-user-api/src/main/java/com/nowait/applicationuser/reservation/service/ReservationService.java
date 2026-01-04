@@ -178,7 +178,7 @@ public class ReservationService {
 
 		} catch (RuntimeException e) {
 			// 실패 시 임대 반납
-			if (snapshot != null && snapshot.isNew()) {
+			if (snapshot != null || snapshot.isNew()) {
 				waitingPermitLuaRepository.releaseLease(userId, token);
 			}
 			throw e;
