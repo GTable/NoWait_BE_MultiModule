@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ import com.nowait.applicationuser.reservation.dto.MyWaitingQueueDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateRequestDto;
 import com.nowait.applicationuser.reservation.dto.ReservationCreateResponseDto;
 import com.nowait.applicationuser.reservation.dto.WaitingResponseDto;
+import com.nowait.applicationuser.reservation.dto.WaitingSnapshot;
 import com.nowait.applicationuser.reservation.repository.WaitingUserRedisRepository;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.common.enums.Role;
@@ -118,20 +120,8 @@ public class ReservationService {
 		String userId = user.getId().toString();
 		Duration ttlTo3am = waitingUserRedisRepository.calculateTTLUntilNext03AM();
 
-		// 1) 이미 해당 store에 대기 중이면 임대 없이 현재 상태 반환 (중복 요청 허용)
-		if (Boolean.TRUE.equals(waitingUserRedisRepository.isUserWaiting(storeId, userId))) {
-			Long rank = waitingUserRedisRepository.getRank(storeId, userId);
-			Integer ps = waitingUserRedisRepository.getPartySize(storeId, userId);
-			String reservationId = waitingUserRedisRepository.getReservationId(storeId, userId);
-			return WaitingResponseDto.builder()
-				.reservationNumber(reservationId)
-				.rank(rank == null ? -1 : rank.intValue() + 1)
-				.partySize(ps == null ? 0 : ps)
-				.build();
-		}
-
 		// 1) 임대 획득
-		String token = java.util.UUID.randomUUID().toString();
+		String token = UUID.randomUUID().toString();
 		int attempts = 0;
 		while (true) {
 			boolean ok = waitingPermitLuaRepository.acquireLease(userId, token, System.currentTimeMillis(), LEASE_MS,
@@ -146,28 +136,57 @@ public class ReservationService {
 			}
 		}
 
-		String reservationId = null;
+		// 2) 임대 획득 후 중복 체크
+		WaitingSnapshot existingSnapshot = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
+		if (existingSnapshot != null &&  existingSnapshot.getRank() != null) {
+			waitingPermitLuaRepository.releaseLease(userId, token);
+			throw new DuplicateReservationException();
+		}
+
+		WaitingSnapshot snapshot = null;
 		try {
 			// 2) 스토어 큐 등록(기존 메서드 그대로)
 			long ts = System.currentTimeMillis();
-			reservationId = waitingUserRedisRepository.addToWaitingQueue(storeId, userId, dto.getPartySize(), ts);
-			if (reservationId == null)
+
+			snapshot = waitingUserRedisRepository.addToWaitingQueueLua(
+				storeId, userId, dto.getPartySize(), ts, ttlTo3am
+			);
+
+			if (snapshot == null || snapshot.getReservationId() == null)
 				throw new ReservationNumberIssueFailException();
 
-			// 3) 확정(holding→active)
-			waitingPermitLuaRepository.finalizeActive(userId, token, String.valueOf(storeId), reservationId, ttlTo3am);
+
+			if (snapshot.isNew()) {
+				waitingPermitLuaRepository.finalizeActive(
+					userId,
+					token,
+					String.valueOf(storeId),
+					snapshot.getReservationId(),
+					ttlTo3am
+				);
+			} else {
+				// Lua 스크립트 중복 감지 케이스
+				waitingPermitLuaRepository.releaseLease(userId, token);
+				throw new DuplicateReservationException();
+			}
+
+			// 3) 확정(holding → active)
+			WaitingSnapshot after = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
+			if (after == null)
+				throw new ReservationNumberIssueFailException();
 
 			// 4) 응답
-			Long rank = waitingUserRedisRepository.getRank(storeId, userId);
 			return WaitingResponseDto.builder()
-				.reservationNumber(reservationId)
-				.rank(rank == null ? -1 : rank.intValue() + 1)
-				.partySize(dto.getPartySize() == null ? 0 : dto.getPartySize())
+				.reservationNumber(after.getReservationId())
+				.rank(after.getRank() == null ? -1 : after.getRank().intValue() + 1)
+				.partySize(after.getPartySize() == null ? 0 : after.getPartySize())
 				.build();
 
 		} catch (RuntimeException e) {
 			// 실패 시 임대 반납
-			waitingPermitLuaRepository.releaseLease(userId, token);
+			if (snapshot == null || (snapshot.isNew())) {
+				waitingPermitLuaRepository.releaseLease(userId, token);
+			}
 			throw e;
 		}
 	}

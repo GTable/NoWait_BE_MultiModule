@@ -80,6 +80,8 @@ public class RedisKeyUtils {
 		return String.format("reservation:user:%d", storeId);
 	}
 
+	public static String buildUserLeaseCountKey(String userId) { return "userID:{" + userId + "}:lease:cnt"; }
+
 	/**
 	 * 대기 호출 시각(hash)에 사용할 키 접두사
 	 */

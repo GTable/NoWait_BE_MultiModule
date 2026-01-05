@@ -215,7 +215,7 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), NOTFOUND_RESERVATION.getCode());
 	}
 
-	@ResponseStatus(BAD_REQUEST)
+	@ResponseStatus(CONFLICT)
 	@ExceptionHandler(DuplicateReservationException.class)
 	public ErrorResponse duplicateReservationException(DuplicateReservationException e, WebRequest request) {
 		alarm(e, request);
