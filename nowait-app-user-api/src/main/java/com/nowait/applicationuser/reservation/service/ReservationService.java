@@ -164,6 +164,10 @@ public class ReservationService {
 					snapshot.getReservationId(),
 					ttlTo3am
 				);
+			} else {
+				// Lua 스크립트 중복 감지 케이스
+				waitingPermitLuaRepository.releaseLease(userId, token);
+				throw new DuplicateReservationException();
 			}
 
 			// 3) 확정(holding → active)
