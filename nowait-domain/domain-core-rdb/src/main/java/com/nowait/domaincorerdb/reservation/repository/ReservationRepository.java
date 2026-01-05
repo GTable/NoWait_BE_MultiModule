@@ -18,6 +18,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 	boolean existsByUserAndStoreAndStatusIn(User user, Store store, List<ReservationStatus> statuses);
 
+	boolean existsReservationByReservationNumber(String reservationNumber);
+
 	Optional<Reservation> findFirstByStore_StoreIdAndUserIdAndStatusInAndRequestedAtBetweenOrderByRequestedAtDesc(
 		Long storeId, Long userId, List<ReservationStatus> statuses, LocalDateTime start, LocalDateTime end);
 
