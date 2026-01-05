@@ -138,7 +138,7 @@ public class ReservationService {
 
 		// 2) 임대 획득 후 중복 체크
 		WaitingSnapshot existingSnapshot = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
-		if (existingSnapshot.getRank() != null) {
+		if (existingSnapshot != null &&  existingSnapshot.getRank() != null) {
 			waitingPermitLuaRepository.releaseLease(userId, token);
 			throw new DuplicateReservationException();
 		}
