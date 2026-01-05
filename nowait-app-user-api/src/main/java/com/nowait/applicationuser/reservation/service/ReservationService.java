@@ -1,5 +1,7 @@
 package com.nowait.applicationuser.reservation.service;
 
+import static com.nowait.common.exception.ErrorMessage.*;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -215,38 +217,42 @@ public class ReservationService {
 
 	public boolean cancelWaiting(Long storeId, CustomOAuth2User customOAuth2User) {
 		String userId = customOAuth2User.getUserId().toString();
-		if (storeId == null || userId.trim().isEmpty()) {
-			throw new IllegalArgumentException("Invalid storeId or userId");
+		if (storeId == null) {
+			throw new StoreNotFoundException();
+		}
+
+		if (userId.trim().isEmpty()) {
+			throw new UserNotFoundException();
 		}
 
 		String reservationNumber = waitingUserRedisRepository.getReservationId(storeId, userId);
 		if (reservationNumber == null) {
-			throw new IllegalArgumentException("Waiting not found");
+			throw new ReservationNotFoundException();
 		}
 		Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
 		Long ts = waitingUserRedisRepository.getWaitingTimestamp(storeId, userId);
 
+
 		// 대기열에서 제거 및 결과 반환
-		boolean removed = waitingUserRedisRepository.removeWaiting(storeId, userId);
-		if (!removed) {
-			throw new IllegalArgumentException("Waiting not found");
+		if (reservationRepository.existsReservationByReservationNumber(reservationNumber)) {
+			Reservation reservation = Reservation.builder()
+				.reservationNumber(reservationNumber)
+				.partySize(partySize)
+				.status(ReservationStatus.CANCELLED)
+				.store(storeRepository.getReferenceById(storeId))
+				.user(userRepository.getReferenceById(Long.parseLong(userId)))
+				.updatedAt(LocalDateTime.now())
+				.requestedAt(ts != null ? LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneId.of("Asia/Seoul"))
+					: LocalDateTime.now())
+				.build();
+
+			reservationRepository.save(reservation);
 		}
 
-		Reservation reservation = Reservation.builder()
-			.reservationNumber(reservationNumber)
-			.partySize(partySize)
-			.status(ReservationStatus.CANCELLED)
-			.store(storeRepository.getReferenceById(storeId))
-			.user(userRepository.getReferenceById(Long.parseLong(userId)))
-			.updatedAt(LocalDateTime.now())
-			.requestedAt(ts != null ? LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneId.of("Asia/Seoul"))
-				: LocalDateTime.now())
-			.build();
-
-		reservationRepository.save(reservation);
+		waitingUserRedisRepository.removeWaiting(storeId, userId);
 		waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
+
 		return true;
-		// return removed;
 	}
 
 	//TODO 성능 개선 필요
