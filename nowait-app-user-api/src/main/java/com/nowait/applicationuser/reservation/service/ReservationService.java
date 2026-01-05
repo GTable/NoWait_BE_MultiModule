@@ -172,6 +172,8 @@ public class ReservationService {
 
 			// 3) 확정(holding → active)
 			WaitingSnapshot after = waitingUserRedisRepository.getWaitingSnapshot(storeId, userId);
+			if (after == null)
+				throw new ReservationNumberIssueFailException();
 
 			// 4) 응답
 			return WaitingResponseDto.builder()
@@ -182,7 +184,7 @@ public class ReservationService {
 
 		} catch (RuntimeException e) {
 			// 실패 시 임대 반납
-			if (snapshot != null || snapshot.isNew()) {
+			if (snapshot == null || (snapshot.isNew())) {
 				waitingPermitLuaRepository.releaseLease(userId, token);
 			}
 			throw e;
