@@ -36,7 +36,7 @@ public class ReservationController {
 
 	// 성능 비교를 위해 남겨둔 레거시 웨이팅 등록 API
 	@PostMapping("/legacy/{storeId}")
-	@Operation(summary = "웨이팅 등록", description = "특정 주점에 대한 웨이팅 등록 레거시")
+	@Operation(summary = "웨이팅 등록", description = "특정 주점에 대한 웨이팅 등록 레거시 현재는 사용하지 않음!!!!")
 	public ResponseEntity<?> create(
 		@PathVariable Long storeId,
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,

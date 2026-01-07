@@ -48,7 +48,7 @@ public class WaitingPermitLuaRepository {
 			if after < 0 then redis.call('SET', KEYS[3], 0) end
 			end
 			
-			-- 2) 정확한 limit 체크 (핵심)
+			-- 2) limit 체크 
 			local active = redis.call('SCARD', KEYS[2])
 			local holding = redis.call('ZCARD', KEYS[1])
 			
