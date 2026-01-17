@@ -1,5 +1,6 @@
 package com.nowait.domaincoreredis.rank.listener;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class CookingCompleteListener {
 	private final MenuCounterService menuCounterService;
 
+	@Async
 	@TransactionalEventListener(
 		classes = CookingCompleteEvent.class,
 		phase = TransactionPhase.AFTER_COMMIT
