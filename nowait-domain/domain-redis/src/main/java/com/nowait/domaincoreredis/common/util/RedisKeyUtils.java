@@ -19,6 +19,7 @@ public class RedisKeyUtils {
 
 	// Waiting keys
 	private static final String WAITING_KEY_PREFIX = "waiting:";
+	private static final String WAITING_USER_LIST_KEY_PREFIX = "waiting:user:";
 	private static final String WAITING_PARTYSIZE_KEY_PREFIX = "waiting:party:";
 	private static final String WAITING_STATUS_KEY_PREFIX = "waiting:status:";
 
@@ -55,6 +56,10 @@ public class RedisKeyUtils {
 		return DTF;
 	}
 
+	public static String buildWaitingUserListKeyPrefix() {
+		return WAITING_USER_LIST_KEY_PREFIX;
+	}
+
 	public static String buildWaitingKeyPrefix() {
 		return WAITING_KEY_PREFIX;
 	}
@@ -70,6 +75,10 @@ public class RedisKeyUtils {
 	// Waiting Reservation Number key
 	public static String buildReservationSeqKey(Long storeId) {
 		return String.format("reservation:seq:%d", storeId);
+	}
+
+	public static String buildWaitingSeqKey(Long storeId) {
+		return String.format("waiting:sequence:%d", storeId);
 	}
 
 	public static String buildReservationNumberKey(Long storeId) {
@@ -94,6 +103,15 @@ public class RedisKeyUtils {
 		LocalDateTime now = LocalDateTime.now(zone);
 		LocalDateTime next03 = now.toLocalDate().plusDays(1).atTime(3, 0);
 		Instant instant = next03.atZone(zone).toInstant();
+
+		return Date.from(instant);
+	}
+
+	public static Date expireAt10Minute() {
+		ZoneId zone = ZoneId.of("Asia/Seoul");
+		LocalDateTime now = LocalDateTime.now(zone);
+		LocalDateTime nextHour = now.toLocalDate().atTime(0, 10);
+		Instant instant = nextHour.atZone(zone).toInstant();
 
 		return Date.from(instant);
 	}
