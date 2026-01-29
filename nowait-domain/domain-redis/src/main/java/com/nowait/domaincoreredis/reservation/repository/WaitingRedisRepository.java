@@ -1,5 +1,8 @@
 package com.nowait.domaincoreredis.reservation.repository;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -9,11 +12,14 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Repository;
 
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domaincoreredis.reservation.exception.AlreadyWaitingException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class WaitingRedisRepository {
 
 	private final StringRedisTemplate redisTemplate;
@@ -109,6 +115,79 @@ public class WaitingRedisRepository {
 		String key = RedisKeyUtils.buildWaitingCalledAtKeyPrefix() + storeId;
 		Object val = redisTemplate.opsForHash().get(key, userId);
 		return val == null ? null : Long.valueOf(val.toString());
+	}
+
+	/**
+	 * 웨이팅 대기열 리팩토링 작업중
+	 */
+	// 대기열 추가
+	public void addWaiting(Long storeId, Long userId, LocalDateTime timestamp) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		String userListKey = RedisKeyUtils.buildWaitingUserListKeyPrefix() + userId;
+		long score = timestamp
+			.atZone(ZoneId.systemDefault())
+			.toInstant()
+			.toEpochMilli();
+
+		// TODO ttl 설정 필요
+		try {
+			redisTemplate.opsForZSet().add(queueKey, String.valueOf(userId), score);
+			log.info("웨이팅 대기열 추가 - storeId : {}, userId : {}", storeId, userId);
+
+			redisTemplate.opsForZSet().add(userListKey, String.valueOf(storeId), score);
+			log.info("유저 웨이팅 목록 추가 - userId : {}, storeId : {}", userId, storeId);
+		} catch (Exception e) {
+			log.error("Redis 웨이팅 대기열 추가 실패 - storeId : {}, userId : {}, error: {}", storeId, userId, e.getMessage());
+			throw e;
+		}
+	}
+
+	public void removeWaiting(Long storeId, Long userId) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		String userListKey = RedisKeyUtils.buildWaitingUserListKeyPrefix() + userId;
+
+		redisTemplate.opsForZSet().remove(queueKey, String.valueOf(userId));
+		log.info("웨이팅 대기열 제거 - storeId : {}, userId : {}", storeId, userId);
+
+		redisTemplate.opsForZSet().remove(userListKey, String.valueOf(storeId));
+		log.info("유저 웨이팅 목록 제거 - userId : {}, storeId : {}", userId, storeId);
+	}
+
+	public Long getWaitingRank(Long storeId, Long userId) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		return redisTemplate.opsForZSet().rank(queueKey, String.valueOf(userId));
+	}
+
+	public Long incrementDailySequence(String dailySeqKey) {
+		return redisTemplate.opsForValue().increment(dailySeqKey, 1);
+	}
+
+	// 웨이팅 등록 요청 시 멱등키 검증
+	public void indempotencyKeyExists(String idempotentKey, String status) {
+		Boolean success = redisTemplate.opsForValue()
+			.setIfAbsent(
+				idempotentKey,
+				status,
+				Duration.ofSeconds(10)
+			);
+
+		if (Boolean.FALSE.equals(success)) {
+			throw new AlreadyWaitingException();
+		}
+	}
+
+	// 웨이팅 여부 조회
+	// TODO: 구현 필요
+	public Boolean isWaiting(Long storeId, Long userId) {
+		redisTemplate.opsForZSet()
+			.score(
+				RedisKeyUtils.buildWaitingKeyPrefix() + storeId,
+				String.valueOf(userId)
+			);
+
+		Boolean isWaiting = true;
+
+		return isWaiting;
 	}
 }
 
