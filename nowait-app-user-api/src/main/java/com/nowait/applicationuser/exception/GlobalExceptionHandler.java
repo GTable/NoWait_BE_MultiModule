@@ -38,6 +38,7 @@ import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentNotFoundException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domaincoreredis.reservation.exception.AlreadyWaitingException;
 import com.nowait.domainuserrdb.bookmark.exception.AlreadyDeletedBookmarkException;
 import com.nowait.domainuserrdb.bookmark.exception.BookmarkNotFoundException;
 import com.nowait.domainuserrdb.bookmark.exception.BookmarkOwnerMismatchException;
@@ -220,6 +221,14 @@ public class GlobalExceptionHandler {
 	public ErrorResponse duplicateReservationException(DuplicateReservationException e, WebRequest request) {
 		alarm(e, request);
 		log.error("duplicateReservationException", e);
+		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(AlreadyWaitingException.class)
+	public ErrorResponse alreadyWaitingException(AlreadyWaitingException e, WebRequest request) {
+		alarm(e, request);
+		log.error("alreadyWaitingException", e);
 		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
 	}
 
