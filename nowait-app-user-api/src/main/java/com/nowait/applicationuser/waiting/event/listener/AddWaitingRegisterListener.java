@@ -1,6 +1,4 @@
-package com.nowait.applicationuser.waiting.event.listner;
-
-import java.time.LocalDateTime;
+package com.nowait.applicationuser.waiting.event.listener;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -23,7 +21,7 @@ public class AddWaitingRegisterListener {
 		classes = AddWaitingRegisterEvent.class,
 		phase = TransactionPhase.AFTER_COMMIT
 	)
-	public void onAddWaitingRegister(Long storeId, Long userId, LocalDateTime timestamp) {
-		waitingRedisRepository.addWaiting(storeId, userId, timestamp);
+	public void onAddWaitingRegister(AddWaitingRegisterEvent event) {
+		waitingRedisRepository.addWaiting(event.getStoreId(), event.getUserId(), event.getTimestamp());
 	}
 }
