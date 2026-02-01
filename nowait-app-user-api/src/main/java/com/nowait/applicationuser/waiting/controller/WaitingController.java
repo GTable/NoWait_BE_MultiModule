@@ -3,6 +3,7 @@ package com.nowait.applicationuser.waiting.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
 import com.nowait.applicationuser.waiting.service.WaitingService;
@@ -74,6 +76,26 @@ public class WaitingController {
 			.body(
 				ApiUtils.success(
 					cancelWaitingResponse
+				)
+			);
+	}
+
+	@GetMapping("/{publicCode}/waiting-count")
+	@Operation(summary = "대기열 리팩토링용 API", description = "대기 인원수 조회")
+	public ResponseEntity<?> getWaitingCount(
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
+		@PathVariable String publicCode
+	) {
+		GetWaitingSizeResponse response = waitingService.getWaitingCount(
+			customOAuth2User,
+			publicCode
+		);
+
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					response
 				)
 			);
 	}

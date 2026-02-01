@@ -209,6 +209,13 @@ public class WaitingRedisRepository {
 		return redisTemplate.opsForZSet().rank(queueKey, String.valueOf(userId));
 	}
 
+	public Long getWaitingCount(Long storeId) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		Long size = redisTemplate.opsForZSet().zCard(queueKey);
+
+		return size != null ? size : 0L;
+	}
+
 	// 웨이팅 여부 조회
 	// TODO: 구현 필요
 	public Boolean isWaiting(Long storeId, Long userId) {
