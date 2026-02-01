@@ -7,5 +7,7 @@ import lombok.Getter;
 @Builder
 public class GetWaitingSizeResponse {
 	private Long storeId;
+	private String storeName;
+	private String departmentName;
 	private Long waitingCount;
 }

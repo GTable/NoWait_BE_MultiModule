@@ -79,6 +79,9 @@ public enum ErrorMessage {
 	STORE_PAYMENT_DELETE_UNAUTHORIZED("주점 결제 정보 삭제 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "storePayment006"),
 	STORE_PAYMENT_ALREADY_EXISTS("이미 존재하는 주점 결제 정보입니다.", "storePayment007"),
 
+	// department
+	DEPARTMENT_NOT_FOUND("해당 학과/전공을 찾을 수 없습니다.", "department001"),
+
 	// Statistics
 	STATISTIC_VIEW_UNAUTHORIZED("통계 보기 권한이 없습니다.(슈퍼계정 or 주점 관리자만 가능)", "statistics001"),
 	MENU_COUNTER_UPDATE("메뉴 카운터 업데이트 실패", "statistics002"),
