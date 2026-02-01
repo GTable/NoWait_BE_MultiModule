@@ -55,6 +55,15 @@ public class WaitingService {
 	@Transactional
 	public RegisterWaitingResponse registerWaiting(CustomOAuth2User oAuth2User, String publicCode, RegisterWaitingRequest waitingRequest, HttpServletRequest httpServletRequest) {
 
+		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+
+		// TODO 멱등성 검증 로직 점검 필요
+		Optional<WaitingIdempotencyValue> existingIdempotencyValue = waitingIdempotencyRepository.findByKey(idempotentKey);
+		if (existingIdempotencyValue.isPresent()) {
+			log.info("Existing idempotency key found: {}", idempotentKey);
+			return existingIdempotencyValue.get().getResponse();
+		}
+
 		// TODO 유저 및 주점 존재 검증은 공통으로 많이 쓰이니 AOP로 빼는게 좋을 듯
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
@@ -66,17 +75,9 @@ public class WaitingService {
 		Long storeId = store.getStoreId();
 		LocalDateTime timestamp = LocalDateTime.now();
 		String waitingNumber = generateWaitingNumber(storeId, timestamp);
-		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
 
 		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
 		// waitingRedisRepository.idempotentKeyKeyExists(idempotentKey, ReservationStatus.WAITING.name());
-
-		// TODO 멱등성 검증 로직 점검 필요
-		Optional<WaitingIdempotencyValue> existingIdempotencyValue = waitingIdempotencyRepository.findByKey(idempotentKey);
-		if (existingIdempotencyValue.isPresent()) {
-			log.info("Existing idempotency key found: {}", idempotentKey);
-			return existingIdempotencyValue.get().getResponse();
-		}
 
 
 		// 일일 가능 웨이팅 최대 개수 초과 검증

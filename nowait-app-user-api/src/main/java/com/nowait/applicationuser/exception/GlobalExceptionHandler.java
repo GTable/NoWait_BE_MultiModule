@@ -229,7 +229,7 @@ public class GlobalExceptionHandler {
 	public ErrorResponse alreadyWaitingException(AlreadyDeletedWaitingException e, WebRequest request) {
 		alarm(e, request);
 		log.error("alreadyWaitingException", e);
-		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
+		return new ErrorResponse(e.getMessage(), ALREADY_DELETED_RESERVATION.getCode());
 	}
 
 	@ResponseStatus(BAD_REQUEST)
