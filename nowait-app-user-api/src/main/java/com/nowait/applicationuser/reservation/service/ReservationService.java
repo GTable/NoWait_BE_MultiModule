@@ -1,7 +1,5 @@
 package com.nowait.applicationuser.reservation.service;
 
-import static com.nowait.common.exception.ErrorMessage.*;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -36,7 +34,6 @@ import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationExcept
 import com.nowait.domaincorerdb.reservation.exception.ReservationAddUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFailException;
-import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.ImageType;
 import com.nowait.domaincorerdb.store.entity.Store;
@@ -49,6 +46,7 @@ import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
+import com.nowait.domaincoreredis.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
