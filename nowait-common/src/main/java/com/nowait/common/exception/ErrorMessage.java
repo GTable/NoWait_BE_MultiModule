@@ -38,6 +38,7 @@ public enum ErrorMessage {
 	RESERVATION_ALREADY_CANCELLED("이미 취소된 예약입니다.", "reservation010"),
 	UNSUPPORTED_RESERVATION_STATUS("지원하지 않는 예약 상태입니다: %s", "reservation011"),
 	INVALID_RESERVATION_PARAMETER("잘못된 예약 요청 파라미터입니다. (%s)", "reservation012"),
+	ALREADY_DELETED_RESERVATION("이미 삭제된 예약입니다.", "reservation013"),
 
 	// redis
 	RESERVATION_DATA_INCONSISTENCY("예약 데이터가 Redis와 DB 간 일치하지 않습니다. (%s)", "redis001"),

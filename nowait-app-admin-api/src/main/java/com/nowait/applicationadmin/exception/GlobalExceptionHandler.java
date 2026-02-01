@@ -43,6 +43,7 @@ import com.nowait.domaincorerdb.order.exception.OrderNotFoundException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.order.exception.OrderViewUnauthorizedException;
+import com.nowait.domaincorerdb.reservation.exception.AlreadyDeletedWaitingException;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationParameterException;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
@@ -54,7 +55,6 @@ import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFail
 import com.nowait.domaincorerdb.reservation.exception.ReservationUpdateUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationViewUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.UnsupportedReservationStatusException;
-import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.store.exception.StoreDeleteUnauthorizedException;
 import com.nowait.domaincorerdb.store.exception.StoreImageEmptyException;
 import com.nowait.domaincorerdb.store.exception.StoreImageNotFoundException;
@@ -325,12 +325,13 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), UNSUPPORTED_RESERVATION_STATUS.getCode());
 	}
 
-	@ResponseStatus(BAD_REQUEST)
-	@ExceptionHandler(UserWaitingLimitExceededException.class)
-	public ErrorResponse userWaitingLimitExceededException(UserWaitingLimitExceededException e, WebRequest request) {
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(AlreadyDeletedWaitingException.class)
+	public ErrorResponse alreadyDeletedWaitingException(AlreadyDeletedWaitingException e, WebRequest request) {
 		alarm(e, request);
-		log.error("userWaitingLimitExceededException", e);
-		return new ErrorResponse(e.getMessage(), USER_WAITING_LIMIT_EXCEEDED.getCode());
+		log.error("alreadyDeletedWaitingException", e);
+		return new ErrorResponse(e.getMessage(), ALREADY_DELETED_RESERVATION.getCode());
 	}
 
 
