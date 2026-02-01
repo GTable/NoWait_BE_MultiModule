@@ -24,6 +24,7 @@ import com.nowait.applicationuser.security.exception.UnauthorizedException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
 import com.nowait.discord.service.DiscordAlarmService;
+import com.nowait.domaincorerdb.department.exception.DepartmentNotFoundException;
 import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
@@ -238,6 +239,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("storeWaitingDisabledException", e);
 		return new ErrorResponse(e.getMessage(), STORE_WAITING_DISABLED.getCode());
+	}
+
+	@ResponseStatus(NOT_FOUND)
+	@ExceptionHandler(DepartmentNotFoundException.class)
+	public ErrorResponse handleDepartmentNotFoundException(DepartmentNotFoundException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleDepartmentNotFoundException", e);
+		return new ErrorResponse(e.getMessage(), DEPARTMENT_NOT_FOUND.getCode());
 	}
 
 	@ResponseStatus(NOT_FOUND)

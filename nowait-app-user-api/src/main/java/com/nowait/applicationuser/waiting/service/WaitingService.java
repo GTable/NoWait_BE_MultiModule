@@ -17,6 +17,9 @@ import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
 import com.nowait.applicationuser.waiting.redis.WaitingIdempotencyRepository;
 import com.nowait.common.enums.ReservationStatus;
+import com.nowait.domaincorerdb.department.entity.Department;
+import com.nowait.domaincorerdb.department.exception.DepartmentNotFoundException;
+import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
@@ -43,6 +46,7 @@ public class WaitingService {
 	private final WaitingRedisRepository waitingRedisRepository;
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
+	private final DepartmentRepository departmentRepository;
 	private final ApplicationEventPublisher eventPublisher;
 	private final WaitingIdempotencyRepository waitingIdempotencyRepository;
 
@@ -153,15 +157,20 @@ public class WaitingService {
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
 
+		Long storeId = store.getStoreId();
+
 		User user = userRepository.findById(oAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
 
-		Long storeId = store.getStoreId();
+		Department department = departmentRepository.findById(store.getDepartmentId())
+			.orElseThrow(DepartmentNotFoundException::new);
 
 		Long waitingCount = waitingRedisRepository.getWaitingCount(storeId);
 
 		return GetWaitingSizeResponse.builder()
 			.storeId(storeId)
+			.storeName(store.getName())
+			.departmentName(department.getName())
 			.waitingCount(waitingCount)
 			.build();
 	}
