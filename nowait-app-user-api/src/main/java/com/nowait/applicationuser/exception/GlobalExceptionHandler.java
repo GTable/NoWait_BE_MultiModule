@@ -28,16 +28,17 @@ import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
 import com.nowait.domaincorerdb.order.exception.OrderParameterEmptyException;
+import com.nowait.domaincorerdb.reservation.exception.AlreadyDeletedWaitingException;
 import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationAddUnauthorizedException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNumberIssueFailException;
-import com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.exception.StoreWaitingDisabledException;
 import com.nowait.domaincorerdb.storepayment.exception.StorePaymentNotFoundException;
 import com.nowait.domaincorerdb.token.exception.BusinessException;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
+import com.nowait.domaincoreredis.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domainuserrdb.bookmark.exception.AlreadyDeletedBookmarkException;
 import com.nowait.domainuserrdb.bookmark.exception.BookmarkNotFoundException;
 import com.nowait.domainuserrdb.bookmark.exception.BookmarkOwnerMismatchException;
@@ -221,6 +222,14 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("duplicateReservationException", e);
 		return new ErrorResponse(e.getMessage(), DUPLICATE_RESERVATION.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(AlreadyDeletedWaitingException.class)
+	public ErrorResponse alreadyWaitingException(AlreadyDeletedWaitingException e, WebRequest request) {
+		alarm(e, request);
+		log.error("alreadyWaitingException", e);
+		return new ErrorResponse(e.getMessage(), ALREADY_DELETED_RESERVATION.getCode());
 	}
 
 	@ResponseStatus(BAD_REQUEST)
