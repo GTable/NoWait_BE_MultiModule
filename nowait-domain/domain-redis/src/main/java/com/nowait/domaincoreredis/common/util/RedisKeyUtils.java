@@ -98,6 +98,15 @@ public class RedisKeyUtils {
 		return "waiting:calledAt:";
 	}
 
+	/**
+	 * 웨이팅 리팩토링 작업중
+	 */
+	private static final String USER_WAITING_LIMIT_COUNT_KEY_FMT = "waiting:user:%s:limit:count";
+
+	public static String buildUserWaitingLimitCountKey(String userId) {
+		return String.format(USER_WAITING_LIMIT_COUNT_KEY_FMT, userId);
+	}
+
 	public static Date expireAtNext03() {
 		ZoneId zone = ZoneId.of("Asia/Seoul");
 		LocalDateTime now = LocalDateTime.now(zone);
