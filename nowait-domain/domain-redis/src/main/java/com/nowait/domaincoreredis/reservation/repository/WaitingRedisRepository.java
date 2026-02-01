@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 import com.nowait.domaincoreredis.reservation.exception.AlreadyWaitingException;
+import com.nowait.domaincoreredis.reservation.exception.UserWaitingLimitExceededException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,7 @@ public class WaitingRedisRepository {
 
 	public void deleteWaiting(Long storeId, String userId) {
 		String numberMapKey = RedisKeyUtils.buildReservationNumberKey(storeId);
-		String userMapKey   = RedisKeyUtils.buildReservationUserKey(storeId);
+		String userMapKey = RedisKeyUtils.buildReservationUserKey(storeId);
 
 		Object reservationNumber = redisTemplate.opsForHash().get(numberMapKey, userId);
 
@@ -124,6 +125,8 @@ public class WaitingRedisRepository {
 	public void addWaiting(Long storeId, Long userId, LocalDateTime timestamp) {
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 		String userListKey = RedisKeyUtils.buildWaitingUserListKeyPrefix() + userId;
+		String userWaitingLimitCountKey = RedisKeyUtils.buildUserWaitingLimitCountKey(String.valueOf(userId));
+
 		long score = timestamp
 			.atZone(ZoneId.systemDefault())
 			.toInstant()
@@ -145,25 +148,26 @@ public class WaitingRedisRepository {
 	public void removeWaiting(Long storeId, Long userId) {
 		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
 		String userListKey = RedisKeyUtils.buildWaitingUserListKeyPrefix() + userId;
+		String userWaitingLimitCountKey = RedisKeyUtils.buildUserWaitingLimitCountKey(String.valueOf(userId));
 
-		redisTemplate.opsForZSet().remove(queueKey, String.valueOf(userId));
-		log.info("웨이팅 대기열 제거 - storeId : {}, userId : {}", storeId, userId);
+		try {
+			redisTemplate.opsForZSet().remove(queueKey, String.valueOf(userId));
+			log.info("웨이팅 대기열 제거 - storeId : {}, userId : {}", storeId, userId);
 
-		redisTemplate.opsForZSet().remove(userListKey, String.valueOf(storeId));
-		log.info("유저 웨이팅 목록 제거 - userId : {}, storeId : {}", userId, storeId);
-	}
+			redisTemplate.opsForZSet().remove(userListKey, String.valueOf(storeId));
+			log.info("유저 웨이팅 목록 제거 - userId : {}, storeId : {}", userId, storeId);
 
-	public Long getWaitingRank(Long storeId, Long userId) {
-		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
-		return redisTemplate.opsForZSet().rank(queueKey, String.valueOf(userId));
-	}
-
-	public Long incrementDailySequence(String dailySeqKey) {
-		return redisTemplate.opsForValue().increment(dailySeqKey, 1);
+			redisTemplate.opsForValue().decrement(userWaitingLimitCountKey, 1);
+			log.info("유저 웨이팅 제한 카운트 감소 - userId : {}, currentCount : {}", userId,
+				redisTemplate.opsForValue().get(userWaitingLimitCountKey));
+		} catch (Exception e) {
+			log.error("Redis 웨이팅 대기열 제거 실패 - storeId : {}, userId : {}, error: {}", storeId, userId, e.getMessage());
+			throw e;
+		}
 	}
 
 	// 웨이팅 등록 요청 시 멱등키 검증
-	public void indempotencyKeyExists(String idempotentKey, String status) {
+	public void idempotentKeyKeyExists(String idempotentKey, String status) {
 		Boolean success = redisTemplate.opsForValue()
 			.setIfAbsent(
 				idempotentKey,
@@ -171,9 +175,38 @@ public class WaitingRedisRepository {
 				Duration.ofSeconds(10)
 			);
 
+
+		// TODO 멱등하지 않은 요청 응답값 검토 필요
 		if (Boolean.FALSE.equals(success)) {
 			throw new AlreadyWaitingException();
 		}
+	}
+
+	public void incrementAndCheckWaitingLimit(Long userId, Long maxLimit) {
+		String userWaitingLimitCountKey = RedisKeyUtils.buildUserWaitingLimitCountKey(String.valueOf(userId));
+
+		Long current = redisTemplate.opsForValue().increment(userWaitingLimitCountKey, 1);
+		log.info("유저 웨이팅 제한 카운트 증가 - userId : {}, currentCount : {}", userId, redisTemplate.opsForValue().get(userWaitingLimitCountKey));
+
+		// TTL 없으면 하루 단위로 묶어야 함 (중요)
+		// redisTemplate.expireAt(key, RedisKeyUtils.expireAtNext03());
+
+		if (current != null && current > maxLimit) {
+			redisTemplate.opsForValue().decrement(userWaitingLimitCountKey, 1);
+			throw new UserWaitingLimitExceededException();
+		}
+	}
+
+	// 일일 시퀀스 증가 - 예약 번호 전용
+	// TODO : 현재 중복 웨이팅 요청에도 시퀀스가 증가하는 문제가 있음 (추후 개선 필요)
+	public Long incrementDailySequence(String dailySeqKey) {
+		return redisTemplate.opsForValue().increment(dailySeqKey, 1);
+	}
+
+	// TODO : 대기 순번 조회 (추후 사용 예정)
+	public Long getWaitingRank(Long storeId, Long userId) {
+		String queueKey = RedisKeyUtils.buildWaitingKeyPrefix() + storeId;
+		return redisTemplate.opsForZSet().rank(queueKey, String.valueOf(userId));
 	}
 
 	// 웨이팅 여부 조회
