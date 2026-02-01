@@ -38,6 +38,7 @@ import com.nowait.domaincorerdb.store.repository.StoreRepository;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domaincoreredis.reservation.exception.UserWaitingLimitExceededException;
 import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
@@ -356,7 +357,7 @@ public class ReservationServiceTest {
 
 		// When & Then
 		assertThatThrownBy(() -> service.registerWaiting(storeId, principal, dto))
-			.isInstanceOf(com.nowait.domaincorerdb.reservation.exception.UserWaitingLimitExceededException.class)
+			.isInstanceOf(UserWaitingLimitExceededException.class)
 			.hasMessageContaining("유저당 웨이팅 가능 개수");
 
 		verify(waitingRepo, never()).addToWaitingQueue(anyLong(), anyString(), anyInt(), anyLong());
