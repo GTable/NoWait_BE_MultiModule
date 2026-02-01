@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
 import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
@@ -144,6 +145,24 @@ public class WaitingService {
 			.reservationStatus(reservation.getStatus())
 			.canceledAt(reservation.getUpdatedAt())
 			.message("대기 취소가 완료되었습니다.")
+			.build();
+	}
+
+	public GetWaitingSizeResponse getWaitingCount(CustomOAuth2User oAuth2User, String publicCode) {
+
+		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
+			.orElseThrow(StoreNotFoundException::new);
+
+		User user = userRepository.findById(oAuth2User.getUserId())
+			.orElseThrow(UserNotFoundException::new);
+
+		Long storeId = store.getStoreId();
+
+		Long waitingCount = waitingRedisRepository.getWaitingCount(storeId);
+
+		return GetWaitingSizeResponse.builder()
+			.storeId(storeId)
+			.waitingCount(waitingCount)
 			.build();
 	}
 
