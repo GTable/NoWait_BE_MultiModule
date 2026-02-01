@@ -3,6 +3,7 @@ package com.nowait.domaincorerdb.reservation.entity;
 import java.time.LocalDateTime;
 
 import com.nowait.common.enums.ReservationStatus;
+import com.nowait.domaincorerdb.reservation.exception.AlreadyDeletedWaitingException;
 import com.nowait.domaincorerdb.reservation.exception.InvalidReservationStatusTransitionException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationAlreadyCancelledException;
 import com.nowait.domaincorerdb.reservation.exception.ReservationAlreadyConfirmedException;
@@ -75,6 +76,19 @@ public class Reservation {
 			throw new InvalidReservationStatusTransitionException(this.status, newStatus);
 		}
 		this.status = newStatus;
+		this.updatedAt = updatedAt;
+	}
+
+	public void markAsCancelled(LocalDateTime updatedAt) {
+		if (this.status == ReservationStatus.CANCELLED) {
+			throw new AlreadyDeletedWaitingException();
+		}
+
+		if (!isValidTransition(this.status, ReservationStatus.CANCELLED)) {
+			throw new InvalidReservationStatusTransitionException(this.status, ReservationStatus.CANCELLED);
+		}
+
+		this.status = ReservationStatus.CANCELLED;
 		this.updatedAt = updatedAt;
 	}
 
