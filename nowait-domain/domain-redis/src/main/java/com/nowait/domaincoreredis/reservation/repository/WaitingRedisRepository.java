@@ -166,22 +166,6 @@ public class WaitingRedisRepository {
 		}
 	}
 
-	// 웨이팅 등록 요청 시 멱등키 검증
-	public void idempotentKeyKeyExists(String idempotentKey, String status) {
-		Boolean success = redisTemplate.opsForValue()
-			.setIfAbsent(
-				idempotentKey,
-				status,
-				Duration.ofSeconds(10)
-			);
-
-
-		// TODO 멱등하지 않은 요청 응답값 검토 필요
-		if (Boolean.FALSE.equals(success)) {
-			throw new AlreadyWaitingException();
-		}
-	}
-
 	public void incrementAndCheckWaitingLimit(Long userId, Long maxLimit) {
 		String userWaitingLimitCountKey = RedisKeyUtils.buildUserWaitingLimitCountKey(String.valueOf(userId));
 
