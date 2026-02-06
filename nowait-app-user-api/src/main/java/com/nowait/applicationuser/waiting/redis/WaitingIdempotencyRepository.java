@@ -21,22 +21,25 @@ public class WaitingIdempotencyRepository {
 
 	private static final Duration TTL = Duration.ofMinutes(10);
 
+	// 멱등키 조회 메서드
 	public Optional<WaitingIdempotencyValue> findByKey(String key) {
-		String value = redisTemplate.opsForValue().get(key);
+		String idempotencyValue = redisTemplate.opsForValue().get(key);
 
-		if (value == null) {
+		if (idempotencyValue == null) {
 			return Optional.empty();
 		}
 
 		try {
 			return Optional.of(
-				objectMapper.readValue(value, WaitingIdempotencyValue.class)
+				objectMapper.readValue(idempotencyValue, WaitingIdempotencyValue.class)
 			);
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Failed to deserialize value from Redis", e);
 		}
 	}
 
+
+	// 멱등키 저장 메서드
 	public void saveIdempotencyValue(String key, RegisterWaitingResponse response) {
 		WaitingIdempotencyValue waitingIdempotencyValue = new WaitingIdempotencyValue(
 			"COMPLETED",
