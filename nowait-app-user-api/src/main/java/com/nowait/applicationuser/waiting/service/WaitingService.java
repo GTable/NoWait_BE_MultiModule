@@ -2,7 +2,6 @@ package com.nowait.applicationuser.waiting.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
