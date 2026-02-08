@@ -173,12 +173,10 @@ public class WaitingService {
 			.orElse(null);
 	}
 
-	// TODO 공통 멱등키 검증 메서드로 리팩토링 필요
+	// TODO : 공통 멱등키 검증 메서드로 리팩토링 필요!!!!!!!!!
 	private Optional<?> validateIdempotency_(HttpServletRequest httpServletRequest) {
 		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
 
-		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
-		// TODO 멱등성 검증 로직 점검 필요
 		return waitingIdempotencyRepository.findByKey(idempotentKey);
 	}
 
