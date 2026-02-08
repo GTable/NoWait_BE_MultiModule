@@ -2,7 +2,6 @@ package com.nowait.applicationuser.waiting.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -13,6 +12,7 @@ import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
 import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.WaitingCancelIdempotencyValue;
 import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
 import com.nowait.applicationuser.waiting.redis.WaitingIdempotencyRepository;
@@ -59,13 +59,11 @@ public class WaitingService {
 	@Transactional
 	public RegisterWaitingResponse registerWaiting(CustomOAuth2User oAuth2User, String publicCode, RegisterWaitingRequest waitingRequest, HttpServletRequest httpServletRequest) {
 
-		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
-
-		// TODO 멱등성 검증 로직 점검 필요
-		Optional<WaitingIdempotencyValue> existingIdempotencyValue = waitingIdempotencyRepository.findByKey(idempotentKey);
-		if (existingIdempotencyValue.isPresent()) {
-			log.info("Existing idempotency key found: {}", idempotentKey);
-			return existingIdempotencyValue.get().getResponse();
+		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
+		RegisterWaitingResponse registerWaitingResponse = validateIdempotency(httpServletRequest);
+		if (registerWaitingResponse != null) {
+			log.info("Idempotent request detected. Returning existing response.");
+			return registerWaitingResponse;
 		}
 
 		// TODO 유저 및 주점 존재 검증은 공통으로 많이 쓰이니 AOP로 빼는게 좋을 듯
@@ -75,18 +73,14 @@ public class WaitingService {
 		User user = userRepository.findById(oAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
 
+		// 일일 가능 웨이팅 최대 개수 초과 검증
+		// TODO race condition 발생 가능성 점검 필요, DB 저장 로직 실패 시 롤백 처리 필요
+		waitingRedisRepository.incrementAndCheckWaitingLimit(user.getId(), 3L);
+
 		// 웨이팅 고유 번호 생성 - YYYYMMDD-storeId-sequence number 일련 번호
 		Long storeId = store.getStoreId();
 		LocalDateTime timestamp = LocalDateTime.now();
 		String waitingNumber = generateWaitingNumber(storeId, timestamp);
-
-		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
-		// waitingRedisRepository.idempotentKeyKeyExists(idempotentKey, ReservationStatus.WAITING.name());
-
-
-		// 일일 가능 웨이팅 최대 개수 초과 검증
-		// TODO race condition 발생 가능성 점검 필요
-		waitingRedisRepository.incrementAndCheckWaitingLimit(user.getId(), 3L);
 
 		// DB에 상태 값 저장
 		Reservation reservation = Reservation.builder()
@@ -115,24 +109,26 @@ public class WaitingService {
 			.partySize(waitingRequest.getPartySize())
 			.build();
 
-		// 멱등키가 있다면 멱등 응답 저장
-		waitingIdempotencyRepository.saveIdempotencyValue(idempotentKey, response);
+		// TODO 멱등키 응답 실패 시 어떻게 처리할 지 점검 필요
+		saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
 
 		return response;
 	}
 
 	@Transactional
-	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request) {
+	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request, HttpServletRequest httpServletRequest) {
+		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
+		CancelWaitingResponse cancelWaitingResponse = validateCancelIdempotency(httpServletRequest);
+		if (cancelWaitingResponse != null) {
+			log.info("Idempotent request detected. Returning existing response.");
+			return cancelWaitingResponse;
+		}
 
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode).orElseThrow(StoreNotFoundException::new);
 		Long storeId = store.getStoreId();
 
 		User user = userRepository.findById(oAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
-
-		// TODO 멱등키 검증 로직 점검 필요
-		// String idempotentKey = generateIdempotentKey(storeId, user.getId());
-		// waitingRedisRepository.idempotentKeyKeyExists(idempotentKey, ReservationStatus.CANCELLED.name());
 
 		// DB 웨이팅 상태 취소 처리
 		Reservation reservation = reservationRepository.findReservationByReservationNumber(request.getWaitingNumber())
@@ -143,27 +139,61 @@ public class WaitingService {
 		// Redis 대기열 취소 이벤트 발행
 		waitingRedisRepository.removeWaiting(storeId, user.getId());
 
-		return CancelWaitingResponse.builder()
+		CancelWaitingResponse response = CancelWaitingResponse.builder()
 			.waitingNumber(reservation.getReservationNumber())
 			.storeId(storeId)
 			.reservationStatus(reservation.getStatus())
 			.canceledAt(reservation.getUpdatedAt())
 			.message("대기 취소가 완료되었습니다.")
 			.build();
+
+		// 멱등키가 있다면 멱등 응답 저장
+		waitingIdempotencyRepository.saveCancelIdempotencyValue(httpServletRequest.getHeader("Idempotency-Key"), response);
+
+		return response;
 	}
 
+	// 멱등키 검증 메서드
+	private RegisterWaitingResponse validateIdempotency(HttpServletRequest httpServletRequest) {
+		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+
+		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
+		// TODO 멱등성 검증 로직 점검 필요
+		return waitingIdempotencyRepository.findByKey(idempotentKey)
+			.map(WaitingIdempotencyValue::getResponse)
+			.orElse(null);
+	}
+
+	private CancelWaitingResponse validateCancelIdempotency(HttpServletRequest httpServletRequest) {
+		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+
+		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
+		// TODO 멱등성 검증 로직 점검 필요
+		return waitingIdempotencyRepository.findByCancelKey(idempotentKey)
+			.map(WaitingCancelIdempotencyValue::getResponse)
+			.orElse(null);
+	}
+
+	// 멱등키 응답 저장 메서드
+	private void saveIdempotencyResponse(String idempotentKey, RegisterWaitingResponse response) {
+		if (idempotentKey != null && !idempotentKey.isBlank()) {
+			waitingIdempotencyRepository.saveIdempotencyValue(idempotentKey, response);
+		}
+	}
+
+	// 현재 대기 인원 수 조회
 	public GetWaitingSizeResponse getWaitingCount(CustomOAuth2User oAuth2User, String publicCode) {
 
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
-
-		Long storeId = store.getStoreId();
 
 		User user = userRepository.findById(oAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
 
 		Department department = departmentRepository.findById(store.getDepartmentId())
 			.orElseThrow(DepartmentNotFoundException::new);
+
+		Long storeId = store.getStoreId();
 
 		Long waitingCount = waitingRedisRepository.getWaitingCount(storeId);
 
@@ -189,9 +219,5 @@ public class WaitingService {
 
 		// 4) 최종 ID 조합
 		return today + "-" + storeId + "-" + seqStr;
-	}
-
-	private String generateIdempotentKey(Long storeId, Long userId) {
-		return "idempotentKey" + ":" + storeId + ":" + userId;
 	}
 }

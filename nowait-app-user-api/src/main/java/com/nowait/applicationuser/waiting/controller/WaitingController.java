@@ -63,12 +63,14 @@ public class WaitingController {
 	public ResponseEntity<?> cancelWaiting(
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
 		@PathVariable String publicCode,
-		@RequestBody CancelWaitingRequest request
+		@RequestBody CancelWaitingRequest request,
+		HttpServletRequest httpServletRequest
 	) {
 		CancelWaitingResponse cancelWaitingResponse = waitingService.cancelWaiting(
 			customOAuth2User,
 			publicCode,
-			request
+			request,
+			httpServletRequest
 		);
 
 		return ResponseEntity
