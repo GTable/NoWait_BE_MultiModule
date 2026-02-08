@@ -99,50 +99,6 @@ class WaitingServiceTest {
 	}
 
 	@Test
-	@DisplayName("Idempotency-Key가 blank이면 멱등 로직을 타지 않는다")
-	void registerWaiting_idempotentKeyNotExists() {
-		// given
-		CustomOAuth2User customOAuth2User = mock(CustomOAuth2User.class);
-		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
-
-		when(httpServletRequest.getHeader("Idempotency-Key")).thenReturn("   ");
-
-		Long userId = 10L;
-		String publicCode = "ZiVXAD1vVr5b";
-
-		Store store = Store.builder().publicCode(publicCode).build();
-		User user = User.builder().id(userId).build();
-
-		when(storeRepository.findByPublicCodeAndDeletedFalse(publicCode)).thenReturn(java.util.Optional.of(store));
-		when(customOAuth2User.getUserId()).thenReturn(10L);
-		when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
-
-		doNothing()
-			.when(waitingRedisRepository)
-			.incrementAndCheckWaitingLimit(userId, 3L);
-
-		when(waitingRedisRepository.incrementDailySequence(anyString())).thenReturn(1L);
-
-		// when
-		RegisterWaitingResponse response = waitingService.registerWaiting(
-			customOAuth2User,
-			publicCode,
-			request,
-			httpServletRequest
-		);
-
-		// then
-		assertThat(response).isNotNull();
-		assertThat(response.getPartySize()).isEqualTo(4);
-		assertThat(response.getWaitingNumber()).isNotBlank();
-
-		verify(waitingIdempotencyRepository, never()).findByKey(any());
-		verify(waitingRedisRepository).incrementAndCheckWaitingLimit(userId, 3L);
-		verify(reservationRepository).save(any(Reservation.class));
-		verify(eventPublisher).publishEvent(any(AddWaitingRegisterEvent.class));
-	}
-
-	@Test
 	@DisplayName("웨이팅 정상 등록 시 DB 저장, 이벤트 발생, 멱등 응답 저장 수행")
 	void registerWaiting_success() {
 		// given

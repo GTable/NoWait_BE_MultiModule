@@ -58,6 +58,7 @@ public class WaitingService {
 	@Transactional
 	public RegisterWaitingResponse registerWaiting(CustomOAuth2User oAuth2User, String publicCode, RegisterWaitingRequest waitingRequest, HttpServletRequest httpServletRequest) {
 
+		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
 		RegisterWaitingResponse registerWaitingResponse = validateIdempotency(httpServletRequest);
 		if (registerWaitingResponse != null) {
 			log.info("Idempotent request detected. Returning existing response.");
@@ -155,10 +156,6 @@ public class WaitingService {
 	// 멱등키 검증 메서드
 	private RegisterWaitingResponse validateIdempotency(HttpServletRequest httpServletRequest) {
 		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
-
-		if (idempotentKey == null || idempotentKey.isBlank()) {
-			return null;
-		}
 
 		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
 		// TODO 멱등성 검증 로직 점검 필요
