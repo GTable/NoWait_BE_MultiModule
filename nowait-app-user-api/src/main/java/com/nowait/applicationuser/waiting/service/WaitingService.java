@@ -12,6 +12,7 @@ import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
 import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.WaitingCancelIdempotencyValue;
 import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
 import com.nowait.applicationuser.waiting.redis.WaitingIdempotencyRepository;
@@ -115,20 +116,19 @@ public class WaitingService {
 	}
 
 	@Transactional
-	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request) {
+	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request, HttpServletRequest httpServletRequest) {
+		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
+		CancelWaitingResponse cancelWaitingResponse = validateCancelIdempotency(httpServletRequest);
+		if (cancelWaitingResponse != null) {
+			log.info("Idempotent request detected. Returning existing response.");
+			return cancelWaitingResponse;
+		}
 
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode).orElseThrow(StoreNotFoundException::new);
 		Long storeId = store.getStoreId();
 
 		User user = userRepository.findById(oAuth2User.getUserId())
 			.orElseThrow(UserNotFoundException::new);
-
-		// TODO 멱등키 검증 로직 점검 필요
-		// Optional<WaitingIdempotencyValue> existingIdempotencyValue = waitingIdempotencyRepository.findByKey(idempotentKey);
-		// if (existingIdempotencyValue.isPresent()) {
-		// 	log.info("Existing idempotency key found: {}", idempotentKey);
-		// 	return existingIdempotencyValue.get().getResponse();
-		// }
 
 		// DB 웨이팅 상태 취소 처리
 		Reservation reservation = reservationRepository.findReservationByReservationNumber(request.getWaitingNumber())
@@ -148,7 +148,7 @@ public class WaitingService {
 			.build();
 
 		// 멱등키가 있다면 멱등 응답 저장
-		// waitingIdempotencyRepository.saveIdempotencyValue(idempotentKey, response);
+		waitingIdempotencyRepository.saveCancelIdempotencyValue(httpServletRequest.getHeader("Idempotency-Key"), response);
 
 		return response;
 	}
@@ -161,6 +161,16 @@ public class WaitingService {
 		// TODO 멱등성 검증 로직 점검 필요
 		return waitingIdempotencyRepository.findByKey(idempotentKey)
 			.map(WaitingIdempotencyValue::getResponse)
+			.orElse(null);
+	}
+
+	private CancelWaitingResponse validateCancelIdempotency(HttpServletRequest httpServletRequest) {
+		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+
+		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
+		// TODO 멱등성 검증 로직 점검 필요
+		return waitingIdempotencyRepository.findByCancelKey(idempotentKey)
+			.map(WaitingCancelIdempotencyValue::getResponse)
 			.orElse(null);
 	}
 
