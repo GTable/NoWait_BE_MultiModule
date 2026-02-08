@@ -2,6 +2,7 @@ package com.nowait.applicationuser.waiting.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -52,8 +53,6 @@ public class WaitingService {
 
 	/**
 	 * 최초 대기 등록
-	 * @param publicCode
-	 * @param waitingRequest
 	 */
 	// 대기열 리팩토링 서비스 메서드
 	@Transactional
@@ -148,7 +147,7 @@ public class WaitingService {
 			.build();
 
 		// 멱등키가 있다면 멱등 응답 저장
-		waitingIdempotencyRepository.saveCancelIdempotencyValue(httpServletRequest.getHeader("Idempotency-Key"), response);
+		saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
 
 		return response;
 	}
@@ -174,10 +173,19 @@ public class WaitingService {
 			.orElse(null);
 	}
 
+	// TODO 공통 멱등키 검증 메서드로 리팩토링 필요
+	private Optional<?> validateIdempotency_(HttpServletRequest httpServletRequest) {
+		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+
+		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
+		// TODO 멱등성 검증 로직 점검 필요
+		return waitingIdempotencyRepository.findByKey(idempotentKey);
+	}
+
 	// 멱등키 응답 저장 메서드
-	private void saveIdempotencyResponse(String idempotentKey, RegisterWaitingResponse response) {
+	private void saveIdempotencyResponse(String idempotentKey, Object response) {
 		if (idempotentKey != null && !idempotentKey.isBlank()) {
-			waitingIdempotencyRepository.saveIdempotencyValue(idempotentKey, response);
+			waitingIdempotencyRepository.saveIdempotencyResponse(idempotentKey, response);
 		}
 	}
 

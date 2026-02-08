@@ -95,7 +95,7 @@ class WaitingServiceTest {
 		verify(waitingRedisRepository, never()).incrementAndCheckWaitingLimit(anyLong(), anyLong());
 		verify(reservationRepository, never()).save(any(Reservation.class));
 		verify(eventPublisher, never()).publishEvent(any());
-		verify(waitingIdempotencyRepository, never()).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 	}
 
 	@Test
@@ -114,7 +114,7 @@ class WaitingServiceTest {
 		User user = User.builder().id(userId).build();
 
 		when(storeRepository.findByPublicCodeAndDeletedFalse(publicCode)).thenReturn(java.util.Optional.of(store));
-		when(customOAuth2User.getUserId()).thenReturn(10L);
+		when(customOAuth2User.getUserId()).thenReturn(userId);
 		when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
 
 		doNothing()
@@ -184,7 +184,7 @@ class WaitingServiceTest {
 		verify(waitingRedisRepository).incrementAndCheckWaitingLimit(userId, 3L);
 		verify(reservationRepository).save(any(Reservation.class));
 		verify(eventPublisher).publishEvent(any(AddWaitingRegisterEvent.class));
-		verify(waitingIdempotencyRepository).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 	}
 
 	@Test
@@ -222,7 +222,7 @@ class WaitingServiceTest {
 		)).isInstanceOf(RuntimeException.class);
 
 		verify(eventPublisher, never()).publishEvent(any(AddWaitingRegisterEvent.class));
-		verify(waitingIdempotencyRepository, never()).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 	}
 
 	@Test
@@ -262,7 +262,7 @@ class WaitingServiceTest {
 
 		verify(reservationRepository, never()).save(any(Reservation.class));
 		verify(eventPublisher, never()).publishEvent(any());
-		verify(waitingIdempotencyRepository, never()).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 		verify(waitingRedisRepository).incrementAndCheckWaitingLimit(10L, 3L);
 	}
 

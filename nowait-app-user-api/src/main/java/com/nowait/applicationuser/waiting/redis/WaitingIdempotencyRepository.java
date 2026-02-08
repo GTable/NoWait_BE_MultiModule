@@ -7,8 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
-import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.IdempotencyResponse;
 import com.nowait.applicationuser.waiting.dto.WaitingCancelIdempotencyValue;
 import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 
@@ -58,30 +57,15 @@ public class WaitingIdempotencyRepository {
 	}
 
 
-	// 멱등키 저장 메서드 - 대기 등록
-	public void saveIdempotencyValue(String key, RegisterWaitingResponse response) {
-		WaitingIdempotencyValue waitingIdempotencyValue = new WaitingIdempotencyValue(
+	// 멱등키 저장 메서드
+	public void saveIdempotencyResponse(String key, Object response) {
+		IdempotencyResponse idempotencyResponse = new IdempotencyResponse(
 			"COMPLETED",
 			response
 		);
 
 		try {
-			String jsonValue = objectMapper.writeValueAsString(waitingIdempotencyValue);
-			redisTemplate.opsForValue().set(key, jsonValue, TTL);
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Failed to serialize value for Redis", e);
-		}
-	}
-
-	// 멱등키 저장 메서드 - 대기 취소
-	public void saveCancelIdempotencyValue(String key, CancelWaitingResponse response) {
-		WaitingCancelIdempotencyValue waitingIdempotencyValue = new WaitingCancelIdempotencyValue(
-			"COMPLETED",
-			response
-		);
-
-		try {
-			String jsonValue = objectMapper.writeValueAsString(waitingIdempotencyValue);
+			String jsonValue = objectMapper.writeValueAsString(idempotencyResponse);
 			redisTemplate.opsForValue().set(key, jsonValue, TTL);
 		} catch (Exception e) {
 			throw new IllegalArgumentException("Failed to serialize value for Redis", e);
