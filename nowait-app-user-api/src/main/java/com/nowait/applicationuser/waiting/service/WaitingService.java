@@ -180,6 +180,7 @@ public class WaitingService {
 
 				return GetMyWaitingInfoResponse.builder()
 					.reservationId(dto.getReservationId())
+					.publicCode(dto.getPublicCode())
 					.storeId(dto.getStoreId())
 					.storeName(dto.getStoreName())
 					.departmentName(dto.getDepartmentName())
