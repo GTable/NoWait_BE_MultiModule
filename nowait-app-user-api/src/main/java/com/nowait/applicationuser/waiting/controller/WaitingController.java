@@ -1,5 +1,7 @@
 package com.nowait.applicationuser.waiting.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.GetMyWaitingInfoResponse;
 import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
@@ -34,6 +37,24 @@ public class WaitingController {
 	/**
 	 * 대기열 리팩토링용 API
 	 */
+	@GetMapping()
+	@Operation(summary = "대기열 리팩토링용 API", description = "전체 대기 목록 조회")
+	public ResponseEntity<?> getMyWaitingInfo(
+		@AuthenticationPrincipal CustomOAuth2User customOAuth2User
+	) {
+		List<GetMyWaitingInfoResponse> response = waitingService.getMyWaitingInfo(
+			customOAuth2User
+		);
+
+		return ResponseEntity
+			.ok()
+			.body(
+				ApiUtils.success(
+					response
+				)
+			);
+	}
+
 	@PostMapping("/{publicCode}")
 	@Operation(summary = "대기열 리팩토링용 API", description = "대기열 리팩토링용 API")
 	public ResponseEntity<?> registerWaiting(

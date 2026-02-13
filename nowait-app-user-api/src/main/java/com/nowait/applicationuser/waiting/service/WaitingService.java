@@ -2,6 +2,7 @@ package com.nowait.applicationuser.waiting.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.GetMyWaitingInfoResponse;
 import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
@@ -21,6 +23,7 @@ import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.exception.DepartmentNotFoundException;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
+import com.nowait.domaincorerdb.reservation.dto.GetMyWaitingBaseDto;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
@@ -159,6 +162,38 @@ public class WaitingService {
 		idempotencyService.saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
 
 		return response;
+	}
+
+	// 웨이팅 목록 조회
+	public List<GetMyWaitingInfoResponse> getMyWaitingInfo(CustomOAuth2User oAuth2User) {
+		User user = userRepository.findById(oAuth2User.getUserId())
+			.orElseThrow(UserNotFoundException::new);
+
+		Long userId = user.getId();
+
+		List<GetMyWaitingBaseDto> waitingInfoList = reservationRepository.findMyWaitingInfo(userId);
+
+		return waitingInfoList.stream()
+			.map(dto -> {
+				Long storeId = dto.getStoreId();
+				Long rank = waitingRedisRepository.getWaitingCount(storeId);
+
+				return GetMyWaitingInfoResponse.builder()
+					.reservationId(dto.getReservationId())
+					.storeId(dto.getStoreId())
+					.storeName(dto.getStoreName())
+					.departmentName(dto.getDepartmentName())
+					.rank(rank.intValue())
+					.teamsAhead(rank.intValue() - 1)
+					.partySize(dto.getPartySize())
+					.status(dto.getStatus().name())
+					.registeredAt(dto.getRegisteredAt())
+					.location(dto.getLocation())
+					.profileImageUrl(dto.getProfileImageUrl())
+					.bannerImageUrl(dto.getBannerImageUrl())
+					.build();
+			})
+			.toList();
 	}
 
 	// 현재 대기 인원 수 조회
