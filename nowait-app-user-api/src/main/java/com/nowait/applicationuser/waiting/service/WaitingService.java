@@ -179,7 +179,7 @@ public class WaitingService {
 				Long rank = waitingRedisRepository.getWaitingCount(storeId);
 
 				return GetMyWaitingInfoResponse.builder()
-					.reservationId(dto.getReservationId())
+					.waitingNumber(dto.getWaitingNumber())
 					.publicCode(dto.getPublicCode())
 					.storeId(dto.getStoreId())
 					.storeName(dto.getStoreName())
