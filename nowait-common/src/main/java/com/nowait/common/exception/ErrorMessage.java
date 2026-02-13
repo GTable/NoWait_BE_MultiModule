@@ -93,6 +93,9 @@ public enum ErrorMessage {
 	// search
 	SEARCH_PARAMETER_EMPTY("검색어가 비어있습니다.", "search001"),
 
+	// idempotency
+	WORK_IN_PROGRESS("해당 요청이 이미 처리 중입니다. 잠시 후 다시 시도해주세요.", "idempotency001"),
+
 	// common
 	UNEXPECTED_ERROR("예상하지 못한 오류가 발생했습니다.", "common999");
 
