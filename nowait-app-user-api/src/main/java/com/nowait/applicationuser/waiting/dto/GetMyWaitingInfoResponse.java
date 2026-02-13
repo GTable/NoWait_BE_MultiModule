@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class GetMyWaitingInfoResponse {
-	private String  reservationId;
+	private String  waitingNumber;
 	private String publicCode;
 	private Long storeId;
 	private String storeName;
