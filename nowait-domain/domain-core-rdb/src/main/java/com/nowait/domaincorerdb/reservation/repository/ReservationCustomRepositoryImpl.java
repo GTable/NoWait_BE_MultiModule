@@ -45,6 +45,7 @@ public class ReservationCustomRepositoryImpl implements ReservationCustomReposit
 		return queryFactory
 			.select(new QGetMyWaitingBaseDto(
 				reservation.reservationNumber,
+				store.publicCode,
 				store.storeId,
 				store.name,
 				department.name,

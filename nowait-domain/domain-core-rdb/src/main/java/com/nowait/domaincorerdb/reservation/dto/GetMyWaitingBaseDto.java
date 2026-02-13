@@ -12,6 +12,7 @@ import lombok.Getter;
 @Getter
 public class GetMyWaitingBaseDto {
 	private final String reservationId;
+	private final String publicCode;
 	private final Long storeId;
 	private final String storeName;
 	private final String departmentName;
@@ -25,6 +26,7 @@ public class GetMyWaitingBaseDto {
 	@QueryProjection
 	public GetMyWaitingBaseDto(
 		String reservationId,
+		String publicCode,
 		Long storeId,
 		String storeName,
 		String departmentName,
@@ -36,6 +38,7 @@ public class GetMyWaitingBaseDto {
 		String bannerImageUrl
 	) {
 		this.reservationId = reservationId;
+		this.publicCode = publicCode;
 		this.storeId = storeId;
 		this.storeName = storeName;
 		this.departmentName = departmentName;
