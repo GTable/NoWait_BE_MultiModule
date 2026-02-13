@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartException;
 
 import com.nowait.applicationuser.security.exception.ResourceNotFoundException;
 import com.nowait.applicationuser.security.exception.UnauthorizedException;
+import com.nowait.applicationuser.waiting.exception.WorkInProgressException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
 import com.nowait.discord.service.DiscordAlarmService;
@@ -290,6 +291,15 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("handleReservationAddUnauthorizedException", e);
 		return new ErrorResponse(e.getMessage(), RESERVATION_ADD_UNAUTHORIZED.getCode());
+	}
+
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(WorkInProgressException.class)
+	public ErrorResponse handleWorkInProgressException(
+		WorkInProgressException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleWorkInProgressException", e);
+		return new ErrorResponse(e.getMessage(), WORK_IN_PROGRESS.getCode());
 	}
 
 	// 공통 에러 Map 생성

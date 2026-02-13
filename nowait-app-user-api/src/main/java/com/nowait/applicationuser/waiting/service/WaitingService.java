@@ -2,6 +2,8 @@ package com.nowait.applicationuser.waiting.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -9,17 +11,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.GetMyWaitingInfoResponse;
 import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
 import com.nowait.applicationuser.waiting.dto.WaitingCancelIdempotencyValue;
 import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
-import com.nowait.applicationuser.waiting.redis.WaitingIdempotencyRepository;
+import com.nowait.applicationuser.waiting.exception.WorkInProgressException;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.exception.DepartmentNotFoundException;
 import com.nowait.domaincorerdb.department.repository.DepartmentRepository;
+import com.nowait.domaincorerdb.reservation.dto.GetMyWaitingBaseDto;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.exception.ReservationNotFoundException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
@@ -42,28 +46,31 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WaitingService {
 
+	private final IdempotencyService idempotencyService;
 	private final ReservationRepository reservationRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
 	private final StoreRepository storeRepository;
 	private final UserRepository userRepository;
 	private final DepartmentRepository departmentRepository;
 	private final ApplicationEventPublisher eventPublisher;
-	private final WaitingIdempotencyRepository waitingIdempotencyRepository;
 
 	/**
 	 * 최초 대기 등록
-	 * @param publicCode
-	 * @param waitingRequest
 	 */
 	// 대기열 리팩토링 서비스 메서드
 	@Transactional
 	public RegisterWaitingResponse registerWaiting(CustomOAuth2User oAuth2User, String publicCode, RegisterWaitingRequest waitingRequest, HttpServletRequest httpServletRequest) {
 
 		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
-		RegisterWaitingResponse registerWaitingResponse = validateIdempotency(httpServletRequest);
-		if (registerWaitingResponse != null) {
+		Optional<WaitingIdempotencyValue> idempotencyResponse = idempotencyService.validateIdempotency(httpServletRequest);
+		if (idempotencyResponse.isPresent() && idempotencyResponse.getClass().equals("IN-PROGRESS")) {
+			throw new WorkInProgressException();
+		} else if (idempotencyResponse.isPresent() && idempotencyResponse.getClass().equals("COMPLETED")) {
 			log.info("Idempotent request detected. Returning existing response.");
-			return registerWaitingResponse;
+			return idempotencyResponse.get().getResponse();
+		} else {
+			// TODO : DB 저장 실패 시 롤백 처리 필요
+			idempotencyService.saveIdempotencyKeyInProgress(httpServletRequest.getHeader("Idempotency-Key"));
 		}
 
 		// TODO 유저 및 주점 존재 검증은 공통으로 많이 쓰이니 AOP로 빼는게 좋을 듯
@@ -110,7 +117,7 @@ public class WaitingService {
 			.build();
 
 		// TODO 멱등키 응답 실패 시 어떻게 처리할 지 점검 필요
-		saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
+		idempotencyService.saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
 
 		return response;
 	}
@@ -118,10 +125,14 @@ public class WaitingService {
 	@Transactional
 	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request, HttpServletRequest httpServletRequest) {
 		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
-		CancelWaitingResponse cancelWaitingResponse = validateCancelIdempotency(httpServletRequest);
-		if (cancelWaitingResponse != null) {
+		WaitingCancelIdempotencyValue idempotencyResponse = idempotencyService.validateIdempotencyCancel(httpServletRequest);
+		if (idempotencyResponse != null && idempotencyResponse.getState().equals("IN-PROGRESS")) {
+			throw new WorkInProgressException();
+		} else if (idempotencyResponse != null && idempotencyResponse.getState().equals("COMPLETED")) {
 			log.info("Idempotent request detected. Returning existing response.");
-			return cancelWaitingResponse;
+			return idempotencyResponse.getResponse();
+		} else {
+			idempotencyService.saveIdempotencyKeyInProgress(httpServletRequest.getHeader("Idempotency-Key"));
 		}
 
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode).orElseThrow(StoreNotFoundException::new);
@@ -148,37 +159,41 @@ public class WaitingService {
 			.build();
 
 		// 멱등키가 있다면 멱등 응답 저장
-		waitingIdempotencyRepository.saveCancelIdempotencyValue(httpServletRequest.getHeader("Idempotency-Key"), response);
+		idempotencyService.saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
 
 		return response;
 	}
 
-	// 멱등키 검증 메서드
-	private RegisterWaitingResponse validateIdempotency(HttpServletRequest httpServletRequest) {
-		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+	// 웨이팅 목록 조회
+	public List<GetMyWaitingInfoResponse> getMyWaitingInfo(CustomOAuth2User oAuth2User) {
+		User user = userRepository.findById(oAuth2User.getUserId())
+			.orElseThrow(UserNotFoundException::new);
 
-		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
-		// TODO 멱등성 검증 로직 점검 필요
-		return waitingIdempotencyRepository.findByKey(idempotentKey)
-			.map(WaitingIdempotencyValue::getResponse)
-			.orElse(null);
-	}
+		Long userId = user.getId();
 
-	private CancelWaitingResponse validateCancelIdempotency(HttpServletRequest httpServletRequest) {
-		String idempotentKey = httpServletRequest.getHeader("Idempotency-Key");
+		List<GetMyWaitingBaseDto> waitingInfoList = reservationRepository.findMyWaitingInfo(userId);
 
-		// 멱등키 검증 - 이미 동일한 멱등키로 등록된 웨이팅이 있는지 확인
-		// TODO 멱등성 검증 로직 점검 필요
-		return waitingIdempotencyRepository.findByCancelKey(idempotentKey)
-			.map(WaitingCancelIdempotencyValue::getResponse)
-			.orElse(null);
-	}
+		return waitingInfoList.stream()
+			.map(dto -> {
+				Long storeId = dto.getStoreId();
+				Long rank = waitingRedisRepository.getWaitingCount(storeId);
 
-	// 멱등키 응답 저장 메서드
-	private void saveIdempotencyResponse(String idempotentKey, RegisterWaitingResponse response) {
-		if (idempotentKey != null && !idempotentKey.isBlank()) {
-			waitingIdempotencyRepository.saveIdempotencyValue(idempotentKey, response);
-		}
+				return GetMyWaitingInfoResponse.builder()
+					.reservationId(dto.getReservationId())
+					.storeId(dto.getStoreId())
+					.storeName(dto.getStoreName())
+					.departmentName(dto.getDepartmentName())
+					.rank(rank.intValue())
+					.teamsAhead(rank.intValue() - 1)
+					.partySize(dto.getPartySize())
+					.status(dto.getStatus().name())
+					.registeredAt(dto.getRegisteredAt())
+					.location(dto.getLocation())
+					.profileImageUrl(dto.getProfileImageUrl())
+					.bannerImageUrl(dto.getBannerImageUrl())
+					.build();
+			})
+			.toList();
 	}
 
 	// 현재 대기 인원 수 조회

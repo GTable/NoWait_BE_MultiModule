@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
 import com.nowait.applicationuser.waiting.redis.WaitingIdempotencyRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
+import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
@@ -38,6 +40,8 @@ class WaitingServiceTest {
 
 	@InjectMocks
 	private WaitingService waitingService;
+	@InjectMocks
+	private IdempotencyService idempotencyService;
 	@Mock
 	private ApplicationEventPublisher eventPublisher;
 	@Mock
@@ -73,7 +77,7 @@ class WaitingServiceTest {
 			.partySize(4)
 			.build();
 
-		when(waitingIdempotencyRepository.findByKey(IDEMPOTENCY_KEY))
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
 			.thenReturn(Optional.of(new WaitingIdempotencyValue(
 				"COMPLETED",
 				idempotentResponse
@@ -95,7 +99,36 @@ class WaitingServiceTest {
 		verify(waitingRedisRepository, never()).incrementAndCheckWaitingLimit(anyLong(), anyLong());
 		verify(reservationRepository, never()).save(any(Reservation.class));
 		verify(eventPublisher, never()).publishEvent(any());
-		verify(waitingIdempotencyRepository, never()).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
+	}
+
+	@Test
+	@DisplayName("멱등키가 In-PROGRESS 상태이면 DuplicateReservationException 발생")
+	void registerWaiting_idempotentKeyInProgress() {
+		// given
+		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
+
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
+			.thenReturn(Optional.of(new WaitingIdempotencyValue(
+				"IN-PROGRESS",
+				null
+			)));
+
+		// when & then
+		assertThatThrownBy(() -> waitingService.registerWaiting(
+			customOAuth2User,
+			"ZiVXAD1vVr5b",
+			request,
+			httpServletRequest
+		)).isInstanceOf(DuplicateReservationException.class);
+
+		verify(storeRepository, never()).findByPublicCodeAndDeletedFalse(anyString());
+		verify(userRepository, never()).findById(anyLong());
+		verify(waitingRedisRepository, never()).incrementAndCheckWaitingLimit(anyLong(), anyLong());
+		verify(reservationRepository, never()).save(any(Reservation.class));
+		verify(eventPublisher, never()).publishEvent(any());
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(),
+			any(RegisterWaitingResponse.class));
 	}
 
 	@Test
@@ -114,7 +147,7 @@ class WaitingServiceTest {
 		User user = User.builder().id(userId).build();
 
 		when(storeRepository.findByPublicCodeAndDeletedFalse(publicCode)).thenReturn(java.util.Optional.of(store));
-		when(customOAuth2User.getUserId()).thenReturn(10L);
+		when(customOAuth2User.getUserId()).thenReturn(userId);
 		when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
 
 		doNothing()
@@ -149,7 +182,7 @@ class WaitingServiceTest {
 		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
 
 		when(httpServletRequest.getHeader("Idempotency-Key")).thenReturn(IDEMPOTENCY_KEY);
-		when(waitingIdempotencyRepository.findByKey(IDEMPOTENCY_KEY))
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
 			.thenReturn(Optional.empty());
 
 		Long userId = 10L;
@@ -184,14 +217,14 @@ class WaitingServiceTest {
 		verify(waitingRedisRepository).incrementAndCheckWaitingLimit(userId, 3L);
 		verify(reservationRepository).save(any(Reservation.class));
 		verify(eventPublisher).publishEvent(any(AddWaitingRegisterEvent.class));
-		verify(waitingIdempotencyRepository).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 	}
 
 	@Test
 	@DisplayName("DB 저장 중 예외 발생 시 이벤트 발행 및 멱등 저장이 수행되지 않음")
 	void registerWaiting_dbSaveException() {
 		// given
-		when(waitingIdempotencyRepository.findByKey(IDEMPOTENCY_KEY))
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
 			.thenReturn(Optional.empty());
 		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
 
@@ -222,7 +255,7 @@ class WaitingServiceTest {
 		)).isInstanceOf(RuntimeException.class);
 
 		verify(eventPublisher, never()).publishEvent(any(AddWaitingRegisterEvent.class));
-		verify(waitingIdempotencyRepository, never()).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 	}
 
 	@Test
@@ -233,7 +266,7 @@ class WaitingServiceTest {
 		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
 
 		when(httpServletRequest.getHeader("Idempotency-Key")).thenReturn(IDEMPOTENCY_KEY);
-		when(waitingIdempotencyRepository.findByKey(IDEMPOTENCY_KEY))
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
 			.thenReturn(Optional.empty());
 
 
@@ -262,7 +295,7 @@ class WaitingServiceTest {
 
 		verify(reservationRepository, never()).save(any(Reservation.class));
 		verify(eventPublisher, never()).publishEvent(any());
-		verify(waitingIdempotencyRepository, never()).saveIdempotencyValue(anyString(), any(RegisterWaitingResponse.class));
+		verify(waitingIdempotencyRepository, never()).saveIdempotencyResponse(anyString(), any(RegisterWaitingResponse.class));
 		verify(waitingRedisRepository).incrementAndCheckWaitingLimit(10L, 3L);
 	}
 
@@ -270,7 +303,7 @@ class WaitingServiceTest {
 	@DisplayName("존재하지 않는 publicCode이면 StoreNotFoundException 발생")
 	void registerWaiting_storeNotFound() {
 		// given
-		when(waitingIdempotencyRepository.findByKey(IDEMPOTENCY_KEY))
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
 			.thenReturn(Optional.empty());
 		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
 
@@ -296,7 +329,7 @@ class WaitingServiceTest {
 	@DisplayName("존재하지 않는 userId이면 UserNotFoundException 발생")
 	void registerWaiting_userNotFound() {
 		// given
-		when(waitingIdempotencyRepository.findByKey(IDEMPOTENCY_KEY))
+		when(waitingIdempotencyRepository.findByRegisterKey(IDEMPOTENCY_KEY))
 			.thenReturn(Optional.empty());
 		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
 		String publicCode = "ZiVXAD1vVr5b";
