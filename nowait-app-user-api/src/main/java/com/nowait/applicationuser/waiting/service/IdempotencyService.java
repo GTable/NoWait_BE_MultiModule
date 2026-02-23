@@ -48,4 +48,11 @@ public class IdempotencyService {
 		}
 	}
 
+	public void rollbackIdempotencyKey(String idempotentKey) {
+		if (idempotentKey != null && !idempotentKey.isBlank()) {
+			log.info("Rolling back idempotency key: {}", idempotentKey);
+			waitingIdempotencyRepository.deleteByRegisterKey(idempotentKey);
+		}
+	}
+
 }
