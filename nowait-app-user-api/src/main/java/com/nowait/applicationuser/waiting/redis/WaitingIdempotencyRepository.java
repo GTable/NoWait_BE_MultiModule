@@ -85,4 +85,8 @@ public class WaitingIdempotencyRepository {
 			throw new IllegalArgumentException("Failed to serialize value for Redis", e);
 		}
 	}
+
+	public void deleteByRegisterKey(String key) {
+		redisTemplate.delete(key);
+	}
 }

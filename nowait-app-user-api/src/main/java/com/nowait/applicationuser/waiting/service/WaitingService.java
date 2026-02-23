@@ -142,13 +142,20 @@ public class WaitingService {
 			.orElseThrow(UserNotFoundException::new);
 
 		// DB 웨이팅 상태 취소 처리
-		Reservation reservation = reservationRepository.findReservationByReservationNumber(request.getWaitingNumber())
-			.orElseThrow(ReservationNotFoundException::new);
+		Reservation reservation;
+		try {
+			reservation = reservationRepository.findReservationByReservationNumber(request.getWaitingNumber())
+				.orElseThrow(ReservationNotFoundException::new);
 
-		reservation.markAsCancelled(LocalDateTime.now());
+			reservation.markAsCancelled(LocalDateTime.now());
 
-		// Redis 대기열 취소 이벤트 발행
-		waitingRedisRepository.removeWaiting(storeId, user.getId());
+			// Redis 대기열 취소 이벤트 발행
+			waitingRedisRepository.removeWaiting(storeId, user.getId());
+		} catch (RuntimeException e) {
+			// 롤백 처리
+			idempotencyService.rollbackIdempotencyKey(httpServletRequest.getHeader("Idempotency-Key"));
+			throw e;
+		}
 
 		CancelWaitingResponse response = CancelWaitingResponse.builder()
 			.waitingNumber(reservation.getReservationNumber())
