@@ -14,6 +14,8 @@ import com.nowait.domaincorerdb.menu.exception.MenuImageNotFoundException;
 import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.repository.MenuImageRepository;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
+import com.nowait.domaincoreredis.common.cache.CacheInvalidationPublisher;
+import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 import com.nowait.infraaws.aws.s3.S3Service;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ public class MenuImageService {
 	private final MenuRepository menuRepository;
 	private final MenuImageRepository menuImageRepository;
 	private final S3Service s3Service;
+	private final CacheInvalidationPublisher cacheInvalidationPublisher;
+
 	@Transactional
 	public MenuImageUploadResponse save(Long menuId, MultipartFile file) {
 		if (file == null || file.isEmpty()) {
@@ -52,6 +56,7 @@ public class MenuImageService {
 			.build();
 
 		menuImageRepository.save(menuImage);
+		cacheInvalidationPublisher.invalidate(RedisKeyUtils.buildMenuCacheChannel(), String.valueOf(menu.getStoreId()));
 
 		// 응답 생성
 		return MenuImageUploadResponse.fromEntity(menuImage);
@@ -64,5 +69,7 @@ public class MenuImageService {
 
 		s3Service.delete(menuImage.getFileKey());
 		menuImageRepository.delete(menuImage);
+		cacheInvalidationPublisher.invalidate(RedisKeyUtils.buildMenuCacheChannel(),
+			String.valueOf(menuImage.getMenu().getStoreId()));
 	}
 }

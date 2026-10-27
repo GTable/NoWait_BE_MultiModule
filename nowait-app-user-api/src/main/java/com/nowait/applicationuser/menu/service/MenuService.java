@@ -1,19 +1,12 @@
 package com.nowait.applicationuser.menu.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.nowait.applicationuser.menu.dto.MenuImageUploadResponse;
 import com.nowait.applicationuser.menu.dto.MenuReadDto;
 import com.nowait.applicationuser.menu.dto.MenuReadResponse;
-import com.nowait.domaincorerdb.menu.entity.Menu;
-import com.nowait.domaincorerdb.menu.entity.MenuImage;
+import com.nowait.applicationuser.menu.repository.DistributedCachedMenuDao;
 import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
 import com.nowait.domaincorerdb.menu.exception.MenuParamEmptyException;
-import com.nowait.domaincorerdb.menu.repository.MenuImageRepository;
-import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
 import com.nowait.domaincorerdb.store.repository.StoreRepository;
@@ -24,12 +17,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MenuService {
 
-	private final MenuRepository menuRepository;
-	private final MenuImageRepository menuImageRepository;
 	private final StoreRepository storeRepository;
+	private final DistributedCachedMenuDao menuDao;
 
-
-	@Transactional(readOnly = true)
+	// @Transactional 을 걸지 않는다: 주점 조회로 잡힌 스냅샷 안에서 캐시 미스 로딩이 일어나면
+	// 무효화 직후에도 커밋 전 메뉴가 TTL 동안 캐싱될 수 있다
 	public MenuReadResponse getAllMenusByStoreId(String publicCode) {
 		if (publicCode == null) {
 			throw new MenuParamEmptyException();
@@ -38,24 +30,9 @@ public class MenuService {
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
 
-		String storeName = store.getName();
-		Long storeId = store.getStoreId();
-		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
-
-		List<MenuReadDto> menuReadResponse = menus.stream()
-			.map(menu -> {
-				List<MenuImage> images = menuImageRepository.findByMenu(menu);
-				List<MenuImageUploadResponse> imageDto = images.stream()
-					.map(MenuImageUploadResponse::fromEntity)
-					.toList();
-				return MenuReadDto.fromEntity(menu, imageDto);
-			})
-			.toList();
-
-		return MenuReadResponse.of(storeName, menuReadResponse);
+		return MenuReadResponse.of(store.getName(), menuDao.get(String.valueOf(store.getStoreId())));
 	}
 
-	@Transactional(readOnly = true)
 	public MenuReadDto getMenuById(String publicCode, Long menuId) {
 		if (publicCode == null || menuId == null) {
 			throw new MenuParamEmptyException();
@@ -64,14 +41,9 @@ public class MenuService {
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
 
-		Menu menu = menuRepository.findByStoreIdAndIdAndDeletedFalse(store.getStoreId(), menuId)
+		return menuDao.get(String.valueOf(store.getStoreId())).stream()
+			.filter(menu -> menu.getMenuId().equals(menuId))
+			.findFirst()
 			.orElseThrow(MenuNotFoundException::new);
-
-		List<MenuImage> images = menuImageRepository.findByMenu(menu);
-		List<MenuImageUploadResponse> imageDto = images.stream()
-			.map(MenuImageUploadResponse::fromEntity)
-			.toList();
-
-		return MenuReadDto.fromEntity(menu, imageDto);
 	}
 }
