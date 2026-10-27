@@ -23,6 +23,13 @@ public class RedisKeyUtils {
 	private static final String WAITING_PARTYSIZE_KEY_PREFIX = "waiting:party:";
 	private static final String WAITING_STATUS_KEY_PREFIX = "waiting:status:";
 
+	// Cache invalidation channels
+	private static final String MENU_CACHE_CHANNEL = "cache:menus";
+
+	public static String buildMenuCacheChannel() {
+		return MENU_CACHE_CHANNEL;
+	}
+
 	// Waiting User keys
 	public static String buildUserHoldingKey(String userId) {
 		return "waiting:user:{" + userId + "}:holding"; // ZSET(member=token, score=expireEpochMs)

@@ -34,6 +34,8 @@ import com.nowait.domaincorerdb.user.entity.MemberDetails;
 import com.nowait.domaincorerdb.user.entity.User;
 import com.nowait.domaincorerdb.user.exception.UserNotFoundException;
 import com.nowait.domaincorerdb.user.repository.UserRepository;
+import com.nowait.domaincoreredis.common.cache.CacheInvalidationPublisher;
+import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +46,7 @@ public class MenuService {
 	private final MenuRepository menuRepository;
 	private final MenuImageRepository menuImageRepository;
 	private final UserRepository userRepository;
+	private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
 	@Transactional
 	public MenuCreateResponse createMenu(MenuCreateRequest request, MemberDetails memberDetails) {
@@ -55,6 +58,7 @@ public class MenuService {
 		// 메뉴 생성 로직
 		Menu toSave = request.toEntity();
 		Menu saved = menuRepository.save(toSave);
+		invalidateMenuCache(saved.getStoreId());
 
 		return MenuCreateResponse.fromEntity(saved);
 	}
@@ -66,16 +70,9 @@ public class MenuService {
 		// 사용자 역할이 SUPER_ADMIN이거나, storeId가 일치하는지 확인
 		validateViewAuthorization(user, storeId);
 
-		List<Menu> menus = menuRepository.findAllByStoreIdAndDeletedFalseOrderBySortOrder(storeId);
-
-		List<MenuReadDto> menuReadResponse = menus.stream()
-			.map(menu -> {
-				List<MenuImage> images = menuImageRepository.findByMenu(menu);
-				List<MenuImageUploadResponse> imageDto = images.stream()
-					.map(MenuImageUploadResponse::fromEntity)
-					.toList();
-				return MenuReadDto.fromEntity(menu, imageDto);
-			})
+		List<MenuReadDto> menuReadResponse = menuRepository.findAllWithImagesByStoreId(storeId).entrySet().stream()
+			.map(e -> MenuReadDto.fromEntity(e.getKey(),
+				e.getValue().stream().map(MenuImageUploadResponse::fromEntity).toList()))
 			.toList();
 
 		return MenuReadResponse.of(menuReadResponse);
@@ -116,6 +113,7 @@ public class MenuService {
 		);
 
 		Menu saved = menuRepository.save(menu);
+		invalidateMenuCache(saved.getStoreId());
 
 		List<MenuImage> images = menuImageRepository.findByMenu(saved);
 		List<MenuImageUploadResponse> imageDto = images.stream()
@@ -163,6 +161,7 @@ public class MenuService {
 		menus.forEach(m -> m.updateSortOrder(idToSort.get(m.getId())));
 
 		menuRepository.saveAll(menus);
+		invalidateMenuCache(storeId);
 
 		return "메뉴 순서가 성공적으로 업데이트되었습니다.";
 	}
@@ -175,6 +174,7 @@ public class MenuService {
 		validateDeleteAuthorization(user, menu.getStoreId());
 		menu.markAsDeleted();
 		menuRepository.save(menu);
+		invalidateMenuCache(menu.getStoreId());
 
 		return "Menu with ID " + menuId + " 삭제되었습니다.";
 	}
@@ -186,9 +186,15 @@ public class MenuService {
 
 		menu.toggleSoldOut();
 		menuRepository.save(menu);
+		invalidateMenuCache(menu.getStoreId());
 		return menu.getIsSoldOut();
 	}
 
+
+	// user-api 의 DistributedCachedMenuDao 무효화 (커밋 후 발행)
+	private void invalidateMenuCache(Long storeId) {
+		cacheInvalidationPublisher.invalidate(RedisKeyUtils.buildMenuCacheChannel(), String.valueOf(storeId));
+	}
 
 	private void validateViewAuthorization(User user, Long storeId) {
 		if (!(Role.SUPER_ADMIN.equals(user.getRole())

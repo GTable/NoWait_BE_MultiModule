@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,9 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "menus")
+// 주점별 메뉴 조회(WHERE store_id = ? AND deleted = ? ORDER BY sort_order)가 전체 스캔·filesort 없이 끝나게 한다
+@Table(name = "menus", indexes = @Index(name = "idx_menus_store_id_deleted_sort_order",
+	columnList = "store_id, deleted, sort_order"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
