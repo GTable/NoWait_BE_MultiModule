@@ -1,32 +1,33 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.0' apply false
-    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com.nowaiting'
+group = 'com.nowait'
 version = '0.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+allprojects {
+    group = 'com.nowait'
+    version = '0.0.1-SNAPSHOT'
 }
 
 subprojects {
-    apply plugin: 'java'
-    apply plugin: 'org.springframework.boot'
-    apply plugin: 'io.spring.dependency-management'
-
-    group = rootProject.group
-    version = rootProject.version
+    apply plugin: "java"
+    apply plugin: 'java-library'
+    apply plugin: "io.spring.dependency-management"
+    if (project.name.startsWith('nowait-app-')) {
+        apply plugin: "org.springframework.boot"
+    }
 
     repositories {
         mavenCentral()
     }
 
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
-        }
-    }
 
     dependencyManagement {
         imports {
@@ -34,20 +35,7 @@ subprojects {
         }
     }
 
-    if (project.name != 'common') {
-        dependencies {
-            implementation project(':common')
-        }
-    }
-
     test {
         useJUnitPlatform()
-    }
-
-    bootJar {
-        enabled = false
-    }
-    jar {
-        enabled = true
     }
 }

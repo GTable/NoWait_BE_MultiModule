@@ -1,0 +1,76 @@
+package com.nowait.applicationadmin.reservation.dto;
+
+import java.time.LocalDateTime;
+
+import com.nowait.domaincorerdb.reservation.entity.Reservation;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+@Builder
+@Schema(description = "대기 사용자 응답 DTO")
+public class WaitingUserResponse {
+
+	@Schema(description = "예약 ID", example = "16-20240201-0002")
+	private String reservationNumber;
+
+	@Schema(description = "휴대폰 번호", example = "010-1234-5678")
+	private String phoneNumber;
+
+	@Schema(description = "유저 ID", example = "16")
+	private String userId;
+
+	@Schema(description = "파티 인원", example = "3")
+	private Integer partySize;
+
+	@Schema(description = "사용자 이름(닉네임)", example = "혜민이")
+	private String userName;
+
+	@Schema(description = "대기 등록 시각", example = "2025-07-22T16:00:00")
+	private LocalDateTime createdAt;
+
+	@Schema(description = "호출 시각", example = "2025-07-22T16:10:00")
+	private LocalDateTime calledAt;
+
+	@Schema(description = "호출 시각", example = "2025-07-22T16:10:00")
+	private LocalDateTime updatedAt;
+
+	@Schema(description = "대기 상태", example = "CALLING")
+	private String status;
+
+	@Schema(description = "대기 순번/점수", example = "2.0")
+	private Double score;
+
+	public static WaitingUserResponse fromEntity(Reservation reservation) {
+		return WaitingUserResponse.builder()
+			.reservationNumber(reservation.getReservationNumber())
+			.userId(reservation.getUser().getId().toString())
+			.partySize(reservation.getPartySize())
+			.phoneNumber(reservation.getUser().getPhoneNumber())
+			.userName(reservation.getUser().getNickname())
+			.createdAt(reservation.getRequestedAt())
+			.updatedAt(reservation.getUpdatedAt())
+			.status(reservation.getStatus().name())
+			.build();
+	}
+
+	public static WaitingUserResponse fromRedis(String reservationId, String userId, String phoneNumber,
+		Integer partySize, String userName,
+		LocalDateTime createdAt, LocalDateTime calledAt, String status, Double score) {
+		return WaitingUserResponse.builder()
+			.reservationNumber(reservationId)
+			.userId(userId)
+			.phoneNumber(phoneNumber)
+			.partySize(partySize)
+			.userName(userName)
+			.createdAt(createdAt)
+			.calledAt(calledAt)
+			.status(status)
+			.score(score)
+			.build();
+	}
+}

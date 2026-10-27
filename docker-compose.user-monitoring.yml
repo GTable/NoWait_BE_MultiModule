@@ -1,0 +1,27 @@
+services:
+  prometheus-user:
+    image: prom/prometheus:latest
+    container_name: prometheus-user
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-user.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - nowait-app-user-api
+    restart: always
+
+  grafana-user:
+    image: grafana/grafana:latest
+    container_name: grafana-user
+    ports:
+      - "3003:3000"
+    volumes:
+      - grafana-user-data:/var/lib/grafana
+    depends_on:
+      - prometheus-user
+    restart: always
+
+volumes:
+  grafana-user-data:
