@@ -9,10 +9,15 @@ on:
       - 'nowait-common/**'
       - 'nowait-domain/domain-core-rdb/**'
       - 'nowait-domain/domain-admin-rdb/**'
+      - 'nowait-domain/domain-redis/**'
+      - 'nowait-event/**'
       - 'nowait-infra/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle/**'
+      - 'docker-compose.admin.yml'
+      - 'docker-compose.admin-monitoring.yml'
+      - 'scripts/deploy-admin-docker.sh'
 
 env:
   DOCKERHUB_REPO: jihuneddie/nowait_dev_admin
