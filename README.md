@@ -16,7 +16,7 @@
 
 ## 📌 Architecture
 ### 1️⃣ System Architecture
-![NoWait-Architecture](https://github.com/user-attachments/assets/b85dc5fd-0a42-4f1a-a79e-448044a08c47)
+![NoWait-Architecture](docs/images/nowait-architecture.png)
 
 ### 2️⃣ Multi Module Architecture
 ![NoWait-MultiModule-Architecture](https://github.com/user-attachments/assets/e30dcaf6-c1dc-4a5b-b2a3-29e22f1536f1)
