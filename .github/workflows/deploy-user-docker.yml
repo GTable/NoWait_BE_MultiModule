@@ -9,10 +9,16 @@ on:
       - 'nowait-common/**'
       - 'nowait-domain/domain-core-rdb/**'
       - 'nowait-domain/domain-user-rdb/**'
+      - 'nowait-domain/domain-admin-rdb/**'
+      - 'nowait-domain/domain-redis/**'
+      - 'nowait-event/**'
       - 'nowait-infra/**'
       - 'build.gradle'
       - 'settings.gradle'
       - 'gradle/**'
+      - 'docker-compose.user.yml'
+      - 'docker-compose.user-monitoring.yml'
+      - 'scripts/deploy-user-docker.sh'
 
 env:
   DOCKERHUB_REPO: jihuneddie/nowait_dev_user
