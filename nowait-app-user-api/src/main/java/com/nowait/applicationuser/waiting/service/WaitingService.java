@@ -63,9 +63,9 @@ public class WaitingService {
 
 		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
 		Optional<WaitingIdempotencyValue> idempotencyResponse = idempotencyService.validateIdempotency(httpServletRequest);
-		if (idempotencyResponse.isPresent() && idempotencyResponse.getClass().equals("IN-PROGRESS")) {
+		if (idempotencyResponse.isPresent() && "IN-PROGRESS".equals(idempotencyResponse.get().getState())) {
 			throw new WorkInProgressException();
-		} else if (idempotencyResponse.isPresent() && idempotencyResponse.getClass().equals("COMPLETED")) {
+		} else if (idempotencyResponse.isPresent() && "COMPLETED".equals(idempotencyResponse.get().getState())) {
 			log.info("Idempotent request detected. Returning existing response.");
 			return idempotencyResponse.get().getResponse();
 		} else {
