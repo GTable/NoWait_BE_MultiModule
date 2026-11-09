@@ -14,14 +14,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
 import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
+import com.nowait.applicationuser.waiting.exception.WorkInProgressException;
 import com.nowait.applicationuser.waiting.redis.WaitingIdempotencyRepository;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
-import com.nowait.domaincorerdb.reservation.exception.DuplicateReservationException;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
 import com.nowait.domaincorerdb.store.entity.Store;
 import com.nowait.domaincorerdb.store.exception.StoreNotFoundException;
@@ -63,7 +64,8 @@ class WaitingServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		when(httpServletRequest.getHeader("Idempotency-Key")).thenReturn(IDEMPOTENCY_KEY);
+		lenient().when(httpServletRequest.getHeader("Idempotency-Key")).thenReturn(IDEMPOTENCY_KEY);
+		ReflectionTestUtils.setField(waitingService, "idempotencyService", idempotencyService);
 	}
 
 	@Test
@@ -103,7 +105,7 @@ class WaitingServiceTest {
 	}
 
 	@Test
-	@DisplayName("멱등키가 In-PROGRESS 상태이면 DuplicateReservationException 발생")
+	@DisplayName("멱등키가 In-PROGRESS 상태이면 WorkInProgressException 발생")
 	void registerWaiting_idempotentKeyInProgress() {
 		// given
 		RegisterWaitingRequest request = new RegisterWaitingRequest(4);
@@ -120,7 +122,7 @@ class WaitingServiceTest {
 			"ZiVXAD1vVr5b",
 			request,
 			httpServletRequest
-		)).isInstanceOf(DuplicateReservationException.class);
+		)).isInstanceOf(WorkInProgressException.class);
 
 		verify(storeRepository, never()).findByPublicCodeAndDeletedFalse(anyString());
 		verify(userRepository, never()).findById(anyLong());
