@@ -1,5 +1,7 @@
 package com.nowait.applicationuser.reservation.service;
 
+import com.nowait.applicationuser.reservation.dto.WaitingSnapshot;
+import static org.mockito.ArgumentMatchers.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -99,16 +101,46 @@ public class ReservationServiceTest {
 		CustomOAuth2User user = mock(CustomOAuth2User.class);
 		when(user.getUserId()).thenReturn(30L);
 		when(waitingRepo.getReservationId(storeId, "30")).thenReturn("RID-1");
-		when(waitingRepo.getPartySize(storeId, "30")).thenReturn(4);
-		when(waitingRepo.getWaitingTimestamp(storeId, "30")).thenReturn(Instant.now().toEpochMilli());
-		when(waitingRepo.removeWaiting(storeId, "30")).thenReturn(true);
+		Reservation row = mock(Reservation.class);
+		when(reservationRepository.findReservationByReservationNumber("RID-1")).thenReturn(Optional.of(row));
 
 		// When
 		boolean removed = service.cancelWaiting(storeId, user);
 
 		// Then
 		assertTrue(removed);
-		verify(reservationRepository).save(any(Reservation.class));
+		verify(row).markAsCancelled(any());
+		verify(reservationRepository).save(row);
+		verify(waitingRepo).removeWaiting(storeId, "30");
+	}
+
+	@Test
+	@DisplayName("registerWaiting: DB 저장 실패 시 Redis 등록을 되돌린다")
+	void registerWaiting_RollsBackRedis_WhenDbSaveFails() {
+		// Given
+		Long storeId = 10L;
+		CustomOAuth2User principal = mock(CustomOAuth2User.class);
+		when(principal.getUserId()).thenReturn(100L);
+		ReservationCreateRequestDto dto = ReservationCreateRequestDto.builder().partySize(2).build();
+		Store store = mock(Store.class);
+		when(storeRepository.findById(storeId)).thenReturn(Optional.of(store));
+		when(store.getIsActive()).thenReturn(true);
+		when(store.getStoreId()).thenReturn(storeId);
+		User user = mock(User.class);
+		when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(user.getId()).thenReturn(100L);
+		when(user.getRole()).thenReturn(Role.USER);
+		when(waitingRepo.calculateTTLUntilNext03AM()).thenReturn(Duration.ofHours(1));
+		when(waitingPermitLuaRepository.acquireLease(eq("100"), anyString(), anyLong(), anyLong(), anyInt(), any()))
+			.thenReturn(true);
+		when(waitingRepo.addToWaitingQueueLua(eq(storeId), eq("100"), eq(2), anyLong(), any()))
+			.thenReturn(new WaitingSnapshot(0L, 2, "10-20261109-0001", true));
+		when(reservationRepository.save(any(Reservation.class))).thenThrow(new IllegalStateException("db down"));
+
+		// When / Then
+		assertThrows(IllegalStateException.class, () -> service.registerWaiting(storeId, principal, dto));
+		verify(waitingRepo).removeWaiting(storeId, "100");
+		verify(waitingPermitLuaRepository).removeActiveMember("100", "10", "10-20261109-0001");
 	}
 
 	@Test
