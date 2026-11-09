@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.reservation.entity.Reservation;
 import com.nowait.domaincorerdb.reservation.repository.ReservationRepository;
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import com.nowait.domaincoreredis.reservation.repository.WaitingRedisRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class WaitingRedisRecoveryScheduler {
 
 	private final ReservationRepository reservationRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
+	private final WaitingPermitLuaRepository waitingPermitLuaRepository;
 
 	// ponytail: 30초마다 당일 진행 중 예약을 전부 훑는다. 행이 많아지면 (status, requested_at) 인덱스를 추가한다
 	@Scheduled(fixedDelay = 30_000)
@@ -54,8 +56,23 @@ public class WaitingRedisRecoveryScheduler {
 
 	private boolean restore(Reservation r) {
 		Long calledAt = r.getStatus() == ReservationStatus.CALLING ? toEpochMilli(r.getUpdatedAt()) : null;
-		return waitingRedisRepository.restoreWaiting(r.getStore().getStoreId(), r.getUser().getId(),
-			toEpochMilli(r.getRequestedAt()), r.getPartySize(), r.getStatus().name(), r.getReservationNumber(), calledAt);
+		Long storeId = r.getStore().getStoreId();
+		String userId = String.valueOf(r.getUser().getId());
+		if (!waitingRedisRepository.restoreWaiting(storeId, r.getUser().getId(), toEpochMilli(r.getRequestedAt()),
+			r.getPartySize(), r.getStatus().name(), r.getReservationNumber(), calledAt)) {
+			return false;
+		}
+
+		// 취소·입장은 커밋 후 Redis를 지우므로, 복구 직후 재확인 뒤 커밋된 경우에도 그 삭제가 복구를 이긴다.
+		boolean stillActive = reservationRepository.findById(r.getId())
+			.map(current -> current.getStatus() == ReservationStatus.WAITING || current.getStatus() == ReservationStatus.CALLING)
+			.orElse(false);
+		if (!stillActive) {
+			waitingRedisRepository.deleteWaiting(storeId, userId);
+			waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), r.getReservationNumber());
+			return false;
+		}
+		return true;
 	}
 
 	private long toEpochMilli(LocalDateTime time) {
