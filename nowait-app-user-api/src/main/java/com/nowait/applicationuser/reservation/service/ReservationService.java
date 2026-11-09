@@ -164,6 +164,7 @@ public class ReservationService {
 					snapshot.getReservationId(),
 					ttlTo3am
 				);
+				saveWaitingRow(store, user, snapshot.getReservationId(), dto.getPartySize(), ts);
 			} else {
 				// Lua 스크립트 중복 감지 케이스
 				waitingPermitLuaRepository.releaseLease(userId, token);
@@ -187,6 +188,27 @@ public class ReservationService {
 			if (snapshot == null || (snapshot.isNew())) {
 				waitingPermitLuaRepository.releaseLease(userId, token);
 			}
+			throw e;
+		}
+	}
+
+	// Redis 를 잃어도 복구할 수 있도록 성공 응답 전에 DB 에 남긴다. 저장에 실패하면 Redis 등록을 되돌려 등록 실패로 끝낸다
+	private void saveWaitingRow(Store store, User user, String reservationNumber, Integer partySize, long ts) {
+		LocalDateTime requestedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneId.of("Asia/Seoul"));
+		try {
+			reservationRepository.save(Reservation.builder()
+				.reservationNumber(reservationNumber)
+				.store(store)
+				.user(user)
+				.partySize(partySize)
+				.requestedAt(requestedAt)
+				.updatedAt(requestedAt)
+				.status(ReservationStatus.WAITING)
+				.build());
+		} catch (RuntimeException e) {
+			String userId = user.getId().toString();
+			waitingUserRedisRepository.removeWaiting(store.getStoreId(), userId);
+			waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(store.getStoreId()), reservationNumber);
 			throw e;
 		}
 	}
@@ -227,25 +249,11 @@ public class ReservationService {
 		if (reservationNumber == null) {
 			throw new ReservationNotFoundException();
 		}
-		Integer partySize = waitingUserRedisRepository.getPartySize(storeId, userId);
-		Long ts = waitingUserRedisRepository.getWaitingTimestamp(storeId, userId);
-
-
 		// 대기열에서 제거 및 결과 반환
-		if (reservationRepository.existsReservationByReservationNumber(reservationNumber)) {
-			Reservation reservation = Reservation.builder()
-				.reservationNumber(reservationNumber)
-				.partySize(partySize)
-				.status(ReservationStatus.CANCELLED)
-				.store(storeRepository.getReferenceById(storeId))
-				.user(userRepository.getReferenceById(Long.parseLong(userId)))
-				.updatedAt(LocalDateTime.now())
-				.requestedAt(ts != null ? LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneId.of("Asia/Seoul"))
-					: LocalDateTime.now())
-				.build();
-
+		reservationRepository.findReservationByReservationNumber(reservationNumber).ifPresent(reservation -> {
+			reservation.markAsCancelled(LocalDateTime.now());
 			reservationRepository.save(reservation);
-		}
+		});
 
 		waitingUserRedisRepository.removeWaiting(storeId, userId);
 		waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);

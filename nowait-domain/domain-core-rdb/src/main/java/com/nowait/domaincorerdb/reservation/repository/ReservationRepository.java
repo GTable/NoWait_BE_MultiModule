@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.nowait.common.enums.ReservationStatus;
@@ -25,6 +27,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
 	List<Reservation> findAllByStore_StoreIdAndStatusInAndRequestedAtBetween(
 		Long storeId, List<ReservationStatus> statuses, LocalDateTime start, LocalDateTime end);
+
+	@Query("select r from Reservation r join fetch r.store join fetch r.user "
+		+ "where r.status in :statuses and r.requestedAt >= :from")
+	List<Reservation> findActiveSince(@Param("statuses") List<ReservationStatus> statuses,
+		@Param("from") LocalDateTime from);
 
 	// 웨이팅 취소 처리
 	Optional<Reservation> findReservationByReservationNumber(String reservationNumber);
