@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Repository;
 
 import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
@@ -24,6 +25,61 @@ import lombok.extern.slf4j.Slf4j;
 public class WaitingRedisRepository {
 
 	private final StringRedisTemplate redisTemplate;
+
+	// 대기열에 이미 있으면 아무것도 바꾸지 않는다. 발급 번호가 겹치지 않도록 일일 시퀀스는 복구 행의 번호까지 올린다
+	private static final String RESTORE_WAITING_LUA = """
+		if redis.call('ZADD', KEYS[1], 'NX', ARGV[2], ARGV[1]) == 0 then
+			return 0
+		end
+		redis.call('HSET', KEYS[2], ARGV[1], ARGV[3])
+		redis.call('HSET', KEYS[3], ARGV[1], ARGV[4])
+		redis.call('HSET', KEYS[4], ARGV[1], ARGV[5])
+		redis.call('HSET', KEYS[5], ARGV[5], ARGV[1])
+		if ARGV[6] ~= '' then
+			redis.call('HSET', KEYS[6], ARGV[1], ARGV[6])
+		end
+		redis.call('SADD', KEYS[7], ARGV[7])
+		if tonumber(redis.call('GET', KEYS[8]) or '0') < tonumber(ARGV[8]) then
+			redis.call('SET', KEYS[8], ARGV[8])
+		end
+		for i = 1, #KEYS do
+			redis.call('PEXPIRE', KEYS[i], ARGV[9])
+		end
+		return 1
+		""";
+
+	/**
+	 * DB 의 진행 중 예약을 Redis 대기열에 되살린다. reservationNumber 는 {storeId}-{yyyyMMdd}-{seq} 형식이다.
+	 * @return 실제로 복구했으면 true, 이미 대기열에 있으면 false
+	 */
+	public boolean restoreWaiting(Long storeId, Long userId, long score, int partySize, String status,
+		String reservationNumber, Long calledAt) {
+		String[] number = reservationNumber.split("-");
+		String user = String.valueOf(userId);
+		Long restored = redisTemplate.execute(
+			new DefaultRedisScript<>(RESTORE_WAITING_LUA, Long.class),
+			List.of(
+				RedisKeyUtils.buildWaitingKeyPrefix() + storeId,
+				RedisKeyUtils.buildWaitingPartySizeKeyPrefix() + storeId,
+				RedisKeyUtils.buildWaitingStatusKeyPrefix() + storeId,
+				RedisKeyUtils.buildReservationNumberKey(storeId),
+				RedisKeyUtils.buildReservationUserKey(storeId),
+				RedisKeyUtils.buildWaitingCalledAtKeyPrefix() + storeId,
+				RedisKeyUtils.buildUserActiveKey(user),
+				RedisKeyUtils.buildReservationSeqKey(storeId) + ":" + number[1]
+			),
+			user,
+			String.valueOf(score),
+			String.valueOf(partySize),
+			status,
+			reservationNumber,
+			calledAt == null ? "" : String.valueOf(calledAt),
+			storeId + ":" + reservationNumber,
+			String.valueOf(Long.parseLong(number[2])),
+			String.valueOf(RedisKeyUtils.expireAtNext03().getTime() - System.currentTimeMillis())
+		);
+		return Long.valueOf(1L).equals(restored);
+	}
 
 	// 대기열 전체 인원수 조회
 	public List<ZSetOperations.TypedTuple<String>> getAllWaitingWithScore(Long storeId) {

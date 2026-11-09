@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.nowait.domaincoreredis.reservation.repository.WaitingPermitLuaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,8 @@ public class ReservationServiceTest {
 	private ZSetOperations zSetOps;
 
 
+	@Mock
+	private WaitingPermitLuaRepository waitingPermitLuaRepository;
 	@InjectMocks
 	private ReservationService reservationService;
 
@@ -86,15 +89,15 @@ public class ReservationServiceTest {
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
 
-		adminPrincipal = MemberDetails.builder()
-			.id(1L).email("admin@test.com").password("pw")
-			.authorities(List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")))
-			.build();
-
 		User adminUser = User.createUserWithId(
 			1L, "admin@test.com", "admin", "img",
 			SocialType.LOCAL, Role.SUPER_ADMIN, storeId
 		);
+
+		adminPrincipal = MemberDetails.builder()
+			.id(1L).user(adminUser).email("admin@test.com").password("pw")
+			.authorities(List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")))
+			.build();
 
 		given(userRepository.findById(1L)).willReturn(Optional.of(adminUser));
 
@@ -137,7 +140,38 @@ public class ReservationServiceTest {
 		assertThat(dto.getReservationNumber()).isEqualTo("R-001");
 		then(waitingRedisRepository).should().setWaitingStatus(storeId, userId, "CALLING");
 		then(waitingRedisRepository).should().setWaitingCalledAt(eq(storeId), eq(userId), anyLong());
-		then(reservationRepository).shouldHaveNoInteractions();
+		then(reservationRepository).should().findReservationByReservationNumber("R-001");
+	}
+
+	@Test
+	@DisplayName("WAITING → CONFIRMED : 등록 때 저장한 행을 갱신한다")
+	void process_confirmed_updates_row_saved_at_registration() {
+		// given
+		given(waitingRedisRepository.getReservationId(storeId, userId)).willReturn("R-010");
+		given(waitingRedisRepository.getWaitingStatus(storeId, userId)).willReturn("WAITING");
+		given(waitingRedisRepository.getWaitingPartySize(storeId, userId)).willReturn(2);
+		given(zSetOps.score("waiting:" + storeId, userId)).willReturn((double) System.currentTimeMillis());
+		User userRef = User.createUserWithId(200L, "u@a", "neo", "img", SocialType.KAKAO, Role.USER, storeId);
+		Reservation existing = Reservation.builder()
+			.id(77L)
+			.reservationNumber("R-010")
+			.store(storeRef)
+			.user(userRef)
+			.partySize(2)
+			.requestedAt(LocalDateTime.now())
+			.updatedAt(LocalDateTime.now())
+			.status(ReservationStatus.WAITING)
+			.build();
+		given(reservationRepository.findReservationByReservationNumber("R-010")).willReturn(Optional.of(existing));
+		given(reservationRepository.save(existing)).willReturn(existing);
+
+		// when
+		reservationService.processEntryStatus(storeId, userId, adminPrincipal, ReservationStatus.CONFIRMED);
+
+		// then
+		assertThat(existing.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+		then(reservationRepository).should().save(existing);
+		then(waitingRedisRepository).should().deleteWaiting(storeId, userId);
 	}
 
 	@Test

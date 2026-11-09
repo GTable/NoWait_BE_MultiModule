@@ -17,6 +17,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.nowait.applicationadmin.reservation.dto.CallGetResponseDto;
 import com.nowait.applicationadmin.reservation.dto.EntryStatusResponseDto;
@@ -255,6 +257,7 @@ public class ReservationService {
 				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
 				waitingRedisRepository.setWaitingCalledAt(storeId, userId,
 					now.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli());
+				markCalling(reservationNumber, now);
 
 				return EntryStatusResponseDto.builder()
 					.reservationNumber(reservationNumber)
@@ -278,22 +281,9 @@ public class ReservationService {
 						);
 					}
 
-					// 새 Reservation 생성 & 저장
-					Reservation r = Reservation.builder()
-						.reservationNumber(reservationNumber)
-						.store(storeRepository.getReferenceById(storeId))
-						.user(userRepository.getReferenceById(Long.valueOf(userId)))
-						.partySize(partySize)
-						.requestedAt(requestedAt)
-						.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
-						.status(ReservationStatus.valueOf(currStatus))
-						.build();
-
-					// 호출 시각 반영
-					r.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
-					Reservation saved = reservationRepository.save(r);
-					// Redis 전부 삭제
-					waitingRedisRepository.deleteWaiting(storeId, userId);
+					Reservation saved = saveFinalStatus(reservationNumber, storeId, userId, partySize, requestedAt, currStatus,
+						ReservationStatus.CONFIRMED);
+					deleteWaitingAfterCommit(storeId, userId);
 					return EntryStatusResponseDto.fromEntity(saved);
 				} else {
 					if (reservationNumber != null) {
@@ -338,19 +328,9 @@ public class ReservationService {
 					);
 				}
 
-				Reservation r = Reservation.builder()
-					.reservationNumber(reservationNumber)
-					.store(storeRepository.getReferenceById(storeId))
-					.user(userRepository.getReferenceById(Long.valueOf(userId)))
-					.partySize(partySize)
-					.requestedAt(requestedAt)
-					.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
-					.status(ReservationStatus.valueOf(currStatus))
-					.build();
-
-				r.markUpdated(LocalDateTime.now(), ReservationStatus.CANCELLED);
-				Reservation saved = reservationRepository.save(r);
-				waitingRedisRepository.deleteWaiting(storeId, userId);
+				Reservation saved = saveFinalStatus(reservationNumber, storeId, userId, partySize, requestedAt, currStatus,
+					ReservationStatus.CANCELLED);
+				deleteWaitingAfterCommit(storeId, userId);
 
 				return EntryStatusResponseDto.fromEntity(saved);
 
@@ -411,6 +391,7 @@ public class ReservationService {
 				waitingRedisRepository.setWaitingStatus(storeId, userId, ReservationStatus.CALLING.name());
 				waitingRedisRepository.setWaitingCalledAt(storeId, userId,
 					now.atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli());
+				markCalling(reservationNumber, now);
 
 				return EntryStatusResponseDto.builder()
 					.reservationNumber(reservationNumber)
@@ -434,22 +415,9 @@ public class ReservationService {
 						);
 					}
 
-					// 새 Reservation 생성 & 저장
-					Reservation r = Reservation.builder()
-						.reservationNumber(reservationNumber)
-						.store(storeRepository.getReferenceById(storeId))
-						.user(userRepository.getReferenceById(Long.valueOf(userId)))
-						.partySize(partySize)
-						.requestedAt(requestedAt)
-						.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
-						.status(ReservationStatus.valueOf(currStatus))
-						.build();
-
-					// 호출 시각 반영
-					r.markUpdated(LocalDateTime.now(), ReservationStatus.CONFIRMED);
-					Reservation saved = reservationRepository.save(r);
-					// Redis 전부 삭제
-					waitingRedisRepository.deleteWaiting(storeId, userId);
+					Reservation saved = saveFinalStatus(reservationNumber, storeId, userId, partySize, requestedAt, currStatus,
+						ReservationStatus.CONFIRMED);
+					deleteWaitingAfterCommit(storeId, userId);
 					return EntryStatusResponseDto.fromEntity(saved);
 				} else {
 					if (reservationNumber != null) {
@@ -489,19 +457,9 @@ public class ReservationService {
 
 				waitingPermitLuaRepository.removeActiveMember(userId, String.valueOf(storeId), reservationNumber);
 
-				Reservation r = Reservation.builder()
-					.reservationNumber(reservationNumber)
-					.store(storeRepository.getReferenceById(storeId))
-					.user(userRepository.getReferenceById(Long.valueOf(userId)))
-					.partySize(partySize)
-					.requestedAt(requestedAt)
-					.updatedAt(now)
-					.status(ReservationStatus.valueOf(currStatus))
-					.build();
-
-				r.markUpdated(now, ReservationStatus.CANCELLED);
-				Reservation saved = reservationRepository.save(r);
-				waitingRedisRepository.deleteWaiting(storeId, userId);
+				Reservation saved = saveFinalStatus(reservationNumber, storeId, userId, partySize, requestedAt, currStatus,
+					ReservationStatus.CANCELLED);
+				deleteWaitingAfterCommit(storeId, userId);
 
 				return EntryStatusResponseDto.fromEntity(saved);
 
@@ -541,5 +499,40 @@ public class ReservationService {
 			throw new ReservationUpdateUnauthorizedException();
 		}
 	}
-}
 
+	private void markCalling(String reservationNumber, LocalDateTime now) {
+		// ponytail: 배포 전에 등록된 대기는 행이 없어 건너뛴다. 입장·취소 때 saveFinalStatus 가 만든다
+		reservationRepository.findReservationByReservationNumber(reservationNumber)
+			.ifPresent(r -> r.markUpdated(now, ReservationStatus.CALLING));
+	}
+
+	private Reservation saveFinalStatus(String reservationNumber, Long storeId, String userId, Integer partySize,
+		LocalDateTime requestedAt, String currStatus, ReservationStatus newStatus) {
+		Reservation r = reservationRepository.findReservationByReservationNumber(reservationNumber)
+			.orElseGet(() -> Reservation.builder()
+				.reservationNumber(reservationNumber)
+				.store(storeRepository.getReferenceById(storeId))
+				.user(userRepository.getReferenceById(Long.valueOf(userId)))
+				.partySize(partySize)
+				.requestedAt(requestedAt)
+				.updatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+				.status(ReservationStatus.valueOf(currStatus))
+				.build());
+		r.markUpdated(LocalDateTime.now(), newStatus);
+		return reservationRepository.save(r);
+	}
+
+	// 커밋 전에 지우면 복구 스케줄러가 아직 WAITING 인 행을 보고 Redis 에 되살린다
+	private void deleteWaitingAfterCommit(Long storeId, String userId) {
+		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+			waitingRedisRepository.deleteWaiting(storeId, userId);
+			return;
+		}
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				waitingRedisRepository.deleteWaiting(storeId, userId);
+			}
+		});
+	}
+}
