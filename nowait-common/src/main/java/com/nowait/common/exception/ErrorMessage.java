@@ -95,6 +95,8 @@ public enum ErrorMessage {
 
 	// idempotency
 	WORK_IN_PROGRESS("해당 요청이 이미 처리 중입니다. 잠시 후 다시 시도해주세요.", "idempotency001"),
+	IDEMPOTENCY_KEY_MISMATCH("같은 멱등키로 다른 내용의 요청이 들어왔습니다. 새 멱등키로 요청해주세요.", "idempotency002"),
+	INVALID_IDEMPOTENCY_KEY("멱등키는 UUID 형식이어야 합니다.", "idempotency003"),
 
 	// common
 	UNEXPECTED_ERROR("예상하지 못한 오류가 발생했습니다.", "common999");
