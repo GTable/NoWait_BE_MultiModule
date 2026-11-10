@@ -3,7 +3,6 @@ package com.nowait.applicationuser.waiting.service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -15,10 +14,7 @@ import com.nowait.applicationuser.waiting.dto.GetMyWaitingInfoResponse;
 import com.nowait.applicationuser.waiting.dto.GetWaitingSizeResponse;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
-import com.nowait.applicationuser.waiting.dto.WaitingCancelIdempotencyValue;
-import com.nowait.applicationuser.waiting.dto.WaitingIdempotencyValue;
 import com.nowait.applicationuser.waiting.event.AddWaitingRegisterEvent;
-import com.nowait.applicationuser.waiting.exception.WorkInProgressException;
 import com.nowait.common.enums.ReservationStatus;
 import com.nowait.domaincorerdb.department.entity.Department;
 import com.nowait.domaincorerdb.department.exception.DepartmentNotFoundException;
@@ -37,7 +33,6 @@ import com.nowait.domaincoreredis.common.util.RedisKeyUtils;
 import com.nowait.domaincoreredis.reservation.repository.WaitingRedisRepository;
 import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WaitingService {
 
-	private final IdempotencyService idempotencyService;
 	private final ReservationRepository reservationRepository;
 	private final WaitingRedisRepository waitingRedisRepository;
 	private final StoreRepository storeRepository;
@@ -59,20 +53,7 @@ public class WaitingService {
 	 */
 	// 대기열 리팩토링 서비스 메서드
 	@Transactional
-	public RegisterWaitingResponse registerWaiting(CustomOAuth2User oAuth2User, String publicCode, RegisterWaitingRequest waitingRequest, HttpServletRequest httpServletRequest) {
-
-		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
-		Optional<WaitingIdempotencyValue> idempotencyResponse = idempotencyService.validateIdempotency(httpServletRequest);
-		if (idempotencyResponse.isPresent() && "IN-PROGRESS".equals(idempotencyResponse.get().getState())) {
-			throw new WorkInProgressException();
-		} else if (idempotencyResponse.isPresent() && "COMPLETED".equals(idempotencyResponse.get().getState())) {
-			log.info("Idempotent request detected. Returning existing response.");
-			return idempotencyResponse.get().getResponse();
-		} else {
-			// TODO : DB 저장 실패 시 롤백 처리 필요
-			idempotencyService.saveIdempotencyKeyInProgress(httpServletRequest.getHeader("Idempotency-Key"));
-		}
-
+	public RegisterWaitingResponse registerWaiting(CustomOAuth2User oAuth2User, String publicCode, RegisterWaitingRequest waitingRequest) {
 		// TODO 유저 및 주점 존재 검증은 공통으로 많이 쓰이니 AOP로 빼는게 좋을 듯
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode)
 			.orElseThrow(StoreNotFoundException::new);
@@ -111,30 +92,14 @@ public class WaitingService {
 			)
 		);
 
-		RegisterWaitingResponse response = RegisterWaitingResponse.builder()
+		return RegisterWaitingResponse.builder()
 			.waitingNumber(waitingNumber)
 			.partySize(waitingRequest.getPartySize())
 			.build();
-
-		// TODO 멱등키 응답 실패 시 어떻게 처리할 지 점검 필요
-		idempotencyService.saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
-
-		return response;
 	}
 
 	@Transactional
-	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request, HttpServletRequest httpServletRequest) {
-		// TODO 멱등키 동시성 처리 로직 고려 필요 (분산락 등)
-		WaitingCancelIdempotencyValue idempotencyResponse = idempotencyService.validateIdempotencyCancel(httpServletRequest);
-		if (idempotencyResponse != null && idempotencyResponse.getState().equals("IN-PROGRESS")) {
-			throw new WorkInProgressException();
-		} else if (idempotencyResponse != null && idempotencyResponse.getState().equals("COMPLETED")) {
-			log.info("Idempotent request detected. Returning existing response.");
-			return idempotencyResponse.getResponse();
-		} else {
-			idempotencyService.saveIdempotencyKeyInProgress(httpServletRequest.getHeader("Idempotency-Key"));
-		}
-
+	public CancelWaitingResponse cancelWaiting(CustomOAuth2User oAuth2User, String publicCode, CancelWaitingRequest request) {
 		Store store = storeRepository.findByPublicCodeAndDeletedFalse(publicCode).orElseThrow(StoreNotFoundException::new);
 		Long storeId = store.getStoreId();
 
@@ -142,33 +107,21 @@ public class WaitingService {
 			.orElseThrow(UserNotFoundException::new);
 
 		// DB 웨이팅 상태 취소 처리
-		Reservation reservation;
-		try {
-			reservation = reservationRepository.findReservationByReservationNumber(request.getWaitingNumber())
-				.orElseThrow(ReservationNotFoundException::new);
+		Reservation reservation = reservationRepository.findReservationByReservationNumber(request.getWaitingNumber())
+			.orElseThrow(ReservationNotFoundException::new);
 
-			reservation.markAsCancelled(LocalDateTime.now());
+		reservation.markAsCancelled(LocalDateTime.now());
 
-			// Redis 대기열 취소 이벤트 발행
-			waitingRedisRepository.removeWaiting(storeId, user.getId());
-		} catch (RuntimeException e) {
-			// 롤백 처리
-			idempotencyService.rollbackIdempotencyKey(httpServletRequest.getHeader("Idempotency-Key"));
-			throw e;
-		}
+		// Redis 대기열 취소 이벤트 발행
+		waitingRedisRepository.removeWaiting(storeId, user.getId());
 
-		CancelWaitingResponse response = CancelWaitingResponse.builder()
+		return CancelWaitingResponse.builder()
 			.waitingNumber(reservation.getReservationNumber())
 			.storeId(storeId)
 			.reservationStatus(reservation.getStatus())
 			.canceledAt(reservation.getUpdatedAt())
 			.message("대기 취소가 완료되었습니다.")
 			.build();
-
-		// 멱등키가 있다면 멱등 응답 저장
-		idempotencyService.saveIdempotencyResponse(httpServletRequest.getHeader("Idempotency-Key"), response);
-
-		return response;
 	}
 
 	// 웨이팅 목록 조회

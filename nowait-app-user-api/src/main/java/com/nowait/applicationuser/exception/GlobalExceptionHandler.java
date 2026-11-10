@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartException;
 
 import com.nowait.applicationuser.security.exception.ResourceNotFoundException;
 import com.nowait.applicationuser.security.exception.UnauthorizedException;
-import com.nowait.applicationuser.waiting.exception.WorkInProgressException;
+import com.nowait.applicationuser.idempotency.WorkInProgressException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
 import com.nowait.discord.service.DiscordAlarmService;
