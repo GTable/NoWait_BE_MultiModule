@@ -66,8 +66,9 @@ public class WaitingController {
 		@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
 	) {
 		RegisterWaitingResponse registerWaitingResponse = idempotencyService.execute(
-			"waiting:register:" + customOAuth2User.getUserId(),
+			"waiting:register:" + customOAuth2User.getUserId() + ":" + publicCode,
 			idempotencyKey,
+			request,
 			RegisterWaitingResponse.class,
 			() -> waitingService.registerWaiting(customOAuth2User, publicCode, request)
 		);
@@ -90,8 +91,9 @@ public class WaitingController {
 		@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
 	) {
 		CancelWaitingResponse cancelWaitingResponse = idempotencyService.execute(
-			"waiting:cancel:" + customOAuth2User.getUserId(),
+			"waiting:cancel:" + customOAuth2User.getUserId() + ":" + publicCode,
 			idempotencyKey,
+			request,
 			CancelWaitingResponse.class,
 			() -> waitingService.cancelWaiting(customOAuth2User, publicCode, request)
 		);
