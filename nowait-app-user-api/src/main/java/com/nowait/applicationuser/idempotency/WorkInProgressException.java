@@ -1,4 +1,4 @@
-package com.nowait.applicationuser.waiting.exception;
+package com.nowait.applicationuser.idempotency;
 
 import com.nowait.common.exception.ErrorMessage;
 
