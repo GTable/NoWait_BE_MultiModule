@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nowait.applicationuser.idempotency.IdempotencyService;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
 import com.nowait.applicationuser.waiting.dto.GetMyWaitingInfoResponse;
@@ -24,7 +26,6 @@ import com.nowait.domainuserrdb.oauth.dto.CustomOAuth2User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Waiting API", description = "예약 API -리팩토링 중-")
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WaitingController {
 	private final WaitingService waitingService;
+	private final IdempotencyService idempotencyService;
 
 	/**
 	 * 대기열 리팩토링용 API
@@ -61,13 +63,13 @@ public class WaitingController {
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
 		@PathVariable String publicCode,
 		@RequestBody RegisterWaitingRequest request,
-		HttpServletRequest httpServletRequest
+		@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
 	) {
-		RegisterWaitingResponse registerWaitingResponse = waitingService.registerWaiting(
-			customOAuth2User,
-			publicCode,
-			request,
-			httpServletRequest
+		RegisterWaitingResponse registerWaitingResponse = idempotencyService.execute(
+			"waiting:register:" + customOAuth2User.getUserId(),
+			idempotencyKey,
+			RegisterWaitingResponse.class,
+			() -> waitingService.registerWaiting(customOAuth2User, publicCode, request)
 		);
 
 		return ResponseEntity
@@ -85,13 +87,13 @@ public class WaitingController {
 		@AuthenticationPrincipal CustomOAuth2User customOAuth2User,
 		@PathVariable String publicCode,
 		@RequestBody CancelWaitingRequest request,
-		HttpServletRequest httpServletRequest
+		@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
 	) {
-		CancelWaitingResponse cancelWaitingResponse = waitingService.cancelWaiting(
-			customOAuth2User,
-			publicCode,
-			request,
-			httpServletRequest
+		CancelWaitingResponse cancelWaitingResponse = idempotencyService.execute(
+			"waiting:cancel:" + customOAuth2User.getUserId(),
+			idempotencyKey,
+			CancelWaitingResponse.class,
+			() -> waitingService.cancelWaiting(customOAuth2User, publicCode, request)
 		);
 
 		return ResponseEntity
