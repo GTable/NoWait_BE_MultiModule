@@ -294,21 +294,19 @@ public class GlobalExceptionHandler {
 		return new ErrorResponse(e.getMessage(), RESERVATION_ADD_UNAUTHORIZED.getCode());
 	}
 
+	// 멱등 409/422 는 따닥 클릭·재시도 같은 정상 흐름이라 알림 없이 warn 만 남긴다
 	@ResponseStatus(CONFLICT)
 	@ExceptionHandler(WorkInProgressException.class)
-	public ErrorResponse handleWorkInProgressException(
-		WorkInProgressException e, WebRequest request) {
-		alarm(e, request);
-		log.error("handleWorkInProgressException", e);
+	public ErrorResponse handleWorkInProgressException(WorkInProgressException e, WebRequest request) {
+		log.warn("handleWorkInProgressException - {}", request.getDescription(false));
 		return new ErrorResponse(e.getMessage(), WORK_IN_PROGRESS.getCode());
 	}
 
 	@ResponseStatus(UNPROCESSABLE_ENTITY)
 	@ExceptionHandler(IdempotencyKeyMismatchException.class)
-	public ErrorResponse handleIdempotencyKeyMismatchException(
-		IdempotencyKeyMismatchException e, WebRequest request) {
-		alarm(e, request);
-		log.error("handleIdempotencyKeyMismatchException", e);
+	public ErrorResponse handleIdempotencyKeyMismatchException(IdempotencyKeyMismatchException e,
+		WebRequest request) {
+		log.warn("handleIdempotencyKeyMismatchException - {}", request.getDescription(false));
 		return new ErrorResponse(e.getMessage(), IDEMPOTENCY_KEY_MISMATCH.getCode());
 	}
 
