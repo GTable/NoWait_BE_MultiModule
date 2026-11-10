@@ -24,7 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 public class IdempotencyService {
 
 	private static final String IN_PROGRESS = "IN-PROGRESS";
-	private static final Duration TTL = Duration.ofMinutes(10);
+	// 처리 중: 서버가 처리 도중 죽었을 때 키가 막혀 있는 시간. 정상 요청은 1초 미만이고, DB 커넥션 대기(Hikari 기본 30초)보다 길면 된다
+	private static final Duration IN_PROGRESS_TTL = Duration.ofMinutes(1);
+	// 완료: 같은 키 재요청에 저장된 응답을 돌려주는 시간. 앱은 자동 재시도가 없어 사람이 다시 누르는 경우만 덮으면 된다
+	private static final Duration COMPLETED_TTL = Duration.ofMinutes(3);
 	private static final Pattern UUID_FORMAT =
 		Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
@@ -56,7 +59,7 @@ public class IdempotencyService {
 
 		// 값 형식: "{요청 지문}:{IN-PROGRESS | 응답 JSON}"
 		// GET 후 SET 이면 그 사이에 같은 키 요청이 끼어든다. SET NX 한 번으로 선점한다
-		if (!Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, fingerprint + ":" + IN_PROGRESS, TTL))) {
+		if (!Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, fingerprint + ":" + IN_PROGRESS, IN_PROGRESS_TTL))) {
 			return replay(key, fingerprint, responseType);
 		}
 
@@ -69,9 +72,9 @@ public class IdempotencyService {
 		}
 
 		try {
-			redisTemplate.opsForValue().set(key, fingerprint + ":" + objectMapper.writeValueAsString(response), TTL);
+			redisTemplate.opsForValue().set(key, fingerprint + ":" + objectMapper.writeValueAsString(response), COMPLETED_TTL);
 		} catch (Exception e) {
-			// ponytail: 작업은 이미 커밋됐으니 응답은 그대로 준다. 키는 IN-PROGRESS 로 남아 TTL 동안 재시도를 막고,
+			// ponytail: 작업은 이미 커밋됐으니 응답은 그대로 준다. 키는 IN-PROGRESS 로 남아 IN_PROGRESS_TTL 동안 재시도를 막고,
 			//  그 뒤 같은 키 재시도는 다시 실행된다. 이것까지 막으려면 DB 에 멱등키 UNIQUE 제약 추가
 			log.error("멱등 응답 저장 실패 - key: {}", key, e);
 		}

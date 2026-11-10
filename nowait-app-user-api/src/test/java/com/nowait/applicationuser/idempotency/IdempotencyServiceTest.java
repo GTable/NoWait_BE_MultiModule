@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -134,6 +135,20 @@ class IdempotencyServiceTest {
 		assertThatThrownBy(() -> idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(4),
 			RegisterWaitingResponse.class, IdempotencyServiceTest::mustNotRun))
 			.isInstanceOf(IdempotencyKeyMismatchException.class);
+	}
+
+	@Test
+	@DisplayName("처리 중 키는 1분, 완료된 키는 3분 동안 유지된다")
+	void ttl_differsByState() {
+		String key = UUID.randomUUID().toString();
+		String redisKey = "idempotency:" + SCOPE + ":" + key;
+
+		idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(2), RegisterWaitingResponse.class, () -> {
+			assertThat(template.getExpire(redisKey, TimeUnit.SECONDS)).isBetween(55L, 60L);
+			return REGISTERED;
+		});
+
+		assertThat(template.getExpire(redisKey, TimeUnit.SECONDS)).isBetween(175L, 180L);
 	}
 
 	@Test
