@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,7 +23,9 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.nowait.applicationuser.waiting.dto.CancelWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.CancelWaitingResponse;
+import com.nowait.applicationuser.waiting.dto.RegisterWaitingRequest;
 import com.nowait.applicationuser.waiting.dto.RegisterWaitingResponse;
 import com.nowait.common.enums.ReservationStatus;
 
@@ -34,6 +37,10 @@ class IdempotencyServiceTest {
 
 	static StringRedisTemplate template;
 	static IdempotencyService idempotencyService;
+
+	static final String SCOPE = "waiting:register:1:store";
+	static final RegisterWaitingResponse REGISTERED =
+		RegisterWaitingResponse.builder().waitingNumber("20261111-1-0001").partySize(2).build();
 
 	@BeforeAll
 	static void setUpAll() {
@@ -51,6 +58,7 @@ class IdempotencyServiceTest {
 	@Test
 	@DisplayName("같은 키로 동시에 들어온 요청은 한 번만 실행되고, 이후 요청은 저장된 응답을 받는다")
 	void concurrentSameKey_runsOnce() throws Exception {
+		String key = UUID.randomUUID().toString();
 		AtomicInteger runs = new AtomicInteger();
 		CountDownLatch start = new CountDownLatch(1);
 		ExecutorService pool = Executors.newFixedThreadPool(10);
@@ -59,11 +67,12 @@ class IdempotencyServiceTest {
 		for (int i = 0; i < 10; i++) {
 			futures.add(pool.submit(() -> {
 				start.await();
-				return idempotencyService.execute("waiting:register:1", "key-1", RegisterWaitingResponse.class, () -> {
-					runs.incrementAndGet();
-					sleep(300);
-					return RegisterWaitingResponse.builder().waitingNumber("20261111-1-0001").partySize(2).build();
-				});
+				return idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(2),
+					RegisterWaitingResponse.class, () -> {
+						runs.incrementAndGet();
+						sleep(300);
+						return REGISTERED;
+					});
 			}));
 		}
 		start.countDown();
@@ -85,19 +94,19 @@ class IdempotencyServiceTest {
 		assertThat(succeeded).isEqualTo(1);
 		assertThat(rejected).isEqualTo(9);
 
-		RegisterWaitingResponse replayed = idempotencyService.execute(
-			"waiting:register:1", "key-1", RegisterWaitingResponse.class, () -> {
-				throw new AssertionError("완료된 키는 다시 실행되면 안 된다");
-			});
-		assertThat(replayed.getWaitingNumber()).isEqualTo("20261111-1-0001");
-		assertThat(replayed.getPartySize()).isEqualTo(2);
+		RegisterWaitingResponse replayed = idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(2),
+			RegisterWaitingResponse.class, IdempotencyServiceTest::mustNotRun);
+		assertThat(replayed).usingRecursiveComparison().isEqualTo(REGISTERED);
 	}
 
 	@Test
 	@DisplayName("실패한 요청은 키를 풀어줘서 같은 키로 다시 시도할 수 있다")
 	void failure_releasesKey() {
-		assertThatThrownBy(() -> idempotencyService.execute("waiting:cancel:1", "key-2", CancelWaitingResponse.class,
-			() -> {
+		String key = UUID.randomUUID().toString();
+		CancelWaitingRequest request = new CancelWaitingRequest("20261111-1-0001");
+
+		assertThatThrownBy(() -> idempotencyService.execute("waiting:cancel:1:store", key, request,
+			CancelWaitingResponse.class, () -> {
 				throw new IllegalStateException("DB 커밋 실패");
 			})).isInstanceOf(IllegalStateException.class);
 
@@ -108,13 +117,38 @@ class IdempotencyServiceTest {
 			.canceledAt(LocalDateTime.of(2026, 11, 11, 12, 0))
 			.message("대기 취소가 완료되었습니다.")
 			.build();
-		idempotencyService.execute("waiting:cancel:1", "key-2", CancelWaitingResponse.class, () -> ok);
+		idempotencyService.execute("waiting:cancel:1:store", key, request, CancelWaitingResponse.class, () -> ok);
 
-		CancelWaitingResponse replayed = idempotencyService.execute(
-			"waiting:cancel:1", "key-2", CancelWaitingResponse.class, () -> {
-				throw new AssertionError("완료된 키는 다시 실행되면 안 된다");
-			});
+		CancelWaitingResponse replayed = idempotencyService.execute("waiting:cancel:1:store", key, request,
+			CancelWaitingResponse.class, IdempotencyServiceTest::mustNotRun);
 		assertThat(replayed).usingRecursiveComparison().isEqualTo(ok);
+	}
+
+	@Test
+	@DisplayName("같은 키로 본문이 다른 요청이 오면 실행하지 않고 거절한다")
+	void sameKeyDifferentBody_rejected() {
+		String key = UUID.randomUUID().toString();
+		idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(2), RegisterWaitingResponse.class,
+			() -> REGISTERED);
+
+		assertThatThrownBy(() -> idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(4),
+			RegisterWaitingResponse.class, IdempotencyServiceTest::mustNotRun))
+			.isInstanceOf(IdempotencyKeyMismatchException.class);
+	}
+
+	@Test
+	@DisplayName("UUID 형식이 아닌 키는 Redis 에 쓰지 않고 거절한다")
+	void invalidKeyFormat_rejected() {
+		for (String key : List.of("abc", "waiting:sequence:1:20261111", "550e8400e29b41d4a716446655440000")) {
+			assertThatThrownBy(() -> idempotencyService.execute(SCOPE, key, new RegisterWaitingRequest(2),
+				RegisterWaitingResponse.class, IdempotencyServiceTest::mustNotRun))
+				.isInstanceOf(InvalidIdempotencyKeyException.class);
+		}
+		assertThat(template.keys("*")).isEmpty();
+	}
+
+	private static <T> T mustNotRun() {
+		throw new AssertionError("실행되면 안 된다");
 	}
 
 	private static void sleep(long ms) {

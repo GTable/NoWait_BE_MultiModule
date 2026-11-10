@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartException;
 
 import com.nowait.applicationuser.security.exception.ResourceNotFoundException;
 import com.nowait.applicationuser.security.exception.UnauthorizedException;
+import com.nowait.applicationuser.idempotency.IdempotencyKeyMismatchException;
 import com.nowait.applicationuser.idempotency.WorkInProgressException;
 import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
@@ -300,6 +301,15 @@ public class GlobalExceptionHandler {
 		alarm(e, request);
 		log.error("handleWorkInProgressException", e);
 		return new ErrorResponse(e.getMessage(), WORK_IN_PROGRESS.getCode());
+	}
+
+	@ResponseStatus(UNPROCESSABLE_ENTITY)
+	@ExceptionHandler(IdempotencyKeyMismatchException.class)
+	public ErrorResponse handleIdempotencyKeyMismatchException(
+		IdempotencyKeyMismatchException e, WebRequest request) {
+		alarm(e, request);
+		log.error("handleIdempotencyKeyMismatchException", e);
+		return new ErrorResponse(e.getMessage(), IDEMPOTENCY_KEY_MISMATCH.getCode());
 	}
 
 	// 공통 에러 Map 생성
