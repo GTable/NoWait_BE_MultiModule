@@ -25,8 +25,9 @@ public class DistributedCachedMenuDao extends DistributedCachedDao<List<MenuRead
 
 	private final MenuRepository menuRepository;
 
+	// ttl 은 무효화 메시지 발행 실패 시 옛 값이 남는 최대 시간. 주점 200개라 짧아도 히트율 손해가 작다
 	// ttl 을 0s 로 주면 매 조회가 DB 로 간다 (캐시 끄기: 비교 측정, 장애 시 차단)
-	public DistributedCachedMenuDao(MenuRepository menuRepository, @Value("${nowait.cache.menu.ttl:1d}") Duration ttl,
+	public DistributedCachedMenuDao(MenuRepository menuRepository, @Value("${nowait.cache.menu.ttl:5m}") Duration ttl,
 		RedisMessageListenerContainer container, CacheInvalidationPublisher publisher, MeterRegistry meterRegistry) {
 		super(RedisKeyUtils.buildMenuCacheChannel(), ttl, 1_000, container, publisher, meterRegistry);
 		this.menuRepository = menuRepository;

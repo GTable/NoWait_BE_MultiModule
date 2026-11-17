@@ -18,6 +18,7 @@ import com.nowait.applicationuser.order.dto.OrderMenuDto;
 import com.nowait.applicationuser.order.dto.OrderResponseDto;
 import com.nowait.domaincorerdb.menu.entity.Menu;
 import com.nowait.domaincorerdb.menu.exception.MenuNotFoundException;
+import com.nowait.domaincorerdb.menu.exception.MenuSoldOutException;
 import com.nowait.domaincorerdb.menu.repository.MenuRepository;
 import com.nowait.domaincorerdb.order.entity.OrderItem;
 import com.nowait.domaincorerdb.order.entity.OrderStatus;
@@ -82,6 +83,10 @@ public class OrderService {
 			.map(item -> {
 				Menu menu = Optional.ofNullable(menuMap.get(item.getMenuId()))
 					.orElseThrow(MenuNotFoundException::new);
+				// 메뉴 목록은 캐시(최대 TTL 동안 옛 값)라 품절 여부는 주문 시점에 DB 값으로 다시 확인한다
+				if (Boolean.TRUE.equals(menu.getIsSoldOut())) {
+					throw new MenuSoldOutException();
+				}
 				return OrderItem.builder()
 					.userOrder(savedOrder)
 					.menu(menu)

@@ -27,6 +27,7 @@ import com.nowait.common.exception.ErrorMessage;
 import com.nowait.common.exception.ErrorResponse;
 import com.nowait.discord.service.DiscordAlarmService;
 import com.nowait.domaincorerdb.department.exception.DepartmentNotFoundException;
+import com.nowait.domaincorerdb.menu.exception.MenuSoldOutException;
 import com.nowait.domaincorerdb.order.exception.DepositorNameTooLongException;
 import com.nowait.domaincorerdb.order.exception.DuplicateOrderException;
 import com.nowait.domaincorerdb.order.exception.OrderItemsEmptyException;
@@ -308,6 +309,14 @@ public class GlobalExceptionHandler {
 		WebRequest request) {
 		log.warn("handleIdempotencyKeyMismatchException - {}", request.getDescription(false));
 		return new ErrorResponse(e.getMessage(), IDEMPOTENCY_KEY_MISMATCH.getCode());
+	}
+
+	// 품절 메뉴 주문은 손님이 옛 메뉴 화면에서 주문한 정상 흐름이라 알림 없이 warn 만 남긴다
+	@ResponseStatus(CONFLICT)
+	@ExceptionHandler(MenuSoldOutException.class)
+	public ErrorResponse handleMenuSoldOutException(MenuSoldOutException e, WebRequest request) {
+		log.warn("handleMenuSoldOutException - {}", request.getDescription(false));
+		return new ErrorResponse(e.getMessage(), MENU_SOLD_OUT.getCode());
 	}
 
 	// 공통 에러 Map 생성
