@@ -61,6 +61,7 @@ public enum ErrorMessage {
 	MENU_CROSS_STORE_CONFLICT("서로 다른 매장의 메뉴가 포함되어 있습니다.", "menu009"),
 	MENU_ALREADY_DELETED("이미 삭제된 메뉴입니다.", "menu010"),
 	MENU_TOGGLE_UNAUTHORIZED("메뉴 품절 상태 변경 권한이 없습니다.", "menu011"),
+	MENU_SOLD_OUT("품절된 메뉴가 포함되어 있습니다.", "menu012"),
 
 	// store
 	STORE_PARAMETER_EMPTY("주점 생성 시 파라미터 정보가 없습니다.", "store001"),
