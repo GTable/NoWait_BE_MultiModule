@@ -51,12 +51,16 @@ class DistributedCachedDaoTest {
 	}
 
 	@Test
-	void 만료가_가까울수록_미리_갱신할_확률이_높다() {
-		long delta = Duration.ofMillis(2).toNanos();
-		assertFalse(DistributedCachedDao.shouldRefreshEarly(Duration.ofMinutes(5).toNanos(), delta, 0.5));
-		assertTrue(DistributedCachedDao.shouldRefreshEarly(0, delta, 0.5));
-		// 남은 수명 = delta 일 때 -ln(rand) >= 1, 즉 rand <= 1/e(약 0.37) 이면 갱신
-		assertTrue(DistributedCachedDao.shouldRefreshEarly(delta, delta, 0.3));
-		assertFalse(DistributedCachedDao.shouldRefreshEarly(delta, delta, 0.4));
+	void TTL_90퍼센트부터_경과할수록_미리_갱신할_확률이_높아진다() {
+		Duration ttl = Duration.ofMinutes(5);
+		// 90% 전에는 갱신하지 않는다
+		assertFalse(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(89).dividedBy(100), ttl, 0.0));
+		// 93% → 30%, 95% → 50%, 98% → 80%: rand 가 확률보다 작을 때만 갱신
+		assertTrue(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(93).dividedBy(100), ttl, 0.29));
+		assertFalse(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(93).dividedBy(100), ttl, 0.31));
+		assertTrue(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(95).dividedBy(100), ttl, 0.49));
+		assertFalse(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(95).dividedBy(100), ttl, 0.51));
+		assertTrue(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(98).dividedBy(100), ttl, 0.79));
+		assertFalse(DistributedCachedDao.shouldRefreshEarly(ttl.multipliedBy(98).dividedBy(100), ttl, 0.81));
 	}
 }
