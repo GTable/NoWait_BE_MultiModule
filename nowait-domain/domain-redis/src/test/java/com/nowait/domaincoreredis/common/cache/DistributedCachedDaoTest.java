@@ -49,4 +49,14 @@ class DistributedCachedDaoTest {
 		dao.onChannelSubscribed("cache:test".getBytes(StandardCharsets.UTF_8), 1);
 		assertEquals(5, dao.get("2"));
 	}
+
+	@Test
+	void 만료가_가까울수록_미리_갱신할_확률이_높다() {
+		long delta = Duration.ofMillis(2).toNanos();
+		assertFalse(DistributedCachedDao.shouldRefreshEarly(Duration.ofMinutes(5).toNanos(), delta, 0.5));
+		assertTrue(DistributedCachedDao.shouldRefreshEarly(0, delta, 0.5));
+		// 남은 수명 = delta 일 때 -ln(rand) >= 1, 즉 rand <= 1/e(약 0.37) 이면 갱신
+		assertTrue(DistributedCachedDao.shouldRefreshEarly(delta, delta, 0.3));
+		assertFalse(DistributedCachedDao.shouldRefreshEarly(delta, delta, 0.4));
+	}
 }
